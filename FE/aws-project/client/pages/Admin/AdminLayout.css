@@ -1,0 +1,31 @@
+/* Admin Layout Styles */
+
+/* Override Ant Design Sider colors */
+.ant-layout-sider {
+  background: #15803d !important; /* green-700 */
+}
+
+.ant-menu.ant-menu-dark {
+  background: #15803d !important;
+}
+
+.ant-menu-dark .ant-menu-item-selected {
+  background-color: #16a34a !important; /* green-600 */
+}
+
+.ant-menu-dark .ant-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.ant-menu-dark.ant-menu-dark:not(.ant-menu-horizontal) .ant-menu-item-selected {
+  background-color: #16a34a !important;
+}
+
+/* Smooth transitions */
+.ant-layout-sider-trigger {
+  background: #14532d !important; /* green-900 */
+}
+
+.ant-layout-sider-collapsed .demo-logo-vertical {
+  margin: 16px;
+}
