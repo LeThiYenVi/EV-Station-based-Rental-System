@@ -9,6 +9,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Customer/Index";
 import About from "./pages/Customer/About/About";
 import Login from "./pages/Login/Login";
+import AdminLayout from "./pages/Admin/AdminLayout";
+import StaffLayout from "./pages/Staff/StaffLayout";
 import NotificationDemo from "./pages/NotificationDemo";
 import ResultDemo from "./pages/ResultDemo";
 import ComponentsDemo from "./pages/ComponentsDemo";
@@ -41,6 +43,8 @@ const App = () => (
             }
           />
           <Route path="/login" element={<Login />} />
+          <Route path="/admin/*" element={<AdminLayout />} />
+          <Route path="/staff/*" element={<StaffLayout />} />
           <Route
             path="/demo/notifications"
             element={

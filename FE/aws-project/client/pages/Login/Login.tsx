@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 const TEST_ACCOUNTS = {
   admin: { username: "admin", password: "admin123" },
   user: { username: "user", password: "user123" },
+  staff: { username: "staff", password: "staff123" },
 };
 
 export default function Login() {
@@ -66,25 +67,42 @@ export default function Login() {
       return;
     }
 
-    // Kiểm tra tài khoản test
-    const isValidAccount = Object.values(TEST_ACCOUNTS).some(
-      (account) =>
-        account.username === loginData.username &&
-        account.password === loginData.password,
+    // Kiểm tra tài khoản test và lấy role
+    let userRole: string | null = null;
+
+    const isValidAccount = Object.entries(TEST_ACCOUNTS).some(
+      ([role, account]) => {
+        if (
+          account.username === loginData.username &&
+          account.password === loginData.password
+        ) {
+          userRole = role;
+          return true;
+        }
+        return false;
+      },
     );
 
-    if (isValidAccount) {
+    if (isValidAccount && userRole) {
       toast({
         title: "Đăng nhập thành công!",
         description: `Chào mừng ${loginData.username}`,
       });
-      // Điều hướng về trang chủ sau khi đăng nhập thành công
-      setTimeout(() => navigate("/"), 1000);
+      // Điều hướng dựa vào role sau khi đăng nhập thành công
+      setTimeout(() => {
+        if (userRole === "admin") {
+          navigate("/admin");
+        } else if (userRole === "staff") {
+          navigate("/staff");
+        } else {
+          navigate("/");
+        }
+      }, 1000);
     } else {
       toast({
         title: "Đăng nhập thất bại",
         description:
-          "Tài khoản hoặc mật khẩu không đúng. Thử: admin/admin123 hoặc user/user123",
+          "Tài khoản hoặc mật khẩu không đúng. Thử: admin/admin123, staff/staff123 hoặc user/user123",
         variant: "destructive",
       });
     }
@@ -262,9 +280,7 @@ export default function Login() {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-700">
-                    BF Car Rental
-                  </p>
+                  <p className="font-semibold text-gray-700">BF Car Rental</p>
                 </div>
               </div>
             </div>
@@ -307,7 +323,7 @@ export default function Login() {
                       <Input
                         id="login-username"
                         type="text"
-                        placeholder="admin hoặc user"
+                        placeholder="admin, staff hoặc user"
                         value={loginData.username}
                         onChange={(e) =>
                           setLoginData({
@@ -330,7 +346,7 @@ export default function Login() {
                       <Input
                         id="login-password"
                         type="password"
-                        placeholder="admin123 hoặc user123"
+                        placeholder="admin123, staff123 hoặc user123"
                         value={loginData.password}
                         onChange={(e) =>
                           setLoginData({
@@ -405,7 +421,8 @@ export default function Login() {
                       </Link>
                       <p className="text-xs text-gray-500">
                         Tài khoản test:{" "}
-                        <span className="font-semibold">admin/admin123</span>{" "}
+                        <span className="font-semibold">admin/admin123</span>,{" "}
+                        <span className="font-semibold">staff/staff123</span>{" "}
                         hoặc <span className="font-semibold">user/user123</span>
                       </p>
                     </div>
