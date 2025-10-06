@@ -1,0 +1,124 @@
+/* Ant Design Notification Customization */
+
+/* Override default notification styles */
+.ant-notification {
+  z-index: 9999;
+}
+
+.ant-notification-notice {
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.ant-notification-notice-message {
+  font-weight: 600;
+  font-size: 15px;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.ant-notification-notice-description {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.ant-notification-notice-icon {
+  font-size: 20px;
+  margin-top: 2px;
+}
+
+.ant-notification-notice-close {
+  color: #9ca3af;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.ant-notification-notice-close:hover {
+  color: #4b5563;
+}
+
+/* Success notification */
+.ant-notification-notice-success .ant-notification-notice-icon {
+  color: #10b981 !important;
+}
+
+/* Error notification */
+.ant-notification-notice-error .ant-notification-notice-icon {
+  color: #ef4444 !important;
+}
+
+/* Warning notification */
+.ant-notification-notice-warning .ant-notification-notice-icon {
+  color: #f59e0b !important;
+}
+
+/* Info notification */
+.ant-notification-notice-info .ant-notification-notice-icon {
+  color: #3b82f6 !important;
+}
+
+/* Custom animation */
+.ant-notification-notice {
+  animation: notificationSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes notificationSlideIn {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .ant-notification-notice {
+    background: rgba(31, 41, 55, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .ant-notification-notice-message {
+    color: #f9fafb;
+  }
+  
+  .ant-notification-notice-description {
+    color: #d1d5db;
+  }
+  
+  .ant-notification-notice-close {
+    color: #9ca3af;
+  }
+  
+  .ant-notification-notice-close:hover {
+    color: #e5e7eb;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .ant-notification {
+    margin: 16px;
+    max-width: calc(100vw - 32px);
+  }
+  
+  .ant-notification-notice {
+    margin-bottom: 8px;
+    padding: 16px;
+  }
+  
+  .ant-notification-notice-message {
+    font-size: 14px;
+  }
+  
+  .ant-notification-notice-description {
+    font-size: 12px;
+  }
+}
