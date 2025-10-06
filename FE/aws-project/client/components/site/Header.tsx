@@ -121,11 +121,15 @@ export function Header() {
           <Button
             variant="ghost"
             className="hidden md:flex text-gray-700 hover:text-green-500 hover:bg-green-50"
+            asChild
           >
-            Đăng ký
+            <Link to="/login?mode=register">Đăng ký</Link>
           </Button>
-          <Button className="bg-green-500 hover:bg-green-600 text-white">
-            Đăng nhập
+          <Button
+            className="bg-green-500 hover:bg-green-600 text-white"
+            asChild
+          >
+            <Link to="/login">Đăng nhập</Link>
           </Button>
         </div>
       </div>
