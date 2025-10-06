@@ -1,0 +1,355 @@
+/* Component-specific Tailwind CSS classes for header */
+
+/* Header component styles */
+.header-component {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header-scrolled {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background-color: rgba(0, 0, 0, 0.95);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.header-transparent {
+  background-color: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Logo component */
+.logo-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.3s ease;
+}
+
+.logo-container:hover {
+  transform: scale(1.05);
+}
+
+.logo-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transition: all 0.3s ease;
+}
+
+.logo-badge:hover {
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.logo-text {
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+.logo-text-highlight {
+  color: #10b981;
+}
+
+/* Navigation styles */
+.nav-container {
+  display: none;
+  align-items: center;
+  gap: 32px;
+}
+
+@media (min-width: 768px) {
+  .nav-container {
+    display: flex;
+  }
+}
+
+.nav-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  transition: color 0.2s ease;
+  position: relative;
+  padding: 8px 0;
+  border-radius: 3%;
+}
+
+.nav-link:hover {
+  color: #10b981;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* Dropdown trigger */
+.dropdown-trigger {
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 3%;
+}
+
+.dropdown-trigger:hover {
+  color: #10b981;
+}
+
+/* Dropdown content */
+.dropdown-content {
+  /* width: 1000px; */
+  width: 100%;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 0;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border-radius: 16px;
+  padding: 32px;
+  margin-top: 8px;
+  animation: dropdown-enter 0.2s ease-out;
+}
+
+@keyframes dropdown-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Service grid */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+}
+
+/* Service card */
+.service-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  background: white;
+}
+
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(16, 185, 129, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.service-card:hover::before {
+  opacity: 1;
+}
+
+.service-card:hover {
+  transform: translateY(-8px);
+  background-color: #ffffff;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+/* Service image container */
+.service-image {
+  width: 240px;
+  height: 140px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Real service images */
+.service-chauffeur {
+  background-image: url('https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=400&h=300&fit=crop&crop=center');
+}
+
+.service-self-drive {
+  background-image: url('https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=300&fit=crop&crop=center');
+}
+
+.service-events {
+  background-image: url('https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=400&h=300&fit=crop&crop=center');
+}
+
+.service-flexible {
+  background-image: url('https://images.unsplash.com/photo-1572635196243-4dd75fbdbd7c?w=400&h=300&fit=crop&crop=center');
+}
+
+/* Coming soon badge */
+.coming-soon {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  padding: 6px 12px;
+  border-radius: 6px;
+  animation: pulse-glow 2s infinite;
+  letter-spacing: 0.5px;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(16, 185, 129, 0.6);
+  }
+}
+
+/* Service titles */
+.service-title {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #111827;
+  letter-spacing: 0.5px;
+}
+
+.service-title-green {
+  color: #10b981;
+}
+
+.service-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Login button */
+.login-button {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  color: #000000;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 9999px;
+  padding: 8px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.login-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.login-button:hover::before {
+  left: 100%;
+}
+
+.login-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.06);
+  border-color: #10b981;
+  background: #ffffff;
+}
+
+.login-button-small {
+  padding: 6px 16px;
+  font-size: 14px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .dropdown-content {
+    width: 100vw !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-radius: 0 !important;
+    margin-top: 0 !important;
+  }
+  
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .service-card {
+    padding: 12px !important;
+  }
+  
+  .service-image {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  
+  .service-title {
+    font-size: 12px;
+  }
+  
+  .service-subtitle {
+    font-size: 10px;
+  }
+}
+
+/* Focus states for accessibility */
+.nav-link:focus,
+.dropdown-trigger:focus,
+.login-button:focus,
+.service-card:focus {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}

@@ -1,0 +1,419 @@
+/* Layout component CSS styles */
+
+/* Main layout container */
+.layout-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  color: #111827;
+  position: relative;
+  overflow-x: clip; /* Changed from hidden to clip - allows sticky positioning to work */
+}
+
+/* Background patterns and decorations */
+.layout-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(16, 185, 129, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Animated background grid */
+.layout-container::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: grid-move 20s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes grid-move {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(60px, 60px);
+  }
+}
+
+/* Main content area */
+.layout-main {
+  padding-top: 0; /* Removed padding to allow hero section to sit directly under header */
+  min-height: calc(100vh);
+  position: relative;
+  z-index: 0; /* Changed from 1 to 0 to prevent overlapping with sticky header (z-50) */
+}
+
+/* Content wrapper */
+.layout-content {
+  position: relative;
+  background: transparent;
+}
+
+/* Page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+.page-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-exit-active {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 0.3s ease-in, transform 0.3s ease-in;
+}
+
+/* Scroll progress indicator */
+.scroll-progress {
+  position: fixed;
+  top: 64px; /* Below header */
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(16, 185, 129, 0.1);
+  z-index: 999;
+}
+
+.scroll-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  width: 0%;
+  transition: width 0.1s ease-out;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+/* Content sections */
+.layout-section {
+  position: relative;
+  padding: 40px 0;
+}
+
+.layout-section:nth-child(even) {
+  background: rgba(16, 185, 129, 0.02);
+}
+
+.layout-section-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+  text-align: center;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.layout-section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 2px;
+}
+
+/* Container utilities */
+.layout-container-narrow {
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.layout-container-wide {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.layout-container-full {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Responsive breakpoints */
+@media (min-width: 640px) {
+  .layout-container-narrow,
+  .layout-container-wide,
+  .layout-container-full {
+    padding: 0 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout-container-narrow,
+  .layout-container-wide,
+  .layout-container-full {
+    padding: 0 32px;
+  }
+}
+
+/* Loading states */
+.layout-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.layout-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #10b981;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Sidebar layout (if needed) */
+.layout-with-sidebar {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+@media (min-width: 1024px) {
+  .layout-with-sidebar {
+    grid-template-columns: 280px 1fr;
+    gap: 32px;
+  }
+}
+
+.layout-sidebar {
+  background: #f9fafb;
+  border-right: 1px solid #e5e7eb;
+  padding: 24px 0;
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+.layout-sidebar-content {
+  padding: 0 24px;
+}
+
+/* Error boundaries */
+.layout-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.layout-error-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #dc2626;
+  margin-bottom: 12px;
+}
+
+.layout-error-message {
+  color: #6b7280;
+  margin-bottom: 24px;
+  max-width: 480px;
+}
+
+.layout-error-button {
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.layout-error-button:hover {
+  background: #059669;
+}
+
+/* Floating action button */
+.layout-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #34d399);
+  color: white;
+  border: none;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.layout-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 12px 35px rgba(16, 185, 129, 0.4);
+}
+
+.layout-fab svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Back to top functionality */
+.layout-back-to-top {
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.layout-back-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Print styles */
+@media print {
+  .layout-container::before,
+  .layout-container::after {
+    display: none;
+  }
+  
+  .layout-main {
+    padding-top: 0;
+  }
+  
+  .scroll-progress,
+  .layout-fab {
+    display: none;
+  }
+}
+
+/* Focus management */
+.layout-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #10b981;
+  color: white;
+  padding: 8px;
+  border-radius: 4px;
+  text-decoration: none;
+  z-index: 1000;
+  transition: top 0.2s ease;
+}
+
+.layout-skip-link:focus {
+  top: 6px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .layout-main {
+    padding-top: 0; /* Keep consistent with desktop - no padding to allow hero sections to sit under sticky header */
+  }
+  
+  .layout-section {
+    padding: 24px 0;
+  }
+  
+  .layout-section-title {
+    font-size: 24px;
+  }
+  
+  .layout-fab {
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+  }
+  
+  .layout-fab svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .layout-container {
+    background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+    color: #f9fafb;
+  }
+  
+  .layout-container::before {
+    background-image: 
+      radial-gradient(circle at 25% 25%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+  }
+  
+  .layout-container::after {
+    background-image: 
+      linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px);
+  }
+  
+  .layout-section:nth-child(even) {
+    background: rgba(16, 185, 129, 0.05);
+  }
+  
+  .layout-section-title {
+    color: #f9fafb;
+  }
+  
+  .layout-sidebar {
+    background: #1f2937;
+    border-right-color: #374151;
+  }
+  
+  .layout-loading {
+    background: rgba(17, 24, 39, 0.9);
+  }
+  
+  .layout-loading-spinner {
+    border-color: #374151;
+    border-top-color: #10b981;
+  }
+}
