@@ -1,0 +1,45 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: evrental-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB_NAME:vehicle_rental}
+    username: ${POSTGRES_USERNAME:postgres}
+    password: ${POSTGRES_PASSWORD:12345}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  cache:
+    type: redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://cognito-idp.${AWS_REGION}.amazonaws.com/${AWS_COGNITO_USER_POOL_ID}
+
+aws:
+  cognito:
+    clientId: ${AWS_COGNITO_CLIENT_ID}s
+    clientSecret: ${AWS_COGNITO_CLIENT_SECRET}
+    userPoolId: ${AWS_COGNITO_USER_POOL_ID}
+    domainPrefix: ${AWS_COGNITO_DOMAIN_PREFIX}
+    region: ${AWS_REGION:ap-southeast-1}
+    jwt-set-uri: https://cognito-idp.${aws.cognito.region}.amazonaws.com/${aws.cognito.userPoolId}/.well-known/jwks.json
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+    urlCallback: ${OAUTH2_CLIENT_COGNITO_CALLBACK:http://localhost:8080/api/auth/callback}
+
+oauth:
+  state:
+    ttl: 5
+    prefix: "oauth:state:"
+
+
+
