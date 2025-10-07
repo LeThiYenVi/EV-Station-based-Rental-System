@@ -26,7 +26,7 @@ spring:
 
 aws:
   cognito:
-    clientId: ${AWS_COGNITO_CLIENT_ID}s
+    clientId: ${AWS_COGNITO_CLIENT_ID}
     clientSecret: ${AWS_COGNITO_CLIENT_SECRET}
     userPoolId: ${AWS_COGNITO_USER_POOL_ID}
     domainPrefix: ${AWS_COGNITO_DOMAIN_PREFIX}
