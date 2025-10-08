@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -390,84 +391,83 @@ export default function Index() {
                 originalPrice: "480K",
               },
             ].map((car, index) => (
-              <Card
-                key={index}
-                className="overflow-hidden hover:shadow-xl transition-shadow cursor-pointer bg-white"
-              >
-                <div className="relative">
-                  <img
-                    src={car.image}
-                    alt={car.name}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="absolute top-3 left-3">
-                    <Badge className="bg-green-500 text-white border-0 flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" />
-                      {car.badge}
-                    </Badge>
+              <Link key={index} to={`/car/${index + 1}`} className="block">
+                <Card className="overflow-hidden hover:shadow-xl transition-shadow cursor-pointer bg-white">
+                  <div className="relative">
+                    <img
+                      src={car.image}
+                      alt={car.name}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute top-3 left-3">
+                      <Badge className="bg-green-500 text-white border-0 flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" />
+                        {car.badge}
+                      </Badge>
+                    </div>
+                    <div className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md">
+                      <svg
+                        className="w-5 h-5 text-yellow-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </div>
                   </div>
-                  <div className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md">
-                    <svg
-                      className="w-5 h-5 text-yellow-500"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  </div>
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-bold text-lg mb-3 text-black">
-                    {car.name}
-                  </h3>
+                  <CardContent className="p-4">
+                    <h3 className="font-bold text-lg mb-3 text-black">
+                      {car.name}
+                    </h3>
 
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Car className="w-4 h-4" />
-                        <span>{car.transmission}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        <span>{car.seats}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Zap className="w-4 h-4" />
-                        <span>{car.fuel}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-1 text-sm text-gray-600">
-                      <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                      <span className="line-clamp-1">{car.location}</span>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-3 mt-3">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-yellow-500 font-bold">
-                          {car.rating}
-                        </span>
-                        <span className="text-gray-400">★</span>
-                        <span className="text-gray-600 text-sm">
-                          {car.trips}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-end justify-between">
-                      <div>
-                        <div className="text-xl font-bold text-black">
-                          {car.price}
-                          <span className="text-sm">/ngày</span>
+                    <div className="space-y-2 mb-3">
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <Car className="w-4 h-4" />
+                          <span>{car.transmission}</span>
                         </div>
-                        <div className="text-sm text-blue-500 line-through">
-                          {car.originalPrice} giá áp giờ
+                        <div className="flex items-center gap-1">
+                          <User className="w-4 h-4" />
+                          <span>{car.seats}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Zap className="w-4 h-4" />
+                          <span>{car.fuel}</span>
                         </div>
                       </div>
+                      <div className="flex items-start gap-1 text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <span className="line-clamp-1">{car.location}</span>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+
+                    <div className="border-t pt-3 mt-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-yellow-500 font-bold">
+                            {car.rating}
+                          </span>
+                          <span className="text-gray-400">★</span>
+                          <span className="text-gray-600 text-sm">
+                            {car.trips}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <div className="text-xl font-bold text-black">
+                            {car.price}
+                            <span className="text-sm">/ngày</span>
+                          </div>
+                          <div className="text-sm text-blue-500 line-through">
+                            {car.originalPrice} giá áp giờ
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
