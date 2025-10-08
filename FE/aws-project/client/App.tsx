@@ -8,6 +8,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Customer/Index";
 import About from "./pages/Customer/About/About";
+import CarIn4 from "./pages/Customer/CarIn4/CarIn4";
+import Blog from "./pages/Customer/Blog/Blog";
+import In4Blog from "./pages/Customer/Blog/In4Blog";
 import Login from "./pages/Login/Login";
 import AdminLayout from "./pages/Admin/AdminLayout";
 import StaffLayout from "./pages/Staff/StaffLayout";
@@ -39,6 +42,30 @@ const App = () => (
             element={
               <Layout>
                 <About />
+              </Layout>
+            }
+          />
+          <Route
+            path="/car/:id"
+            element={
+              <Layout>
+                <CarIn4 />
+              </Layout>
+            }
+          />
+          <Route
+            path="/news"
+            element={
+              <Layout>
+                <Blog />
+              </Layout>
+            }
+          />
+          <Route
+            path="/blog/:id"
+            element={
+              <Layout>
+                <In4Blog />
               </Layout>
             }
           />

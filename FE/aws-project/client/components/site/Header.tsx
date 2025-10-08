@@ -44,6 +44,8 @@ const serviceItems = [
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 8);
@@ -51,6 +53,41 @@ export function Header() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Check login status from localStorage
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+      const user = localStorage.getItem("username") || "";
+      setIsLoggedIn(loggedIn);
+      setUsername(user);
+    };
+
+    checkLoginStatus();
+
+    // Listen for storage changes (for login/logout from other tabs)
+    window.addEventListener("storage", checkLoginStatus);
+    // Custom event for same-tab login/logout
+    window.addEventListener("loginStatusChanged", checkLoginStatus);
+
+    return () => {
+      window.removeEventListener("storage", checkLoginStatus);
+      window.removeEventListener("loginStatusChanged", checkLoginStatus);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("username");
+    setIsLoggedIn(false);
+    setUsername("");
+
+    // Dispatch custom event
+    window.dispatchEvent(new Event("loginStatusChanged"));
+
+    // Redirect to home
+    window.location.href = "/";
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
@@ -118,19 +155,37 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            className="hidden md:flex text-gray-700 hover:text-green-500 hover:bg-green-50"
-            asChild
-          >
-            <Link to="/login?mode=register">Đăng ký</Link>
-          </Button>
-          <Button
-            className="bg-green-500 hover:bg-green-600 text-white"
-            asChild
-          >
-            <Link to="/login">Đăng nhập</Link>
-          </Button>
+          {isLoggedIn ? (
+            <>
+              <span className="hidden md:flex text-gray-700 font-medium">
+                Xin chào,{" "}
+                <span className="text-green-600 ml-1">{username}</span>
+              </span>
+              <Button
+                variant="outline"
+                className="border-green-500 text-green-600 hover:bg-green-50"
+                onClick={handleLogout}
+              >
+                Đăng xuất
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                className="hidden md:flex text-gray-700 hover:text-green-500 hover:bg-green-50"
+                asChild
+              >
+                <Link to="/login?mode=register">Đăng ký</Link>
+              </Button>
+              <Button
+                className="bg-green-500 hover:bg-green-600 text-white"
+                asChild
+              >
+                <Link to="/login">Đăng nhập</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>
