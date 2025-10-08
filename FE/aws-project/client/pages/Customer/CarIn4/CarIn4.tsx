@@ -115,6 +115,19 @@ export default function CarIn4() {
   const [frontPreview, setFrontPreview] = useState<string | null>(null);
   const [backPreview, setBackPreview] = useState<string | null>(null);
 
+  // Booking form states
+  const [pickupDate, setPickupDate] = useState("2025-10-08");
+  const [pickupTime, setPickupTime] = useState("09:00");
+  const [returnDate, setReturnDate] = useState("2025-10-09");
+  const [returnTime, setReturnTime] = useState("08:00");
+  const [deliveryOption, setDeliveryOption] = useState<"pickup" | "delivery">(
+    "pickup",
+  );
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+
+  // Store booking ID (generated once when booking starts)
+  const [currentBookingId, setCurrentBookingId] = useState<string>("");
+
   // Login states
   const [loginData, setLoginData] = useState({
     username: "",
@@ -132,6 +145,47 @@ export default function CarIn4() {
 
   // Mock verified users (trong thực tế sẽ lưu trong database)
   const verifiedUsers = ["admin", "staff"];
+
+  // Calculate rental details
+  const calculateRentalDetails = () => {
+    const pickup = new Date(`${pickupDate}T${pickupTime}`);
+    const returnD = new Date(`${returnDate}T${returnTime}`);
+    const diffMs = returnD.getTime() - pickup.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    const diffDays = Math.ceil(diffHours / 24);
+
+    // Tính giá thuê
+    let rentalDays = diffDays > 0 ? diffDays : 1;
+    const carPrice = carData.price * rentalDays;
+
+    // Bảo hiểm thuê xe (10% giá xe)
+    const insurance = Math.round(carPrice * 0.1);
+
+    // Phí dịch vụ (5% giá xe)
+    const serviceFee = Math.round(carPrice * 0.05);
+
+    // Tiền cọc (5 triệu mặc định)
+    const deposit = 5000000;
+
+    // Giảm giá (lấy từ carData.discount)
+    const discountAmount = Math.round(carPrice * (carData.discount / 100));
+
+    // Tổng tiền
+    const total = carPrice + insurance + serviceFee - discountAmount;
+
+    return {
+      duration: `${rentalDays} ngày`,
+      carPrice,
+      insurance,
+      serviceFee,
+      deposit,
+      discount: discountAmount,
+      total,
+      totalDeposit: deposit,
+      rentalDays,
+      diffHours: Math.floor(diffHours),
+    };
+  };
 
   // Check login status from localStorage on component mount
   useEffect(() => {
@@ -159,30 +213,34 @@ export default function CarIn4() {
     };
   }, []);
 
-  // Mock data thanh toán
+  // Mock data thanh toán - tính toán động
+  const rentalCalc = calculateRentalDetails();
   const bookingDetails = {
-    bookingId: "BK" + Date.now(),
-    renterName: "Chú bộ đội",
+    bookingId: currentBookingId || "BK" + Date.now(),
+    renterName: currentUser || "Khách hàng",
     phone: "09xxxxx",
-    email: "truongnnguyenthaibinhv105@",
-    pickupLocation: "Hồ Chí Minh",
-    pickupDate: "08/10/2025",
-    pickupTime: "13:55",
-    returnDate: "09/10/2025",
-    returnTime: "13:55",
-    duration: "0 ngày",
+    email: "customer@gmail.com",
+    pickupLocation:
+      deliveryOption === "pickup"
+        ? carData.location
+        : deliveryAddress || "Giao xe tận nơi",
+    pickupDate: pickupDate.split("-").reverse().join("/"),
+    pickupTime: pickupTime,
+    returnDate: returnDate.split("-").reverse().join("/"),
+    returnTime: returnTime,
+    duration: rentalCalc.duration,
     rentalType: "Theo ngày",
     driverService: false,
-    carPrice: 0,
+    carPrice: rentalCalc.carPrice,
     driverFee: 0,
-    insurance: 0,
+    insurance: rentalCalc.insurance,
     additionalInsurance: 0,
-    serviceFee: 0,
-    deposit: 0,
-    discount: 0,
+    serviceFee: rentalCalc.serviceFee,
+    deposit: rentalCalc.deposit,
+    discount: rentalCalc.discount,
     useVPoints: false,
-    total: 0,
-    totalDeposit: 0,
+    total: rentalCalc.total,
+    totalDeposit: rentalCalc.totalDeposit,
     qrCode:
       "00020101021238570010A00000072701270006970454011399961234560208QRIBFTTA53037045802VN62150811Thanh toan6304",
     bankAccount: {
@@ -270,6 +328,13 @@ export default function CarIn4() {
   };
 
   const handleBookingClick = () => {
+    // Generate booking ID once when starting booking process
+    if (!currentBookingId) {
+      const newBookingId = "BK" + Date.now();
+      setCurrentBookingId(newBookingId);
+      console.log("🆕 Tạo mã đơn hàng mới:", newBookingId);
+    }
+
     if (!isLoggedIn) {
       setShowLoginDialog(true);
     } else if (!isVerified) {
@@ -330,6 +395,57 @@ export default function CarIn4() {
     setTimeout(() => {
       setIsProcessing(false);
       setPaymentSuccess(true);
+
+      // Save order to localStorage
+      const newOrder = {
+        bookingId: bookingDetails.bookingId,
+        carName: carData.name,
+        carImage: carData.images[0],
+        renterName: bookingDetails.renterName,
+        phone: bookingDetails.phone,
+        email: bookingDetails.email,
+        pickupDate: bookingDetails.pickupDate,
+        pickupTime: bookingDetails.pickupTime,
+        returnDate: bookingDetails.returnDate,
+        returnTime: bookingDetails.returnTime,
+        pickupLocation: bookingDetails.pickupLocation,
+        duration: bookingDetails.duration,
+        rentalType: bookingDetails.rentalType,
+        driverService: bookingDetails.driverService,
+        carPrice: bookingDetails.carPrice,
+        driverFee: bookingDetails.driverFee,
+        insurance: bookingDetails.insurance,
+        additionalInsurance: bookingDetails.additionalInsurance,
+        serviceFee: bookingDetails.serviceFee,
+        deposit: bookingDetails.deposit,
+        discount: bookingDetails.discount,
+        total: bookingDetails.total,
+        totalDeposit: bookingDetails.totalDeposit,
+        status: "pending" as const,
+        createdAt: new Date().toLocaleString("vi-VN"),
+        paymentMethod: paymentMethod,
+        transmission: carData.transmission,
+        seats: carData.seats,
+        fuel: carData.fuel,
+      };
+
+      // Get existing orders from localStorage
+      const savedOrders = localStorage.getItem("bookingOrders");
+      const orders = savedOrders ? JSON.parse(savedOrders) : [];
+
+      // Add new order to the beginning of the array
+      orders.unshift(newOrder);
+
+      // Save back to localStorage
+      localStorage.setItem("bookingOrders", JSON.stringify(orders));
+
+      // Debug log
+      console.log("✅ Đã lưu đơn hàng:", newOrder.bookingId);
+      console.log(
+        "📦 Tất cả đơn hàng:",
+        orders.map((o) => o.bookingId),
+      );
+
       toast({
         title: "Thanh toán thành công!",
         description: "Đặt xe của bạn đã được xác nhận.",
@@ -938,7 +1054,8 @@ export default function CarIn4() {
                         </label>
                         <Input
                           type="date"
-                          defaultValue="2025-10-08"
+                          value={pickupDate}
+                          onChange={(e) => setPickupDate(e.target.value)}
                           className="h-9 text-sm"
                         />
                       </div>
@@ -948,7 +1065,8 @@ export default function CarIn4() {
                         </label>
                         <Input
                           type="time"
-                          defaultValue="21:00"
+                          value={pickupTime}
+                          onChange={(e) => setPickupTime(e.target.value)}
                           className="h-9 text-sm"
                         />
                       </div>
@@ -960,7 +1078,8 @@ export default function CarIn4() {
                         </label>
                         <Input
                           type="date"
-                          defaultValue="2025-10-09"
+                          value={returnDate}
+                          onChange={(e) => setReturnDate(e.target.value)}
                           className="h-9 text-sm"
                         />
                       </div>
@@ -970,7 +1089,8 @@ export default function CarIn4() {
                         </label>
                         <Input
                           type="time"
-                          defaultValue="20:00"
+                          value={returnTime}
+                          onChange={(e) => setReturnTime(e.target.value)}
                           className="h-9 text-sm"
                         />
                       </div>
@@ -998,7 +1118,8 @@ export default function CarIn4() {
                         <input
                           type="radio"
                           name="delivery"
-                          defaultChecked
+                          checked={deliveryOption === "pickup"}
+                          onChange={() => setDeliveryOption("pickup")}
                           className="mt-1"
                         />
                         <div className="flex-1">
@@ -1016,11 +1137,28 @@ export default function CarIn4() {
                         </div>
                       </label>
                       <label className="flex items-start gap-2 cursor-pointer">
-                        <input type="radio" name="delivery" className="mt-1" />
+                        <input
+                          type="radio"
+                          name="delivery"
+                          checked={deliveryOption === "delivery"}
+                          onChange={() => setDeliveryOption("delivery")}
+                          className="mt-1"
+                        />
                         <div className="flex-1">
                           <span className="text-sm font-medium text-gray-900">
                             Tôi muốn được giao xe tận nơi
                           </span>
+                          {deliveryOption === "delivery" && (
+                            <Input
+                              type="text"
+                              placeholder="Nhập địa chỉ giao xe"
+                              value={deliveryAddress}
+                              onChange={(e) =>
+                                setDeliveryAddress(e.target.value)
+                              }
+                              className="mt-2 text-sm"
+                            />
+                          )}
                         </div>
                       </label>
                     </div>
@@ -1031,16 +1169,41 @@ export default function CarIn4() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">
                         Đơn giá thuê{" "}
-                        <span className="text-gray-400">(1 ngày)</span>
+                        <span className="text-gray-400">
+                          ({rentalCalc.duration})
+                        </span>
                       </span>
                       <span className="font-semibold text-gray-900">
-                        722.092 /ngày
+                        {rentalCalc.carPrice.toLocaleString()}đ
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Bảo hiểm thuê xe</span>
                       <span className="font-semibold text-gray-900">
-                        64.788 /ngày
+                        {rentalCalc.insurance.toLocaleString()}đ
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Phí dịch vụ</span>
+                      <span className="font-semibold text-gray-900">
+                        {rentalCalc.serviceFee.toLocaleString()}đ
+                      </span>
+                    </div>
+                    {rentalCalc.discount > 0 && (
+                      <div className="flex items-center justify-between text-sm text-green-600">
+                        <span>Giảm giá ({carData.discount}%)</span>
+                        <span className="font-semibold">
+                          -{rentalCalc.discount.toLocaleString()}đ
+                        </span>
+                      </div>
+                    )}
+                    <div className="h-px bg-gray-200 my-2"></div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-base font-bold text-gray-900">
+                        Tổng cộng
+                      </span>
+                      <span className="text-xl font-bold text-green-600">
+                        {rentalCalc.total.toLocaleString()}đ
                       </span>
                     </div>
                   </div>
@@ -1558,17 +1721,40 @@ export default function CarIn4() {
                       <Card>
                         <CardContent className="p-4 space-y-2">
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Tổng tiền</span>
+                            <span className="text-gray-600">
+                              Đơn giá thuê ({bookingDetails.duration})
+                            </span>
                             <span className="font-semibold">
-                              {bookingDetails.carPrice}đ
+                              {bookingDetails.carPrice.toLocaleString()}đ
                             </span>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Tiền đặt cọc</span>
+                            <span className="text-gray-600">
+                              Bảo hiểm thuê xe
+                            </span>
                             <span className="font-semibold">
-                              {bookingDetails.deposit === 0
-                                ? "NaNđ"
-                                : bookingDetails.deposit.toLocaleString() + "đ"}
+                              {bookingDetails.insurance.toLocaleString()}đ
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Phí dịch vụ</span>
+                            <span className="font-semibold">
+                              {bookingDetails.serviceFee.toLocaleString()}đ
+                            </span>
+                          </div>
+                          {bookingDetails.discount > 0 && (
+                            <div className="flex justify-between text-sm text-green-600">
+                              <span>Giảm giá ({carData.discount}%)</span>
+                              <span className="font-semibold">
+                                -{bookingDetails.discount.toLocaleString()}đ
+                              </span>
+                            </div>
+                          )}
+                          <Separator className="my-2" />
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Tiền đặt cọc</span>
+                            <span className="font-semibold text-orange-600">
+                              {bookingDetails.deposit.toLocaleString()}đ
                             </span>
                           </div>
                           <Separator className="my-2" />
@@ -1601,11 +1787,11 @@ export default function CarIn4() {
                           Thanh toán<span className="text-red-500">*</span>
                         </span>
                         <span className="font-bold text-2xl text-green-600">
-                          {bookingDetails.total}đ
+                          {bookingDetails.total.toLocaleString()}đ
                         </span>
                       </div>
                       <p className="text-xs text-gray-600">
-                        *Giá thuê xe đã bao gồm VAT.
+                        *Giá thuê xe đã bao gồm VAT và bảo hiểm.
                       </p>
                     </div>
 
@@ -1939,7 +2125,7 @@ export default function CarIn4() {
                 onGoConsole={() => {
                   setShowPaymentDialog(false);
                   setPaymentSuccess(false);
-                  navigate("/dashboard");
+                  navigate(`/order/${bookingDetails.bookingId}`);
                 }}
                 onBuyAgain={() => {
                   setShowPaymentDialog(false);

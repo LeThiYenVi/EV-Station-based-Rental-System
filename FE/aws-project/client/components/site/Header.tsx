@@ -11,8 +11,8 @@ import {
 
 const links = [
   { href: "/about", label: "Về chúng tôi" },
-  { href: "/used-cars", label: "Mua xe cũ chính hãng" },
   { href: "/news", label: "Tin tức" },
+  { href: "/history", label: "Lịch sử giao dịch" },
 ];
 
 const serviceItems = [
