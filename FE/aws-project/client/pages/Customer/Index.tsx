@@ -284,185 +284,175 @@ export default function Index() {
             Xe Dành Cho Bạn
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {[
               {
-                name: "MG5 LUXURY 2022",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
+                name: "VinFast VF 3",
+                image:
+                  "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
+                badge: "Miễn phí sóc",
+                transmission: "Minicar",
+                seats: "4 chỗ",
+                fuel: "210km (NEDC)",
+                rating: "460km (NEDC)",
+                originalPrice: "Dung tích cốp 285L",
+                price: "590.000",
+              },
+              {
+                name: "VinFast VF 6 Plus",
+                image:
+                  "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
+                badge: "Miễn phí sóc",
+                transmission: "B-SUV",
                 seats: "5 chỗ",
-                fuel: "Xăng",
-                location: "Phường Linh Đông, TP Thủ Đức",
-                rating: "5.0",
-                trips: "54 Chuyến",
-                price: "762K",
-                originalPrice: "445K",
+                fuel: "460km (NEDC)",
+                rating: "460km (NEDC)",
+                originalPrice: "Dung tích cốp 423L",
+                price: "1.250.000",
               },
               {
-                name: "MG5 LUXURY 2022",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
+                name: "VinFast VF 6S",
+                image:
+                  "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop",
+                badge: "Hết xe",
+                transmission: "B-SUV",
                 seats: "5 chỗ",
-                fuel: "Xăng",
-                location: "Phường Hiệp Bình Chánh, TP Thủ Đức",
-                rating: "5.0",
-                trips: "53 Chuyến",
-                price: "762K",
-                originalPrice: "445K",
+                fuel: "480km (NEDC)",
+                rating: "480km (NEDC)",
+                originalPrice: "Dung tích cốp 423L",
+                price: "1.100.000",
               },
               {
-                name: "MAZDA 6 Luxury 2015",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
+                name: "VinFast VF 5 Plus",
+                image:
+                  "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&h=600&fit=crop",
+                badge: "Miễn phí sóc",
+                transmission: "A-SUV",
                 seats: "5 chỗ",
-                fuel: "Xăng",
-                location: "Phường Hiệp Bình Chánh, TP Thủ Đức",
-                rating: "5.0",
-                trips: "38 Chuyến",
-                price: "610K",
-                originalPrice: "496K",
+                fuel: "380km (NEDC)",
+                rating: "380km (NEDC)",
+                originalPrice: "Dung tích cốp 310L",
+                price: "890.000",
               },
               {
-                name: "MITSUBISHI OUTLANDER Premium",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
-                seats: "7 chỗ",
-                fuel: "Xăng",
-                location: "Phường Hiệp Bình Chánh, TP Thủ Đức",
-                rating: "5.0",
-                trips: "52 Chuyến",
-                price: "884K",
-                originalPrice: "530K",
-              },
-              {
-                name: "TOYOTA FORTUNER 2014",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
-                seats: "7 chỗ",
-                fuel: "Xăng",
-                location: "Phường Linh Đông, TP Thủ Đức",
-                rating: "5.0",
-                trips: "16 Chuyến",
-                price: "805K",
-                originalPrice: "483K",
-              },
-              {
-                name: "KIA SORENTO DELUXE 2018",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
-                seats: "7 chỗ",
-                fuel: "Xăng",
-                location: "Phường Hiệp Bình Chánh, TP Thủ Đức",
-                rating: "5.0",
-                trips: "8 Chuyến",
-                price: "867K",
-                originalPrice: "520K",
-              },
-              {
-                name: "MITSUBISHI OUTLANDER 2019",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
-                seats: "7 chỗ",
-                fuel: "Xăng",
-                location: "Phường Linh Đông, TP Thủ Đức",
-                rating: "5.0",
-                trips: "11 Chuyến",
-                price: "848K",
-                originalPrice: "509K",
-              },
-              {
-                name: "MG5 LUXURY 2024",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
+                name: "VinFast VF 7 Plus",
+                image:
+                  "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
+                badge: "Miễn phí sóc",
+                transmission: "C-SUV",
                 seats: "5 chỗ",
-                fuel: "Xăng",
-                location: "Phường Linh Đông, TP Thủ Đức",
-                rating: "5.0",
-                trips: "65 Chuyến",
-                price: "800K",
-                originalPrice: "480K",
+                fuel: "450km (NEDC)",
+                rating: "450km (NEDC)",
+                originalPrice: "Dung tích cốp 520L",
+                price: "1.450.000",
+              },
+              {
+                name: "VinFast VF 8 Plus",
+                image:
+                  "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
+                badge: "Miễn phí sóc",
+                transmission: "C-SUV",
+                seats: "5 chỗ",
+                fuel: "471km (NEDC)",
+                rating: "471km (NEDC)",
+                originalPrice: "Dung tích cốp 534L",
+                price: "1.650.000",
               },
             ].map((car, index) => (
               <Link key={index} to={`/car/${index + 1}`} className="block">
-                <Card className="overflow-hidden hover:shadow-xl transition-shadow cursor-pointer bg-white">
+                <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer bg-white border border-gray-200 rounded-2xl">
+                  {/* Image Section */}
                   <div className="relative">
                     <img
                       src={car.image}
                       alt={car.name}
-                      className="w-full h-48 object-cover"
+                      className="w-full h-56 object-cover"
                     />
+                    {/* Badge ở góc trên trái */}
                     <div className="absolute top-3 left-3">
-                      <Badge className="bg-green-500 text-white border-0 flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3" />
+                      <Badge
+                        className={`${
+                          car.badge === "Hết xe"
+                            ? "bg-red-500 hover:bg-red-600"
+                            : "bg-green-500 hover:bg-green-600"
+                        } text-white border-0 px-3 py-1 text-xs font-medium rounded-md`}
+                      >
                         {car.badge}
                       </Badge>
                     </div>
-                    <div className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md">
-                      <svg
-                        className="w-5 h-5 text-yellow-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    </div>
                   </div>
-                  <CardContent className="p-4">
-                    <h3 className="font-bold text-lg mb-3 text-black">
+
+                  {/* Content Section */}
+                  <CardContent className="p-5">
+                    {/* Price Section - Chỉ từ */}
+                    <div className="mb-3">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm text-gray-600">Chỉ từ</span>
+                        <span className="text-2xl font-bold text-green-600">
+                          {car.price}
+                        </span>
+                        <span className="text-sm text-gray-600">VNĐ/Ngày</span>
+                      </div>
+                    </div>
+
+                    {/* Car Name */}
+                    <h3 className="font-bold text-xl mb-2 text-gray-900">
                       {car.name}
                     </h3>
 
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Car className="w-4 h-4" />
-                          <span>{car.transmission}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
-                          <span>{car.seats}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Zap className="w-4 h-4" />
-                          <span>{car.fuel}</span>
-                        </div>
+                    {/* Car Type/Category */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <Car className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">
+                        {car.transmission}
+                      </span>
+                    </div>
+
+                    {/* Specifications */}
+                    <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                      <div className="flex items-center gap-1">
+                        <Zap className="w-4 h-4 text-gray-500" />
+                        <span>{car.fuel}</span>
                       </div>
-                      <div className="flex items-start gap-1 text-sm text-gray-600">
-                        <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                        <span className="line-clamp-1">{car.location}</span>
+                      <div className="flex items-center gap-1">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <span>{car.seats}</span>
                       </div>
                     </div>
 
-                    <div className="border-t pt-3 mt-3">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-yellow-500 font-bold">
-                            {car.rating}
-                          </span>
-                          <span className="text-gray-400">★</span>
-                          <span className="text-gray-600 text-sm">
-                            {car.trips}
-                          </span>
-                        </div>
+                    {/* Additional Info */}
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <svg
+                          className="w-4 h-4 text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 10V3L4 14h7v7l9-11h-7z"
+                          />
+                        </svg>
+                        <span>{car.rating}</span>
                       </div>
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <div className="text-xl font-bold text-black">
-                            {car.price}
-                            <span className="text-sm">/ngày</span>
-                          </div>
-                          <div className="text-sm text-blue-500 line-through">
-                            {car.originalPrice} giá áp giờ
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-1">
+                        <svg
+                          className="w-4 h-4 text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                          />
+                        </svg>
+                        <span>{car.originalPrice}</span>
                       </div>
                     </div>
                   </CardContent>

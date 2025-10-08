@@ -11,6 +11,8 @@ import About from "./pages/Customer/About/About";
 import CarIn4 from "./pages/Customer/CarIn4/CarIn4";
 import Blog from "./pages/Customer/Blog/Blog";
 import In4Blog from "./pages/Customer/Blog/In4Blog";
+import HistoryService from "./pages/Customer/HistoryService/HistoryService";
+import OrderDetail from "./pages/Customer/OrderDetail/OrderDetail";
 import Login from "./pages/Login/Login";
 import AdminLayout from "./pages/Admin/AdminLayout";
 import StaffLayout from "./pages/Staff/StaffLayout";
@@ -66,6 +68,22 @@ const App = () => (
             element={
               <Layout>
                 <In4Blog />
+              </Layout>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <Layout>
+                <HistoryService />
+              </Layout>
+            }
+          />
+          <Route
+            path="/order/:id"
+            element={
+              <Layout>
+                <OrderDetail />
               </Layout>
             }
           />
