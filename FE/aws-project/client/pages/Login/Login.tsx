@@ -84,6 +84,14 @@ export default function Login() {
     );
 
     if (isValidAccount && userRole) {
+      // Save login status to localStorage
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("username", loginData.username);
+      localStorage.setItem("userRole", userRole);
+
+      // Dispatch custom event to notify header
+      window.dispatchEvent(new Event("loginStatusChanged"));
+
       toast({
         title: "Đăng nhập thành công!",
         description: `Chào mừng ${loginData.username}`,
