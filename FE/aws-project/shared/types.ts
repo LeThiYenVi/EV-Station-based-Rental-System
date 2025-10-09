@@ -102,23 +102,148 @@ export interface Booking {
 
 // ==================== VEHICLE ====================
 
+export type VehicleStatus =
+  | "available"
+  | "rented"
+  | "maintenance"
+  | "out_of_service";
+export type TransmissionType = "automatic" | "manual";
+export type FuelType = "electric" | "gasoline" | "diesel" | "hybrid";
+export type MaintenanceType = "regular" | "repair" | "inspection" | "emergency";
+
 export interface Vehicle {
   id: string;
   name: string;
   model: string;
+  brand: string;
   year: number;
   license_plate: string;
   color: string;
   seats: number;
-  transmission: "automatic" | "manual";
-  fuel_type: "electric" | "gasoline" | "diesel" | "hybrid";
+  transmission: TransmissionType;
+  fuel_type: FuelType;
+
+  // Pricing
+  price_per_hour: number;
   price_per_day: number;
-  status: "available" | "rented" | "maintenance" | "out_of_service";
+  price_per_week: number;
+
+  // EV Specific
+  battery_capacity?: number;
+  range?: number;
+  charging_time?: number;
+
+  // Engine specs
+  engine_power?: number;
+  max_speed?: number;
+  fuel_consumption?: number;
+
+  // Status & availability
+  status: VehicleStatus;
+  mileage: number;
+
+  // Media & features
   images: string[];
   features: string[];
+  description?: string;
+
+  // Location
   stationid: string;
+
+  // Timestamps
   created_at: string;
   updated_at: string;
+
+  // Populated fields (statistics)
+  total_bookings?: number;
+  total_revenue?: number;
+  average_rating?: number;
+}
+
+export interface VehiclePromotion {
+  id: string;
+  vehicle_id: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  description?: string;
+  created_at: string;
+}
+
+export interface MaintenanceSchedule {
+  id: string;
+  vehicle_id: string;
+  maintenance_type: MaintenanceType;
+  scheduled_date: string;
+  completed_date?: string;
+  status: "scheduled" | "in_progress" | "completed" | "cancelled";
+  notes?: string;
+  cost?: number;
+  performed_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateVehicleDto {
+  name: string;
+  model: string;
+  brand: string;
+  year: number;
+  license_plate: string;
+  color: string;
+  seats: number;
+  transmission: TransmissionType;
+  fuel_type: FuelType;
+  price_per_hour: number;
+  price_per_day: number;
+  price_per_week: number;
+  battery_capacity?: number;
+  range?: number;
+  charging_time?: number;
+  engine_power?: number;
+  max_speed?: number;
+  fuel_consumption?: number;
+  mileage: number;
+  features: string[];
+  description?: string;
+  stationid: string;
+}
+
+export interface UpdateVehicleDto {
+  name?: string;
+  model?: string;
+  brand?: string;
+  year?: number;
+  license_plate?: string;
+  color?: string;
+  seats?: number;
+  transmission?: TransmissionType;
+  fuel_type?: FuelType;
+  price_per_hour?: number;
+  price_per_day?: number;
+  price_per_week?: number;
+  battery_capacity?: number;
+  range?: number;
+  charging_time?: number;
+  engine_power?: number;
+  max_speed?: number;
+  fuel_consumption?: number;
+  mileage?: number;
+  features?: string[];
+  description?: string;
+  status?: VehicleStatus;
+}
+
+export interface VehicleFilterParams {
+  search?: string;
+  status?: VehicleStatus;
+  fuel_type?: FuelType;
+  transmission?: TransmissionType;
+  seats?: number;
+  min_price?: number;
+  max_price?: number;
 }
 
 // ==================== FILTER & PAGINATION ====================
