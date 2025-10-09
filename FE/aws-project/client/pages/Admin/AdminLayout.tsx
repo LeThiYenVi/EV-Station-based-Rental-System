@@ -16,6 +16,7 @@ import { useNavigate, Routes, Route } from "react-router-dom";
 import "./AdminLayout.css";
 import Dashboard from "./Dashboard";
 import Users from "./Users";
+import Vehicles from "./Vehicles";
 
 const { Header, Sider, Content } = Layout;
 
@@ -164,6 +165,7 @@ export default function AdminLayout() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/users" element={<Users />} />
+            <Route path="/vehicles" element={<Vehicles />} />
             {/* Add more routes here */}
           </Routes>
         </Content>
