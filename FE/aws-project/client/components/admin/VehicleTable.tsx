@@ -1,6 +1,6 @@
 /**
- * VehicleTable Component
- * Hiển thị bảng danh sách xe với trạng thái real-time và actions
+ * VehicleTable Component - Theo ERD
+ * Hiển thị bảng danh sách xe với các fields khớp database schema
  */
 
 import { useState } from "react";
@@ -39,12 +39,10 @@ import {
   Edit,
   Trash2,
   Eye,
-  TrendingUp,
-  Wrench,
   Car,
-  Battery,
-  Fuel,
   Zap,
+  Fuel,
+  Star,
 } from "lucide-react";
 
 interface VehicleTableProps {
@@ -56,9 +54,6 @@ interface VehicleTableProps {
   onDelete: (vehicleId: string) => void;
   onChangeStatus: (vehicleId: string, status: VehicleStatus) => void;
   onViewDetail: (vehicle: Vehicle) => void;
-  onViewStats: (vehicle: Vehicle) => void;
-  onViewMaintenance: (vehicle: Vehicle) => void;
-  onManagePromotion: (vehicle: Vehicle) => void;
 }
 
 export default function VehicleTable({
@@ -70,9 +65,6 @@ export default function VehicleTable({
   onDelete,
   onChangeStatus,
   onViewDetail,
-  onViewStats,
-  onViewMaintenance,
-  onManagePromotion,
 }: VehicleTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [vehicleToDelete, setVehicleToDelete] = useState<string | null>(null);
@@ -80,9 +72,12 @@ export default function VehicleTable({
   const allSelected =
     vehicles.length > 0 && selectedVehicles.length === vehicles.length;
 
-  // Status badge with colors
+  // Status badge - theo ERD: available, rented, maintenance, charging, unavailable
   const getStatusBadge = (status: VehicleStatus) => {
-    const configs = {
+    const configs: Record<
+      VehicleStatus,
+      { label: string; className: string; icon: string }
+    > = {
       available: {
         label: "Available",
         className: "bg-green-100 text-green-800 hover:bg-green-100",
@@ -98,8 +93,13 @@ export default function VehicleTable({
         className: "bg-red-100 text-red-800 hover:bg-red-100",
         icon: "🔴",
       },
-      out_of_service: {
-        label: "Out of Service",
+      charging: {
+        label: "Charging",
+        className: "bg-blue-100 text-blue-800 hover:bg-blue-100",
+        icon: "⚡",
+      },
+      unavailable: {
+        label: "Unavailable",
         className: "bg-gray-100 text-gray-800 hover:bg-gray-100",
         icon: "⚫",
       },
@@ -112,35 +112,20 @@ export default function VehicleTable({
     );
   };
 
-  // Fuel type badge
-  const getFuelTypeBadge = (fuelType: Vehicle["fuel_type"]) => {
-    const configs = {
-      electric: {
-        label: "Electric",
-        className: "bg-blue-100 text-blue-800",
-        icon: <Zap className="h-3 w-3" />,
-      },
-      gasoline: {
-        label: "Gasoline",
-        className: "bg-orange-100 text-orange-800",
-        icon: <Fuel className="h-3 w-3" />,
-      },
-      diesel: {
-        label: "Diesel",
-        className: "bg-purple-100 text-purple-800",
-        icon: <Fuel className="h-3 w-3" />,
-      },
-      hybrid: {
-        label: "Hybrid",
-        className: "bg-teal-100 text-teal-800",
-        icon: <Battery className="h-3 w-3" />,
-      },
-    };
-    const config = configs[fuelType];
+  // Type badge (ERD: gasoline/electricity)
+  const getTypeBadge = (type: Vehicle["type"]) => {
+    if (type === "electricity") {
+      return (
+        <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1 w-fit">
+          <Zap className="h-3 w-3" />
+          Electric
+        </Badge>
+      );
+    }
     return (
-      <Badge className={`${config.className} flex items-center gap-1`}>
-        {config.icon}
-        {config.label}
+      <Badge className="bg-orange-100 text-orange-800 flex items-center gap-1 w-fit">
+        <Fuel className="h-3 w-3" />
+        Gasoline
       </Badge>
     );
   };
@@ -184,32 +169,36 @@ export default function VehicleTable({
               <TableHead className="w-12">
                 <Checkbox checked={allSelected} onCheckedChange={onSelectAll} />
               </TableHead>
-              <TableHead>Vehicle</TableHead>
-              <TableHead>Specs</TableHead>
-              <TableHead>Fuel Type</TableHead>
-              <TableHead>Price/Day</TableHead>
+              <TableHead>Vehicle Info</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Capacity</TableHead>
+              <TableHead>Rating</TableHead>
+              <TableHead>Rent Count</TableHead>
+              <TableHead>Pricing</TableHead>
+              <TableHead>Deposit</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Mileage</TableHead>
-              <TableHead>Station</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {vehicles.map((vehicle) => (
               <TableRow key={vehicle.id}>
+                {/* Checkbox */}
                 <TableCell>
                   <Checkbox
                     checked={selectedVehicles.includes(vehicle.id)}
                     onCheckedChange={() => onSelectVehicle(vehicle.id)}
                   />
                 </TableCell>
+
+                {/* Vehicle Info (name, brand, license_plate, photos) */}
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    {vehicle.images && vehicle.images.length > 0 ? (
+                    {vehicle.photos && vehicle.photos.length > 0 ? (
                       <img
-                        src={vehicle.images[0]}
+                        src={vehicle.photos[0]}
                         alt={vehicle.name}
-                        className="w-16 h-16 rounded object-cover"
+                        className="w-16 h-16 rounded object-cover border"
                       />
                     ) : (
                       <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
@@ -219,42 +208,65 @@ export default function VehicleTable({
                     <div>
                       <div className="font-medium">{vehicle.name}</div>
                       <div className="text-sm text-gray-500">
-                        {vehicle.brand} {vehicle.model} • {vehicle.year}
+                        {vehicle.brand}
                       </div>
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-gray-400 font-mono">
                         {vehicle.license_plate}
                       </div>
                     </div>
                   </div>
                 </TableCell>
+
+                {/* Type (ERD field) */}
+                <TableCell>{getTypeBadge(vehicle.type)}</TableCell>
+
+                {/* Capacity (ERD field, renamed from "seats") */}
+                <TableCell>
+                  <div className="text-sm font-medium">
+                    {vehicle.capacity} seats
+                  </div>
+                </TableCell>
+
+                {/* Rating (ERD field) */}
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <span className="font-medium">
+                      {vehicle.rating.toFixed(1)}
+                    </span>
+                  </div>
+                </TableCell>
+
+                {/* Rent Count (ERD field) */}
+                <TableCell>
+                  <div className="text-sm font-medium">
+                    {vehicle.rent_count} times
+                  </div>
+                </TableCell>
+
+                {/* Pricing (hourly_rate, daily_rate) */}
                 <TableCell>
                   <div className="text-sm">
-                    <div>{vehicle.seats} seats</div>
-                    <div className="text-gray-500 capitalize">
-                      {vehicle.transmission}
+                    <div className="font-medium">
+                      {formatCurrency(vehicle.daily_rate)}/day
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {formatCurrency(vehicle.hourly_rate)}/hour
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{getFuelTypeBadge(vehicle.fuel_type)}</TableCell>
+
+                {/* Deposit Amount (ERD field) */}
                 <TableCell>
-                  <div className="font-medium">
-                    {formatCurrency(vehicle.price_per_day)}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {formatCurrency(vehicle.price_per_hour)}/hour
+                  <div className="text-sm font-medium">
+                    {formatCurrency(vehicle.deposit_amount)}
                   </div>
                 </TableCell>
+
+                {/* Status */}
                 <TableCell>{getStatusBadge(vehicle.status)}</TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    {vehicle.mileage.toLocaleString()} km
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-xs text-gray-600">
-                    {vehicle.stationid.slice(0, 10)}...
-                  </div>
-                </TableCell>
+
+                {/* Actions */}
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -262,7 +274,7 @@ export default function VehicleTable({
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="w-48">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem onClick={() => onViewDetail(vehicle)}>
                         <Eye className="mr-2 h-4 w-4" />
@@ -272,41 +284,51 @@ export default function VehicleTable({
                         <Edit className="mr-2 h-4 w-4" />
                         Edit Vehicle
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onViewStats(vehicle)}>
-                        <TrendingUp className="mr-2 h-4 w-4" />
-                        View Statistics
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onViewMaintenance(vehicle)}
-                      >
-                        <Wrench className="mr-2 h-4 w-4" />
-                        Maintenance Schedule
-                      </DropdownMenuItem>
+
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel>Change Status</DropdownMenuLabel>
                       <DropdownMenuItem
                         onClick={() => onChangeStatus(vehicle.id, "available")}
+                        disabled={vehicle.status === "available"}
                       >
-                        Set Available
+                        🟢 Set Available
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onChangeStatus(vehicle.id, "rented")}
+                        disabled={vehicle.status === "rented"}
+                      >
+                        🟡 Set Rented
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
                           onChangeStatus(vehicle.id, "maintenance")
                         }
+                        disabled={vehicle.status === "maintenance"}
                       >
-                        Set Maintenance
+                        🔴 Set Maintenance
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onChangeStatus(vehicle.id, "charging")}
+                        disabled={
+                          vehicle.status === "charging" ||
+                          vehicle.type !== "electricity"
+                        }
+                      >
+                        ⚡ Set Charging
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
-                          onChangeStatus(vehicle.id, "out_of_service")
+                          onChangeStatus(vehicle.id, "unavailable")
                         }
+                        disabled={vehicle.status === "unavailable"}
                       >
-                        Set Out of Service
+                        ⚫ Set Unavailable
                       </DropdownMenuItem>
+
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => handleDeleteClick(vehicle.id)}
-                        className="text-red-600"
+                        className="text-red-600 focus:text-red-600"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete Vehicle
@@ -324,9 +346,10 @@ export default function VehicleTable({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Vehicle?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this vehicle and cannot be undone.
+              This action cannot be undone. This will permanently delete the
+              vehicle from the database.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

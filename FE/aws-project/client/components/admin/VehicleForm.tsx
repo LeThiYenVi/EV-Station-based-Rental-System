@@ -1,6 +1,6 @@
-/**
- * VehicleForm Component
- * Form thêm/sửa xe với upload nhiều ảnh
+﻿/**
+ * VehicleForm Component - Theo ERD 100%
+ * Form thêm/sửa xe với các fields khớp hoàn toàn database schema
  */
 
 import { useEffect, useState } from "react";
@@ -9,7 +9,6 @@ import {
   CreateVehicleDto,
   UpdateVehicleDto,
   FuelType,
-  TransmissionType,
 } from "@shared/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,9 +29,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, X, Plus } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, Upload, X, Plus, Star, Zap, Fuel } from "lucide-react";
 
 interface VehicleFormProps {
   open: boolean;
@@ -49,163 +48,78 @@ export default function VehicleForm({
 }: VehicleFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [newFeature, setNewFeature] = useState("");
 
   const [formData, setFormData] = useState({
-    name: "",
-    model: "",
-    brand: "",
-    year: new Date().getFullYear(),
+    station_id: "",
     license_plate: "",
-    color: "",
-    seats: 5,
-    transmission: "automatic" as TransmissionType,
-    fuel_type: "electric" as FuelType,
-    price_per_hour: 0,
-    price_per_day: 0,
-    price_per_week: 0,
-    battery_capacity: 0,
-    range: 0,
-    charging_time: 0,
-    engine_power: 0,
-    max_speed: 0,
-    fuel_consumption: 0,
-    mileage: 0,
-    features: [] as string[],
-    description: "",
-    stationid: "",
+    name: "",
+    brand: "",
+    type: "gasoline" as FuelType,
+    capacity: 5,
+    hourly_rate: 0,
+    daily_rate: 0,
+    deposit_amount: 0,
+    polices: [""] as string[],
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [photos, setPhotos] = useState<string[]>([]);
 
   useEffect(() => {
-    if (open) {
-      if (vehicle) {
-        setFormData({
-          name: vehicle.name,
-          model: vehicle.model,
-          brand: vehicle.brand,
-          year: vehicle.year,
-          license_plate: vehicle.license_plate,
-          color: vehicle.color,
-          seats: vehicle.seats,
-          transmission: vehicle.transmission,
-          fuel_type: vehicle.fuel_type,
-          price_per_hour: vehicle.price_per_hour,
-          price_per_day: vehicle.price_per_day,
-          price_per_week: vehicle.price_per_week,
-          battery_capacity: vehicle.battery_capacity || 0,
-          range: vehicle.range || 0,
-          charging_time: vehicle.charging_time || 0,
-          engine_power: vehicle.engine_power || 0,
-          max_speed: vehicle.max_speed || 0,
-          fuel_consumption: vehicle.fuel_consumption || 0,
-          mileage: vehicle.mileage,
-          features: vehicle.features || [],
-          description: vehicle.description || "",
-          stationid: vehicle.stationid,
-        });
-        setImagePreviews(vehicle.images || []);
-      } else {
-        setFormData({
-          name: "",
-          model: "",
-          brand: "",
-          year: new Date().getFullYear(),
-          license_plate: "",
-          color: "",
-          seats: 5,
-          transmission: "automatic",
-          fuel_type: "electric",
-          price_per_hour: 0,
-          price_per_day: 0,
-          price_per_week: 0,
-          battery_capacity: 0,
-          range: 0,
-          charging_time: 0,
-          engine_power: 0,
-          max_speed: 0,
-          fuel_consumption: 0,
-          mileage: 0,
-          features: [],
-          description: "",
-          stationid: "",
-        });
-        setImagePreviews([]);
-      }
-      setErrors({});
+    if (vehicle && open) {
+      setFormData({
+        station_id: vehicle.station_id,
+        license_plate: vehicle.license_plate,
+        name: vehicle.name,
+        brand: vehicle.brand,
+        type: vehicle.type,
+        capacity: vehicle.capacity,
+        hourly_rate: vehicle.hourly_rate,
+        daily_rate: vehicle.daily_rate,
+        deposit_amount: vehicle.deposit_amount,
+        polices: vehicle.polices.length > 0 ? vehicle.polices : [""],
+      });
+      setPhotos(vehicle.photos || []);
+    } else if (!open) {
+      setFormData({
+        station_id: "",
+        license_plate: "",
+        name: "",
+        brand: "",
+        type: "gasoline",
+        capacity: 5,
+        hourly_rate: 0,
+        daily_rate: 0,
+        deposit_amount: 0,
+        polices: [""],
+      });
+      setPhotos([]);
     }
-  }, [open, vehicle]);
-
-  const handleChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-  };
-
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name) newErrors.name = "Name is required";
-    if (!formData.brand) newErrors.brand = "Brand is required";
-    if (!formData.model) newErrors.model = "Model is required";
-    if (!formData.license_plate)
-      newErrors.license_plate = "License plate is required";
-    if (formData.year < 2000 || formData.year > new Date().getFullYear() + 1)
-      newErrors.year = "Invalid year";
-    if (formData.price_per_day <= 0)
-      newErrors.price_per_day = "Price must be > 0";
-    if (!formData.stationid) newErrors.stationid = "Station is required";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  }, [vehicle, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) {
-      toast({
-        title: "Validation Error",
-        description: "Please fix the errors",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
+
     try {
-      const submitData: any = { ...formData };
-      // Remove empty optional fields
-      Object.keys(submitData).forEach((key) => {
-        if (submitData[key] === 0 || submitData[key] === "") {
-          if (
-            [
-              "battery_capacity",
-              "range",
-              "charging_time",
-              "engine_power",
-              "max_speed",
-              "fuel_consumption",
-              "description",
-            ].includes(key)
-          ) {
-            delete submitData[key];
-          }
-        }
-      });
+      const cleanedPolices = formData.polices.filter((p) => p.trim() !== "");
+
+      const submitData = {
+        ...formData,
+        polices: cleanedPolices,
+        photos: photos,
+      };
 
       await onSubmit(submitData);
+
       toast({
-        title: vehicle ? "Vehicle Updated" : "Vehicle Created",
-        description: "Operation successful",
+        title: vehicle ? "Cập nhật thành công" : "Tạo xe thành công",
+        description: `${formData.name} đã được ${vehicle ? "cập nhật" : "thêm"} vào hệ thống.`,
       });
       onOpenChange(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save",
+        title: "Lỗi",
+        description: "Không thể lưu thông tin xe. Vui lòng thử lại.",
         variant: "destructive",
       });
     } finally {
@@ -213,369 +127,403 @@ export default function VehicleForm({
     }
   };
 
-  const handleAddFeature = () => {
-    if (newFeature.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        features: [...prev.features, newFeature.trim()],
-      }));
-      setNewFeature("");
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      const urls = newFiles.map((file) => URL.createObjectURL(file));
+
+      setPhotos((prev) => [...prev, ...urls]);
+
+      toast({
+        title: "Ảnh đã được tải lên",
+        description: `${newFiles.length} ảnh mới đã được thêm vào.`,
+      });
     }
   };
 
-  const handleRemoveFeature = (index: number) => {
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addPolicy = () => {
     setFormData((prev) => ({
       ...prev,
-      features: prev.features.filter((_, i) => i !== index),
+      polices: [...prev.polices, ""],
     }));
   };
 
-  const handleRemoveImage = (index: number) => {
-    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  const removePolicy = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      polices: prev.polices.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updatePolicy = (index: number, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      polices: prev.polices.map((p, i) => (i === index ? value : p)),
+    }));
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {vehicle ? "Edit Vehicle" : "Add New Vehicle"}
+          <DialogTitle className="text-2xl">
+            {vehicle ? "Chỉnh sửa thông tin xe" : "Thêm xe mới"}
           </DialogTitle>
           <DialogDescription>
-            Fill in the vehicle information below
+            {vehicle
+              ? "Cập nhật thông tin xe trong hệ thống"
+              : "Điền đầy đủ thông tin để thêm xe mới vào hệ thống"}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
-          <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="specs">Specs</TabsTrigger>
-              <TabsTrigger value="pricing">Pricing</TabsTrigger>
-              <TabsTrigger value="media">Media</TabsTrigger>
-            </TabsList>
-
-            {/* Basic Info Tab */}
-            <TabsContent value="basic" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Vehicle Name *</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => handleChange("name", e.target.value)}
-                    className={errors.name ? "border-red-500" : ""}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-red-500">{errors.name}</p>
-                  )}
-                </div>
-                <div>
-                  <Label>Brand *</Label>
-                  <Input
-                    value={formData.brand}
-                    onChange={(e) => handleChange("brand", e.target.value)}
-                    className={errors.brand ? "border-red-500" : ""}
-                  />
-                </div>
-                <div>
-                  <Label>Model *</Label>
-                  <Input
-                    value={formData.model}
-                    onChange={(e) => handleChange("model", e.target.value)}
-                    className={errors.model ? "border-red-500" : ""}
-                  />
-                </div>
-                <div>
-                  <Label>Year *</Label>
-                  <Input
-                    type="number"
-                    value={formData.year}
-                    onChange={(e) =>
-                      handleChange("year", parseInt(e.target.value))
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>License Plate *</Label>
-                  <Input
-                    value={formData.license_plate}
-                    onChange={(e) =>
-                      handleChange("license_plate", e.target.value)
-                    }
-                    className={errors.license_plate ? "border-red-500" : ""}
-                  />
-                </div>
-                <div>
-                  <Label>Color</Label>
-                  <Input
-                    value={formData.color}
-                    onChange={(e) => handleChange("color", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label>Seats *</Label>
-                  <Select
-                    value={formData.seats.toString()}
-                    onValueChange={(val) =>
-                      handleChange("seats", parseInt(val))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="2">2 seats</SelectItem>
-                      <SelectItem value="4">4 seats</SelectItem>
-                      <SelectItem value="5">5 seats</SelectItem>
-                      <SelectItem value="7">7 seats</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Station ID *</Label>
-                  <Input
-                    value={formData.stationid}
-                    onChange={(e) => handleChange("stationid", e.target.value)}
-                    placeholder="station-uuid"
-                    className={errors.stationid ? "border-red-500" : ""}
-                  />
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Specs Tab */}
-            <TabsContent value="specs" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Transmission *</Label>
-                  <Select
-                    value={formData.transmission}
-                    onValueChange={(val) => handleChange("transmission", val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="automatic">Automatic</SelectItem>
-                      <SelectItem value="manual">Manual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Fuel Type *</Label>
-                  <Select
-                    value={formData.fuel_type}
-                    onValueChange={(val) => handleChange("fuel_type", val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="electric">Electric</SelectItem>
-                      <SelectItem value="gasoline">Gasoline</SelectItem>
-                      <SelectItem value="diesel">Diesel</SelectItem>
-                      <SelectItem value="hybrid">Hybrid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {formData.fuel_type === "electric" && (
-                  <>
-                    <div>
-                      <Label>Battery Capacity (kWh)</Label>
-                      <Input
-                        type="number"
-                        value={formData.battery_capacity}
-                        onChange={(e) =>
-                          handleChange(
-                            "battery_capacity",
-                            parseFloat(e.target.value),
-                          )
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label>Range (km)</Label>
-                      <Input
-                        type="number"
-                        value={formData.range}
-                        onChange={(e) =>
-                          handleChange("range", parseFloat(e.target.value))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label>Charging Time (hours)</Label>
-                      <Input
-                        type="number"
-                        value={formData.charging_time}
-                        onChange={(e) =>
-                          handleChange(
-                            "charging_time",
-                            parseFloat(e.target.value),
-                          )
-                        }
-                      />
-                    </div>
-                  </>
-                )}
-                <div>
-                  <Label>Engine Power (HP)</Label>
-                  <Input
-                    type="number"
-                    value={formData.engine_power}
-                    onChange={(e) =>
-                      handleChange("engine_power", parseFloat(e.target.value))
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Max Speed (km/h)</Label>
-                  <Input
-                    type="number"
-                    value={formData.max_speed}
-                    onChange={(e) =>
-                      handleChange("max_speed", parseFloat(e.target.value))
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Mileage (km)</Label>
-                  <Input
-                    type="number"
-                    value={formData.mileage}
-                    onChange={(e) =>
-                      handleChange("mileage", parseFloat(e.target.value))
-                    }
-                  />
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Pricing Tab */}
-            <TabsContent value="pricing" className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {vehicle && (
+            <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+              <h3 className="font-semibold text-lg">Thông tin hiện tại</h3>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label>Price per Hour (₫) *</Label>
-                  <Input
-                    type="number"
-                    value={formData.price_per_hour}
-                    onChange={(e) =>
-                      handleChange("price_per_hour", parseFloat(e.target.value))
-                    }
-                  />
+                  <Label className="text-xs text-muted-foreground">
+                    Đánh giá
+                  </Label>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <span className="font-semibold">{vehicle.rating}</span>
+                    <span className="text-sm text-muted-foreground">/5.0</span>
+                  </div>
                 </div>
                 <div>
-                  <Label>Price per Day (₫) *</Label>
-                  <Input
-                    type="number"
-                    value={formData.price_per_day}
-                    onChange={(e) =>
-                      handleChange("price_per_day", parseFloat(e.target.value))
-                    }
-                    className={errors.price_per_day ? "border-red-500" : ""}
-                  />
-                  {errors.price_per_day && (
-                    <p className="text-sm text-red-500">
-                      {errors.price_per_day}
-                    </p>
-                  )}
+                  <Label className="text-xs text-muted-foreground">
+                    Số lần thuê
+                  </Label>
+                  <div className="font-semibold mt-1">
+                    {vehicle.rent_count} lần
+                  </div>
                 </div>
                 <div>
-                  <Label>Price per Week (₫)</Label>
-                  <Input
-                    type="number"
-                    value={formData.price_per_week}
-                    onChange={(e) =>
-                      handleChange("price_per_week", parseFloat(e.target.value))
-                    }
-                  />
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Media Tab */}
-            <TabsContent value="media" className="space-y-4 mt-4">
-              <div>
-                <Label>Vehicle Images</Label>
-                <div className="mt-2 grid grid-cols-4 gap-4">
-                  {imagePreviews.map((img, idx) => (
-                    <div key={idx} className="relative">
-                      <img
-                        src={img}
-                        alt=""
-                        className="w-full h-24 object-cover rounded"
-                      />
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="destructive"
-                        className="absolute top-1 right-1 h-6 w-6"
-                        onClick={() => handleRemoveImage(idx)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="h-24 border-2 border-dashed rounded flex items-center justify-center hover:bg-gray-50"
-                  >
-                    <Upload className="h-8 w-8 text-gray-400" />
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <Label>Features</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    value={newFeature}
-                    onChange={(e) => setNewFeature(e.target.value)}
-                    placeholder="Add feature"
-                    onKeyPress={(e) =>
-                      e.key === "Enter" &&
-                      (e.preventDefault(), handleAddFeature())
-                    }
-                  />
-                  <Button type="button" onClick={handleAddFeature}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.features.map((f, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                  <Label className="text-xs text-muted-foreground">
+                    Trạng thái
+                  </Label>
+                  <div className="mt-1">
+                    <Badge
+                      variant={
+                        vehicle.status === "available"
+                          ? "default"
+                          : vehicle.status === "rented"
+                            ? "secondary"
+                            : "destructive"
+                      }
                     >
-                      {f}
-                      <X
-                        className="h-3 w-3 cursor-pointer"
-                        onClick={() => handleRemoveFeature(idx)}
-                      />
-                    </span>
-                  ))}
+                      {vehicle.status === "available" && "🟢 Sẵn sàng"}
+                      {vehicle.status === "rented" && "🟡 Đang thuê"}
+                      {vehicle.status === "maintenance" && "�� Bảo trì"}
+                      {vehicle.status === "charging" && "⚡ Đang sạc"}
+                      {vehicle.status === "unavailable" && "⚫ Không khả dụng"}
+                    </Badge>
+                  </div>
                 </div>
               </div>
+            </div>
+          )}
 
-              <div>
-                <Label>Description</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => handleChange("description", e.target.value)}
-                  rows={4}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold border-b pb-2">
+              📋 Thông tin cơ bản
+            </h3>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="station_id">
+                  Station ID <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="station_id"
+                  value={formData.station_id}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      station_id: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g., station-001"
+                  required
                 />
               </div>
-            </TabsContent>
-          </Tabs>
 
-          <DialogFooter className="mt-6">
+              <div className="space-y-2">
+                <Label htmlFor="license_plate">
+                  Biển số xe <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="license_plate"
+                  value={formData.license_plate}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      license_plate: e.target.value.toUpperCase(),
+                    }))
+                  }
+                  placeholder="30A-12345"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">
+                  Tên xe <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  placeholder="Tesla Model 3 Long Range"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="brand">
+                  Hãng xe <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="brand"
+                  value={formData.brand}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, brand: e.target.value }))
+                  }
+                  placeholder="Tesla, VinFast, Toyota..."
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type">
+                  Loại nhiên liệu <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value: FuelType) =>
+                    setFormData((prev) => ({ ...prev, type: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="electricity">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-blue-500" />
+                        <span>Điện (Electric)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="gasoline">
+                      <div className="flex items-center gap-2">
+                        <Fuel className="h-4 w-4 text-orange-500" />
+                        <span>Xăng (Gasoline)</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="capacity">
+                  Số ghế <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.capacity.toString()}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      capacity: parseInt(value),
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="2">2 chỗ</SelectItem>
+                    <SelectItem value="4">4 chỗ</SelectItem>
+                    <SelectItem value="5">5 chỗ</SelectItem>
+                    <SelectItem value="7">7 chỗ</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold border-b pb-2">
+              💰 Giá thuê và đặt cọc
+            </h3>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="hourly_rate">
+                  Giá theo giờ <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="hourly_rate"
+                  type="number"
+                  value={formData.hourly_rate}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      hourly_rate: parseFloat(e.target.value) || 0,
+                    }))
+                  }
+                  min={0}
+                  step={10000}
+                  required
+                />
+                <p className="text-xs text-green-600">
+                  {formatCurrency(formData.hourly_rate)}/giờ
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="daily_rate">
+                  Giá theo ngày <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="daily_rate"
+                  type="number"
+                  value={formData.daily_rate}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      daily_rate: parseFloat(e.target.value) || 0,
+                    }))
+                  }
+                  min={0}
+                  step={10000}
+                  required
+                />
+                <p className="text-xs text-green-600">
+                  {formatCurrency(formData.daily_rate)}/ngày
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deposit_amount">
+                  Tiền đặt cọc <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="deposit_amount"
+                  type="number"
+                  value={formData.deposit_amount}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      deposit_amount: parseFloat(e.target.value) || 0,
+                    }))
+                  }
+                  min={0}
+                  step={100000}
+                  required
+                />
+                <p className="text-xs text-green-600">
+                  {formatCurrency(formData.deposit_amount)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold border-b pb-2">
+              📸 Hình ảnh xe
+            </h3>
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoUpload}
+            />
+            {photos.length > 0 && (
+              <div className="grid grid-cols-4 gap-3">
+                {photos.map((url, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={url}
+                      alt={`Photo ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="text-lg font-semibold">📜 Điều khoản thuê xe</h3>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={addPolicy}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Thêm
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {formData.polices.map((policy, index) => (
+                <div key={index} className="flex gap-2">
+                  <Textarea
+                    value={policy}
+                    onChange={(e) => updatePolicy(index, e.target.value)}
+                    placeholder={`Điều khoản ${index + 1}`}
+                    rows={2}
+                  />
+                  {formData.polices.length > 1 && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => removePolicy(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              Cancel
+              Hủy
             </Button>
             <Button
               type="submit"
@@ -583,7 +531,7 @@ export default function VehicleForm({
               className="bg-green-600 hover:bg-green-700"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {vehicle ? "Update" : "Create"} Vehicle
+              {vehicle ? "Cập nhật xe" : "Thêm xe mới"}
             </Button>
           </DialogFooter>
         </form>
