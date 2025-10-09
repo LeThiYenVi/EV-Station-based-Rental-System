@@ -102,148 +102,117 @@ export interface Booking {
 
 // ==================== VEHICLE ====================
 
+/**
+ * Vehicle Status - Theo ERD
+ * - available: Xe sẵn sàng cho thuê
+ * - rented: Xe đang được thuê
+ * - maintenance: Xe đang bảo trì
+ * - charging: Xe đang sạc (EV)
+ * - unavailable: Xe không khả dụng
+ */
 export type VehicleStatus =
   | "available"
   | "rented"
   | "maintenance"
-  | "out_of_service";
-export type TransmissionType = "automatic" | "manual";
-export type FuelType = "electric" | "gasoline" | "diesel" | "hybrid";
-export type MaintenanceType = "regular" | "repair" | "inspection" | "emergency";
+  | "charging"
+  | "unavailable";
 
+/**
+ * Fuel Type - Theo ERD: type field
+ * Chú ý: ERD gọi là "type" nhưng code backend dùng "fuel_type"
+ */
+export type FuelType = "gasoline" | "electricity";
+
+/**
+ * Vehicle Interface - Khớp 100% với ERD
+ * Tất cả fields theo đúng database schema
+ */
 export interface Vehicle {
-  id: string;
-  name: string;
-  model: string;
-  brand: string;
-  year: number;
-  license_plate: string;
-  color: string;
-  seats: number;
-  transmission: TransmissionType;
-  fuel_type: FuelType;
+  // Core fields
+  id: string; // uuid
+  station_id: string; // FK to stations table (ERD: station_id, backend: station relation)
+  license_plate: string; // Biển số xe (unique)
+  name: string; // Tên xe
+  brand: string; // Hãng xe
+  type: FuelType; // Loại nhiên liệu: gasoline hoặc electricity (ERD field name)
+
+  // Metrics
+  rating: number; // Đánh giá (decimal)
+  capacity: number; // Số ghế (integer)
+  rent_count: number; // Số lần thuê (decimal -> integer là hợp lý hơn)
+
+  // Media
+  photos: string[]; // Mảng URL ảnh (text[])
+
+  // Status
+  status: VehicleStatus; // Trạng thái xe
 
   // Pricing
-  price_per_hour: number;
-  price_per_day: number;
-  price_per_week: number;
+  hourly_rate: number; // Giá thuê theo giờ (decimal)
+  daily_rate: number; // Giá thuê theo ngày (decimal)
+  deposit_amount: number; // Tiền đặt cọc (decimal)
 
-  // EV Specific
-  battery_capacity?: number;
-  range?: number;
-  charging_time?: number;
-
-  // Engine specs
-  engine_power?: number;
-  max_speed?: number;
-  fuel_consumption?: number;
-
-  // Status & availability
-  status: VehicleStatus;
-  mileage: number;
-
-  // Media & features
-  images: string[];
-  features: string[];
-  description?: string;
-
-  // Location
-  stationid: string;
+  // Policies
+  polices: string[]; // Điều khoản thuê xe (varchar -> string[])
 
   // Timestamps
-  created_at: string;
-  updated_at: string;
+  created_at: string; // Timestamp tạo
+  updated_at: string; // Timestamp cập nhật
 
-  // Populated fields (statistics)
-  total_bookings?: number;
-  total_revenue?: number;
-  average_rating?: number;
+  // Optional computed fields (not in DB, for UI display)
+  station_name?: string; // Tên trạm (joined from stations)
+  total_bookings?: number; // Tổng số lần thuê (computed)
+  total_revenue?: number; // Tổng doanh thu (computed)
 }
 
-export interface VehiclePromotion {
-  id: string;
-  vehicle_id: string;
-  discount_type: "percentage" | "fixed";
-  discount_value: number;
-  start_date: string;
-  end_date: string;
-  is_active: boolean;
-  description?: string;
-  created_at: string;
-}
-
-export interface MaintenanceSchedule {
-  id: string;
-  vehicle_id: string;
-  maintenance_type: MaintenanceType;
-  scheduled_date: string;
-  completed_date?: string;
-  status: "scheduled" | "in_progress" | "completed" | "cancelled";
-  notes?: string;
-  cost?: number;
-  performed_by?: string;
-  created_at: string;
-  updated_at: string;
-}
-
+/**
+ * CreateVehicleDto - Theo ERD (chỉ các fields cần thiết)
+ */
 export interface CreateVehicleDto {
-  name: string;
-  model: string;
-  brand: string;
-  year: number;
-  license_plate: string;
-  color: string;
-  seats: number;
-  transmission: TransmissionType;
-  fuel_type: FuelType;
-  price_per_hour: number;
-  price_per_day: number;
-  price_per_week: number;
-  battery_capacity?: number;
-  range?: number;
-  charging_time?: number;
-  engine_power?: number;
-  max_speed?: number;
-  fuel_consumption?: number;
-  mileage: number;
-  features: string[];
-  description?: string;
-  stationid: string;
+  station_id: string; // FK to stations
+  license_plate: string; // Biển số (unique, required)
+  name: string; // Tên xe
+  brand: string; // Hãng xe
+  type: FuelType; // gasoline hoặc electricity
+  capacity: number; // Số ghế
+  hourly_rate: number; // Giá theo giờ
+  daily_rate: number; // Giá theo ngày
+  deposit_amount: number; // Tiền đặt cọc
+  polices: string[]; // Điều khoản
+  photos?: string[]; // Upload ảnh (optional khi tạo mới)
 }
 
+/**
+ * UpdateVehicleDto - Theo ERD (tất cả fields optional)
+ */
 export interface UpdateVehicleDto {
-  name?: string;
-  model?: string;
-  brand?: string;
-  year?: number;
+  station_id?: string;
   license_plate?: string;
-  color?: string;
-  seats?: number;
-  transmission?: TransmissionType;
-  fuel_type?: FuelType;
-  price_per_hour?: number;
-  price_per_day?: number;
-  price_per_week?: number;
-  battery_capacity?: number;
-  range?: number;
-  charging_time?: number;
-  engine_power?: number;
-  max_speed?: number;
-  fuel_consumption?: number;
-  mileage?: number;
-  features?: string[];
-  description?: string;
+  name?: string;
+  brand?: string;
+  type?: FuelType;
+  rating?: number;
+  capacity?: number;
+  rent_count?: number;
+  photos?: string[];
   status?: VehicleStatus;
+  hourly_rate?: number;
+  daily_rate?: number;
+  deposit_amount?: number;
+  polices?: string[];
 }
 
+/**
+ * VehicleFilterParams - Lọc theo ERD fields
+ */
 export interface VehicleFilterParams {
-  search?: string;
+  search?: string; // Tìm theo name, brand, license_plate
   status?: VehicleStatus;
-  fuel_type?: FuelType;
-  transmission?: TransmissionType;
-  seats?: number;
-  min_price?: number;
-  max_price?: number;
+  type?: FuelType; // Filter theo gasoline/electricity
+  capacity?: number; // Lọc theo số ghế
+  min_price?: number; // Giá tối thiểu (daily_rate)
+  max_price?: number; // Giá tối đa (daily_rate)
+  station_id?: string; // Lọc theo trạm
 }
 
 // ==================== FILTER & PAGINATION ====================
