@@ -50,90 +50,93 @@ import {
 import VehicleTable from "../../components/admin/VehicleTable";
 import VehicleFilter from "../../components/admin/VehicleFilter";
 import VehicleForm from "../../components/admin/VehicleForm";
-import VehicleStats from "../../components/admin/VehicleStats";
-import VehicleMaintenance from "../../components/admin/VehicleMaintenance";
 import { exportToCSV, exportToExcel } from "@/lib/export-utils";
 
 export default function Vehicles() {
   const { toast } = useToast();
 
-  // Mock data - Replace with API calls
+  // Mock data - Replace with API calls (Theo ERD Vehicle schema)
   const [vehicles, setVehicles] = useState<Vehicle[]>([
     {
       id: "v1",
-      name: "Tesla Model 3 Long Range",
-      model: "Model 3",
-      brand: "Tesla",
-      year: 2023,
+      station_id: "station-1",
       license_plate: "30A-12345",
-      color: "Pearl White",
-      seats: 5,
-      transmission: "automatic",
-      fuel_type: "electric",
-      price_per_hour: 150000,
-      price_per_day: 2000000,
-      price_per_week: 12000000,
-      battery_capacity: 82,
-      range: 580,
-      charging_time: 8,
-      engine_power: 450,
-      max_speed: 225,
+      name: "Tesla Model 3 Long Range",
+      brand: "Tesla",
+      type: "electricity",
+      rating: 4.8,
+      capacity: 5,
+      rent_count: 127,
+      photos: ["/placeholder.svg", "/placeholder.svg"],
       status: "available",
-      mileage: 15000,
-      images: ["/placeholder.svg"],
-      features: ["Autopilot", "Premium Sound", "Heated Seats"],
-      description: "Premium electric sedan",
-      stationid: "station-1",
+      hourly_rate: 150000,
+      daily_rate: 2000000,
+      deposit_amount: 10000000,
+      polices: [
+        "Bằng lái xe hạng B2 trở lên",
+        "CCCD gốc còn hạn",
+        "Đặt cọc 10.000.000 VNĐ",
+        "Không sử dụng xe vào mục đích phi pháp",
+      ],
       created_at: "2024-01-15T00:00:00Z",
-      updated_at: "2024-05-20T00:00:00Z",
+      updated_at: "2024-10-05T00:00:00Z",
+      station_name: "Trạm Quận 1",
+      total_bookings: 127,
+      total_revenue: 254000000,
     },
     {
       id: "v2",
-      name: "VinFast VF8 Plus",
-      model: "VF8",
-      brand: "VinFast",
-      year: 2024,
+      station_id: "station-1",
       license_plate: "29B-67890",
-      color: "Midnight Blue",
-      seats: 5,
-      transmission: "automatic",
-      fuel_type: "electric",
-      price_per_hour: 120000,
-      price_per_day: 1500000,
-      price_per_week: 9000000,
-      battery_capacity: 87.7,
-      range: 447,
-      charging_time: 7,
+      name: "VinFast VF8 Plus",
+      brand: "VinFast",
+      type: "electricity",
+      rating: 4.5,
+      capacity: 5,
+      rent_count: 89,
+      photos: ["/placeholder.svg"],
       status: "rented",
-      mileage: 8000,
-      images: ["/placeholder.svg"],
-      features: ["ADAS Level 2", "Sunroof"],
-      stationid: "station-1",
+      hourly_rate: 120000,
+      daily_rate: 1500000,
+      deposit_amount: 8000000,
+      polices: [
+        "Bằng lái xe hạng B2",
+        "CCCD/CMND gốc",
+        "Đặt cọc 8.000.000 VNĐ",
+        "Hoàn trả xe đúng giờ",
+      ],
       created_at: "2024-03-01T00:00:00Z",
-      updated_at: "2024-05-21T00:00:00Z",
+      updated_at: "2024-10-08T00:00:00Z",
+      station_name: "Trạm Quận 1",
+      total_bookings: 89,
+      total_revenue: 133500000,
     },
     {
       id: "v3",
-      name: "Toyota Camry 2.5Q",
-      model: "Camry",
-      brand: "Toyota",
-      year: 2023,
+      station_id: "station-2",
       license_plate: "51G-11111",
-      color: "Silver Metallic",
-      seats: 5,
-      transmission: "automatic",
-      fuel_type: "gasoline",
-      price_per_hour: 80000,
-      price_per_day: 1000000,
-      price_per_week: 6000000,
-      fuel_consumption: 7.5,
+      name: "Toyota Camry 2.5Q",
+      brand: "Toyota",
+      type: "gasoline",
+      rating: 4.2,
+      capacity: 5,
+      rent_count: 156,
+      photos: ["/placeholder.svg"],
       status: "maintenance",
-      mileage: 25000,
-      images: ["/placeholder.svg"],
-      features: ["Cruise Control", "Leather Seats"],
-      stationid: "station-2",
+      hourly_rate: 80000,
+      daily_rate: 1000000,
+      deposit_amount: 5000000,
+      polices: [
+        "Bằng lái B1 trở lên",
+        "CCCD gốc",
+        "Đặt cọc 5.000.000 VNĐ",
+        "Trả đúng mức nhiên liệu ban đầu",
+      ],
       created_at: "2023-08-10T00:00:00Z",
-      updated_at: "2024-05-19T00:00:00Z",
+      updated_at: "2024-10-07T00:00:00Z",
+      station_name: "Trạm Quận 2",
+      total_bookings: 156,
+      total_revenue: 156000000,
     },
   ]);
 
@@ -141,15 +144,9 @@ export default function Vehicles() {
   const [selectedVehicles, setSelectedVehicles] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
-  const [showStats, setShowStats] = useState(false);
-  const [statsVehicle, setStatsVehicle] = useState<Vehicle | null>(null);
-  const [showMaintenance, setShowMaintenance] = useState(false);
-  const [maintenanceVehicle, setMaintenanceVehicle] = useState<Vehicle | null>(
-    null,
-  );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Filtered vehicles
+  // Filtered vehicles - Theo ERD fields
   const filteredVehicles = useMemo(() => {
     return vehicles.filter((vehicle) => {
       if (filters.search) {
@@ -163,11 +160,13 @@ export default function Vehicles() {
         }
       }
       if (filters.status && vehicle.status !== filters.status) return false;
-      if (filters.fuel_type && vehicle.fuel_type !== filters.fuel_type)
+      if (filters.type && vehicle.type !== filters.type) return false; // type thay vì fuel_type
+      if (filters.capacity && vehicle.capacity !== filters.capacity)
+        return false; // capacity thay vì seats
+      if (filters.min_price && vehicle.daily_rate < filters.min_price)
         return false;
-      if (filters.transmission && vehicle.transmission !== filters.transmission)
+      if (filters.max_price && vehicle.daily_rate > filters.max_price)
         return false;
-      if (filters.seats && vehicle.seats !== filters.seats) return false;
       return true;
     });
   }, [vehicles, filters]);
@@ -194,8 +193,10 @@ export default function Vehicles() {
     const newVehicle: Vehicle = {
       id: `v${vehicles.length + 1}`,
       ...data,
+      rating: 0, // Default rating
+      rent_count: 0, // Default rent count
       status: "available",
-      images: [],
+      photos: data.photos || [], // photos thay vì images
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -240,14 +241,15 @@ export default function Vehicles() {
     const csvData = filteredVehicles.map((v) => ({
       Name: v.name,
       Brand: v.brand,
-      Model: v.model,
-      Year: v.year,
       "License Plate": v.license_plate,
-      Seats: v.seats,
-      "Fuel Type": v.fuel_type,
+      Type: v.type,
+      Capacity: v.capacity,
       Status: v.status,
-      "Price/Day": v.price_per_day,
-      Mileage: v.mileage,
+      Rating: v.rating,
+      "Rent Count": v.rent_count,
+      "Hourly Rate": v.hourly_rate,
+      "Daily Rate": v.daily_rate,
+      "Deposit Amount": v.deposit_amount,
     }));
     exportToCSV(csvData as any, "vehicles");
     toast({
@@ -260,14 +262,15 @@ export default function Vehicles() {
     const excelData = filteredVehicles.map((v) => ({
       Name: v.name,
       Brand: v.brand,
-      Model: v.model,
-      Year: v.year,
       "License Plate": v.license_plate,
-      Seats: v.seats,
-      "Fuel Type": v.fuel_type,
+      Type: v.type,
+      Capacity: v.capacity,
       Status: v.status,
-      "Price/Day": v.price_per_day,
-      Mileage: v.mileage,
+      Rating: v.rating,
+      "Rent Count": v.rent_count,
+      "Hourly Rate": v.hourly_rate,
+      "Daily Rate": v.daily_rate,
+      "Deposit Amount": v.deposit_amount,
     }));
     exportToExcel(excelData as any, "vehicles");
     toast({
@@ -385,9 +388,14 @@ export default function Vehicles() {
                       Set Maintenance
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleStatusChange("out_of_service")}
+                      onClick={() => handleStatusChange("charging")}
                     >
-                      Set Out of Service
+                      Set Charging
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleStatusChange("unavailable")}
+                    >
+                      Set Unavailable
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -455,21 +463,9 @@ export default function Vehicles() {
               );
             }}
             onViewDetail={(vehicle) => {
-              setStatsVehicle(vehicle);
-              setShowStats(true);
-            }}
-            onViewStats={(vehicle) => {
-              setStatsVehicle(vehicle);
-              setShowStats(true);
-            }}
-            onViewMaintenance={(vehicle) => {
-              setMaintenanceVehicle(vehicle);
-              setShowMaintenance(true);
-            }}
-            onManagePromotion={(vehicle) => {
               toast({
-                title: "Coming Soon",
-                description: "Promotion management feature",
+                title: "Vehicle Details",
+                description: `Viewing details for ${vehicle.name}`,
               });
             }}
           />
@@ -482,18 +478,6 @@ export default function Vehicles() {
         onOpenChange={setShowForm}
         vehicle={editingVehicle}
         onSubmit={editingVehicle ? handleUpdate : handleCreate}
-      />
-
-      <VehicleStats
-        open={showStats}
-        onOpenChange={setShowStats}
-        vehicle={statsVehicle}
-      />
-
-      <VehicleMaintenance
-        open={showMaintenance}
-        onOpenChange={setShowMaintenance}
-        vehicle={maintenanceVehicle}
       />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
