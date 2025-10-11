@@ -96,8 +96,50 @@ export interface Booking {
 
   // Populated fields
   renter?: User;
+  vehicle?: Vehicle;
   checked_out_staff?: User;
   checked_in_staff?: User;
+}
+
+// For creating new booking
+export interface CreateBookingDto {
+  renter_id: string;
+  vehicle_id: string;
+  start_time: string;
+  expected_end_time: string;
+  base_price: number;
+  deposit_paid: number;
+  pickup_notes?: string;
+  body_condition?: BodyCondition;
+}
+
+// For updating booking
+export interface UpdateBookingDto {
+  status?: BookingStatus;
+  checked_out_by?: string;
+  checked_in_by?: string;
+  actual_end_time?: string;
+  extra_fee?: number;
+  total_amount?: number;
+  payment_status?: PaymentStatus;
+  pickup_notes?: string;
+  return_notes?: string;
+  body_condition?: BodyCondition;
+  photos?: string[];
+}
+
+// For filtering bookings
+export interface BookingFilterParams {
+  search?: string; // Search by booking_code
+  status?: BookingStatus | "all";
+  payment_status?: PaymentStatus | "all";
+  renter_id?: string;
+  vehicle_id?: string;
+  checked_out_by?: string;
+  checked_in_by?: string;
+  start_date?: string; // Filter by start_time
+  end_date?: string; // Filter by expected_end_time
+  date_range?: "past" | "current" | "upcoming" | "all";
 }
 
 // ==================== VEHICLE ====================
