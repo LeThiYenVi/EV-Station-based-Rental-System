@@ -17,6 +17,7 @@ import "./AdminLayout.css";
 import Dashboard from "./Dashboard";
 import Users from "./Users";
 import Vehicles from "./Vehicles";
+import Bookings from "./Bookings";
 
 const { Header, Sider, Content } = Layout;
 
@@ -166,6 +167,7 @@ export default function AdminLayout() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/users" element={<Users />} />
             <Route path="/vehicles" element={<Vehicles />} />
+            <Route path="/bookings" element={<Bookings />} />
             {/* Add more routes here */}
           </Routes>
         </Content>
