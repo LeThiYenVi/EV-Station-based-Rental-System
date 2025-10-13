@@ -13,9 +13,32 @@ import {
   View,
 } from "react-native";
 import { Icon, TextInput } from "react-native-paper";
+import { useAuth } from "@/context/authContext";
+import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 
-export default function login() {
-  const { login, logout } = useAuthApi();
+export default function loginPage({ navigation }: any) {
+  const { login, user } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter();
+  const nav = useNavigation();
+
+  const handleLogin = async () => {
+    try {
+      await login(email, password);
+      // If Login was opened from a tab press, go back to the previous tab.
+      // Otherwise, fall back to opening the Profile tab.
+      if ((nav as any)?.canGoBack?.()) {
+        (nav as any).goBack();
+      } else {
+        router.replace("/profile");
+      }
+    } catch (err) {
+      alert("Sai tài khoản hoặc mật khẩu!");
+    }
+  };
+
   const platFormData = useMemo(
     () => [
       {
@@ -38,12 +61,16 @@ export default function login() {
       <TextInput
         style={style.textInput}
         placeholder="Số điện thoại của bạn"
+        value={email}
+        onChangeText={setEmail}
       ></TextInput>
       <Text style={style.title}>Mật Khẩu</Text>
       <TextInput
         style={style.textInput}
         placeholder="Nhập Mật khẩu"
         secureTextEntry={!showPassword}
+        value={password}
+        onChangeText={setPassword}
         right={
           <TextInput.Icon
             icon={showPassword ? "eye" : "eye-off"}
@@ -75,7 +102,11 @@ export default function login() {
         </TouchableOpacity>
       </View>
       <View style={{ paddingTop: 300 }}>
-        <TouchableOpacity style={style.LoginButton} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={style.LoginButton}
+          activeOpacity={0.7}
+          onPress={handleLogin}
+        >
           <Text>Đăng nhập</Text>
         </TouchableOpacity>
       </View>

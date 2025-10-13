@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   TextInput,
@@ -14,15 +14,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "@/utils";
 import { Avatar, Button, Card, Text } from "react-native-paper";
-import { Section } from "./components/Section";
+import { Section } from "../../../components/Section";
 import { Promo } from "@/types/Promo";
 import { Place } from "@/types/Place";
 import { usePromo } from "@/hooks/usePromo";
 import { placeFetch } from "@/hooks/placeFetch";
+import { useAuth } from "@/context/authContext";
 export default function DashboardPage() {
   const [searchText, setSearchText] = useState<string>("");
   const [name, setName] = useState("Guest");
   const [numColumns, setNumColumns] = useState(2);
+  const { user, token } = useAuth();
   const {
     promos,
     isLoading: isPromoLoading,
@@ -32,6 +34,12 @@ export default function DashboardPage() {
   const { Places, isLoading: isPlaceLoading, error: PlaceError } = placeFetch();
   const PROMO_CARD_WIDTH = 280;
   const PLACE_CARD_WIDTH = 220;
+  useEffect(() => {
+    if (user) {
+      setName(user.userName);
+    }
+  }, [user]);
+
   // Fake data: Về Chúng tôi
   const aboutUsData = useMemo(
     () => [
