@@ -8,7 +8,7 @@ export function useAuthApi() {
       return {
         token: "good-token-can-access",
         user: {
-          id: 1,
+          id: "1",
           userName: "Khang",
           role: "user",
         },
