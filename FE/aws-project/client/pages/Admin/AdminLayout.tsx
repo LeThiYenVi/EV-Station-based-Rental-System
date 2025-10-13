@@ -12,9 +12,13 @@ import {
   SettingOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Routes, Route } from "react-router-dom";
 import "./AdminLayout.css";
 import Dashboard from "./Dashboard";
+import Users from "./Users";
+import Vehicles from "./Vehicles";
+import Bookings from "./Bookings";
+import Reports from "./Reports";
 
 const { Header, Sider, Content } = Layout;
 
@@ -159,7 +163,15 @@ export default function AdminLayout() {
             borderRadius: borderRadiusLG,
           }}
         >
-          <Dashboard />
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/vehicles" element={<Vehicles />} />
+            <Route path="/bookings" element={<Bookings />} />
+            <Route path="/reports" element={<Reports />} />
+            {/* Add more routes here */}
+          </Routes>
         </Content>
       </Layout>
     </Layout>
