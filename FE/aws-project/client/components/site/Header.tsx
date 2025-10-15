@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import "./Header.css";
 
 const links = [
   { href: "/about", label: "Về chúng tôi" },
@@ -17,28 +18,30 @@ const links = [
 
 const serviceItems = [
   {
-    title: "THUÊ XE CÓ TÀI",
-    subtitle: "Đưa đón sân bay",
-    color: "bg-green-500",
-    href: "/services/chauffeur",
-  },
-  {
     title: "THUÊ XE TỰ LÁI",
     subtitle: "Thuê xe đám cưới",
     color: "bg-gray-800",
     href: "/services/self-drive",
   },
   {
+    title: "THUÊ XE CÓ TÀI XẾ",
+    subtitle: "Đưa đón sân bay",
+    color: "bg-green-500",
+    href: "/services/chauffeur",
+  },
+  {
     title: "THUÊ XE SỰ KIỆN",
     subtitle: "Đưa đón đường dài",
     color: "bg-gray-800",
     href: "/services/events",
+    comingSoon: true,
   },
   {
     title: "SỞ HỮU XE LINH HOẠT",
     subtitle: "Đặt xe đưa đón",
     color: "bg-gray-800",
     href: "/services/flexible-ownership",
+    comingSoon: true,
   },
 ];
 
@@ -118,20 +121,20 @@ export function Header() {
                       <div
                         className={`service-image ${
                           index === 0
-                            ? "service-chauffeur"
+                            ? "service-self-drive"
                             : index === 1
-                              ? "service-self-drive"
+                              ? "service-chauffeur"
                               : index === 2
                                 ? "service-events"
                                 : "service-flexible"
                         }`}
                       >
-                        {(index === 2 || index === 3) && (
+                        {service.comingSoon && (
                           <div className="coming-soon">COMING SOON</div>
                         )}
                       </div>
                       <h3
-                        className={`service-title ${index === 0 ? "service-title-green" : ""}`}
+                        className={`service-title ${index === 1 ? "service-title-green" : ""}`}
                       >
                         {service.title}
                       </h3>
