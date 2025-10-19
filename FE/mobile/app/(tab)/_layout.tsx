@@ -3,6 +3,7 @@ import { Tabs } from "expo-router";
 import Foundation from "@expo/vector-icons/Foundation";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import "react-native-reanimated";
 import { theme } from "../../utils";
 import { useAuth } from "@/context/authContext";
@@ -22,10 +23,8 @@ function TabsNavigator() {
         headerTitleAlign: "center",
       }}
     >
-      {/** Hide profile screen from the tab bar, it will be accessed via the account gate */}
       <Tabs.Screen name="profile/index" options={{ href: null }} />
 
-      {/* Trang chủ */}
       <Tabs.Screen
         name="dashboard/index"
         options={{
@@ -36,7 +35,6 @@ function TabsNavigator() {
         }}
       />
 
-      {/* Chuyến */}
       <Tabs.Screen
         name="trip/index"
         options={{
@@ -47,13 +45,22 @@ function TabsNavigator() {
         }}
       />
 
-      {/* Hỗ trợ */}
       <Tabs.Screen
         name="support/index"
         options={{
           title: "Hỗ trợ",
           tabBarIcon: ({ color, size }) => (
             <SimpleLineIcons name="support" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="messages/index"
+        options={{
+          title: "Tin nhắn",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubbles-outline" size={size} color={color} />
           ),
         }}
       />
@@ -72,7 +79,6 @@ function TabsNavigator() {
         }}
         listeners={() => ({
           tabPress: (e) => {
-            // If not authenticated, open login without switching the current tab
             if (!user) {
               e.preventDefault();
               router.push("/login");
@@ -84,7 +90,6 @@ function TabsNavigator() {
   );
 }
 
-// ⚡ Gói TabsNavigator trong AuthProvider
 export default function TabLayout() {
   return <TabsNavigator />;
 }

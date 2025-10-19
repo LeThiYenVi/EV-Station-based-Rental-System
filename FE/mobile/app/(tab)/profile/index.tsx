@@ -7,69 +7,54 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Alert,
 } from "react-native";
 import { theme } from "@/utils";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { mockProfileMenuSections } from "../../../mocks/mockData";
+import { useRouter } from "expo-router";
 
 export default function Profile() {
   const { logout, user } = useAuth();
+  const router = useRouter();
 
-  const menuSections = [
-    {
-      items: [
-        {
-          id: 1,
-          icon: "file-document-outline",
-          label: "Đăng ký cho thuê xe",
-          iconLib: "MaterialCommunityIcons",
-        },
-        {
-          id: 2,
-          icon: "heart-outline",
-          label: "Xe yêu thích",
-          iconLib: "MaterialCommunityIcons",
-        },
-        {
-          id: 3,
-          icon: "map-marker-outline",
-          label: "Địa chỉ của tôi",
-          iconLib: "MaterialCommunityIcons",
-        },
-        {
-          id: 4,
-          icon: "file-document-outline",
-          label: "Giấy phép lái xe",
-          iconLib: "MaterialCommunityIcons",
-        },
-        {
-          id: 5,
-          icon: "credit-card-outline",
-          label: "Thẻ thanh toán",
-          iconLib: "MaterialCommunityIcons",
-        },
-        {
-          id: 6,
-          icon: "star-outline",
-          label: "Đánh giá từ chủ xe",
-          iconLib: "MaterialCommunityIcons",
-        },
-      ],
-    },
-    {
-      items: [
-        { id: 7, icon: "gift", label: "Quà tặng", iconLib: "AntDesign" },
-        {
-          id: 8,
-          icon: "sharealt",
-          label: "Giới thiệu bạn mới",
-          iconLib: "AntDesign",
-        },
-      ],
-    },
-  ];
+  const handleMenuPress = (id: number, label: string) => {
+    // Navigate to appropriate page based on menu item id
+    switch (id) {
+      case 1: // Đăng ký cho thuê xe
+        router.push("/profile/register-car");
+        break;
+      case 2: // Xe yêu thích
+        router.push("/profile/favorites");
+        break;
+      case 3: // Địa chỉ của tôi
+        router.push("/profile/addresses");
+        break;
+      case 4: // Giấy phép lái xe
+        router.push("/profile/license");
+        break;
+      case 5: // Thẻ thanh toán
+        router.push("/profile/payment");
+        break;
+      case 6: // Đánh giá từ chủ xe
+        router.push("/profile/reviews");
+        break;
+      case 7: // Quà tặng
+        router.push("/profile/gifts");
+        break;
+      case 8: // Giới thiệu bạn mới
+        router.push("/profile/referral");
+        break;
+      default:
+        Alert.alert(label, "Chức năng đang phát triển");
+    }
+  };
+
+  // Using mock data from centralized file
+  const menuSections = mockProfileMenuSections;
 
   return (
     <RerquiredLoginButton>
@@ -96,7 +81,11 @@ export default function Profile() {
           <View key={sectionIndex} style={styles.menuSection}>
             {section.items.map((item, index) => (
               <View key={item.id}>
-                <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  activeOpacity={0.7}
+                  onPress={() => handleMenuPress(item.id, item.label)}
+                >
                   <View style={styles.menuItemLeft}>
                     {item.iconLib === "MaterialCommunityIcons" && (
                       <MaterialCommunityIcons
