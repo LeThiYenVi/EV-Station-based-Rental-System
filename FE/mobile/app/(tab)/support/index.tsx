@@ -5,47 +5,38 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  Alert,
+  Linking,
 } from "react-native";
 import { theme } from "@/utils";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { mockInsuranceCompanies, mockInfoCards } from "../../../mocks/mockData";
 
 export default function Support() {
-  const insuranceCompanies = [
-    { id: 1, name: "MIC", logo: require("@/assets/images/favicon.png") },
-    { id: 2, name: "PVI", logo: require("@/assets/images/favicon.png") },
-    { id: 3, name: "DBV", logo: require("@/assets/images/favicon.png") },
-  ];
+  // Using mock data from centralized file
+  const insuranceCompanies = mockInsuranceCompanies;
+  const infoCards = mockInfoCards;
 
-  const infoCards = [
-    {
-      id: 1,
-      icon: "office-building",
-      title: "Thông tin\ncông ty",
-      color: "#10B981",
-    },
-    {
-      id: 2,
-      icon: "clipboard-check-outline",
-      title: "Chính sách\nvà quy định",
-      color: "#10B981",
-    },
-    {
-      id: 3,
-      icon: "phone",
-      title: "Liên hệ\nhỗ trợ",
-      color: "#10B981",
-    },
-    {
-      id: 4,
-      icon: "shield-check",
-      title: "Bảo mật\nthông tin",
-      color: "#10B981",
-    },
-  ];
+  const handleInsurancePress = (company: { name: string; hotline: string }) => {
+    Alert.alert(`Hotline ${company.name}`, `Gọi ${company.hotline}?`, [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: "Gọi ngay",
+        onPress: () => Linking.openURL(`tel:${company.hotline}`),
+      },
+    ]);
+  };
+
+  const handleGuidePress = () => {
+    Alert.alert("Hướng dẫn đặt xe", "Chức năng đang phát triển");
+  };
+
+  const handleInfoCardPress = (title: string) => {
+    Alert.alert(title.replace("\n", " "), "Chức năng đang phát triển");
+  };
 
   return (
     <ScrollView style={styles.container}>
-      {/* Insurance Hotline Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Hotline Bảo hiểm</Text>
         <View style={styles.insuranceGrid}>
@@ -54,6 +45,7 @@ export default function Support() {
               key={company.id}
               style={styles.insuranceCard}
               activeOpacity={0.7}
+              onPress={() => handleInsurancePress(company)}
             >
               <Image
                 source={company.logo}
@@ -65,10 +57,13 @@ export default function Support() {
         </View>
       </View>
 
-      {/* Guide Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Hướng dẫn</Text>
-        <TouchableOpacity style={styles.guideCard} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.guideCard}
+          activeOpacity={0.8}
+          onPress={handleGuidePress}
+        >
           <Image
             source={require("@/assets/images/favicon.png")}
             style={styles.guideImage}
@@ -80,7 +75,6 @@ export default function Support() {
         </TouchableOpacity>
       </View>
 
-      {/* Information Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Thông tin</Text>
         <View style={styles.infoGrid}>
@@ -89,6 +83,7 @@ export default function Support() {
               key={card.id}
               style={styles.infoCard}
               activeOpacity={0.7}
+              onPress={() => handleInfoCardPress(card.title)}
             >
               <MaterialCommunityIcons
                 name={card.icon as any}
