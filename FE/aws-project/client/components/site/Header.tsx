@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useMessage } from "@/components/ui/message";
 import "./Header.css";
 
 const links = [
@@ -46,6 +47,8 @@ const serviceItems = [
 ];
 
 export function Header() {
+  const navigate = useNavigate();
+  const { contextHolder, showWarning } = useMessage();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
@@ -92,15 +95,25 @@ export function Header() {
     window.location.href = "/";
   };
 
+  const handleProtectedNavigation = (e: React.MouseEvent, href: string) => {
+    if (!isLoggedIn) {
+      e.preventDefault();
+      showWarning("Vui lòng đăng nhập để sử dụng tính năng này");
+    } else {
+      navigate(href);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
+      {contextHolder}
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center text-white font-bold text-xl">
             M
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-xl font-bold text-black">MIOTO</span>
+            <span className="text-xl font-bold text-black">BF Car Rental</span>
             <span className="text-xs text-gray-600">Thuê xe tự lái</span>
           </div>
         </Link>
@@ -117,7 +130,12 @@ export function Header() {
               <div className="services-grid">
                 {serviceItems.map((service, index) => (
                   <DropdownMenuItem key={service.href} asChild className="p-0">
-                    <Link to={service.href} className="service-card">
+                    <div
+                      onClick={(e) =>
+                        handleProtectedNavigation(e, service.href)
+                      }
+                      className="service-card cursor-pointer"
+                    >
                       <div
                         className={`service-image ${
                           index === 0
@@ -139,7 +157,7 @@ export function Header() {
                         {service.title}
                       </h3>
                       <p className="service-subtitle">{service.subtitle}</p>
-                    </Link>
+                    </div>
                   </DropdownMenuItem>
                 ))}
               </div>
@@ -147,23 +165,28 @@ export function Header() {
           </DropdownMenu>
 
           {links.map((item) => (
-            <Link
+            <a
               key={item.href}
-              to={item.href}
-              className="text-gray-700 hover:text-green-500 font-medium transition"
+              onClick={(e) => handleProtectedNavigation(e, item.href)}
+              className="text-gray-700 hover:text-green-500 font-medium transition cursor-pointer"
             >
               {item.label}
-            </Link>
+            </a>
           ))}
         </nav>
 
         <div className="flex items-center gap-3">
           {isLoggedIn ? (
             <>
-              <span className="hidden md:flex text-gray-700 font-medium">
+              <Link
+                to="/profile"
+                className="hidden md:flex text-gray-700 font-medium hover:text-green-600 transition-colors"
+              >
                 Xin chào,{" "}
-                <span className="text-green-600 ml-1">{username}</span>
-              </span>
+                <span className="text-green-600 ml-1 hover:underline">
+                  {username}
+                </span>
+              </Link>
               <Button
                 variant="outline"
                 className="border-green-500 text-green-600 hover:bg-green-50"

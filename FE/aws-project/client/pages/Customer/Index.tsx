@@ -14,7 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,13 +35,47 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { useState } from "react";
+import { useMessage } from "@/components/ui/message";
+import { useState, useEffect } from "react";
 
 export default function Index() {
+  const navigate = useNavigate();
+  const { contextHolder, showWarning } = useMessage();
   const [activeTab, setActiveTab] = useState("xe-tu-lai");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+      setIsLoggedIn(loggedIn);
+    };
+
+    checkLoginStatus();
+    window.addEventListener("loginStatusChanged", checkLoginStatus);
+
+    return () => {
+      window.removeEventListener("loginStatusChanged", checkLoginStatus);
+    };
+  }, []);
+
+  const handleProtectedAction = (callback: () => void) => {
+    if (!isLoggedIn) {
+      showWarning("Vui lòng đăng nhập để sử dụng tính năng này");
+    } else {
+      callback();
+    }
+  };
+
+  const handleCarClick = (e: React.MouseEvent, carId: number) => {
+    e.preventDefault();
+    handleProtectedAction(() => {
+      navigate(`/car/${carId}`);
+    });
+  };
 
   return (
     <div>
+      {contextHolder}
       {/* Hero */}
       <section className="relative bg-white overflow-visible pb-32 md:pb-40">
         <div className="container py-8">
@@ -157,7 +191,14 @@ export default function Index() {
                             placeholder="21:00, 02/10/2025 - 20:00, 03/10/2025"
                             className="w-full h-12 text-base"
                           />
-                          <Button className="bg-green-500 hover:bg-green-600 text-white h-12 px-8 text-base font-semibold whitespace-nowrap">
+                          <Button
+                            onClick={() =>
+                              handleProtectedAction(() => {
+                                // Logic tìm xe
+                              })
+                            }
+                            className="bg-green-500 hover:bg-green-600 text-white h-12 px-8 text-base font-semibold whitespace-nowrap"
+                          >
                             Tìm Xe
                           </Button>
                         </div>
@@ -234,7 +275,14 @@ export default function Index() {
                               placeholder="08:00, 03/10/2025 - 10:00, 03/10/2025"
                               className="flex-1 h-10"
                             />
-                            <Button className="bg-green-500 hover:bg-green-600 text-white h-10 px-6">
+                            <Button
+                              onClick={() =>
+                                handleProtectedAction(() => {
+                                  // Logic tìm xe
+                                })
+                              }
+                              className="bg-green-500 hover:bg-green-600 text-white h-10 px-6"
+                            >
                               Tìm Xe
                             </Button>
                           </div>
@@ -263,7 +311,14 @@ export default function Index() {
                             readOnly
                             className="bg-gray-50 flex-1 h-10"
                           />
-                          <Button className="bg-green-500 hover:bg-green-600 text-white h-10 px-6">
+                          <Button
+                            onClick={() =>
+                              handleProtectedAction(() => {
+                                // Logic tìm xe
+                              })
+                            }
+                            className="bg-green-500 hover:bg-green-600 text-white h-10 px-6"
+                          >
                             Tìm Xe
                           </Button>
                         </div>
@@ -279,7 +334,7 @@ export default function Index() {
 
       {/* Xe Dành Cho Bạn */}
       <section className="py-16 bg-gray-50">
-        <div className="container">
+        <div className="container max-w-[75%] mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-black">
             Xe Dành Cho Bạn
           </h2>
@@ -359,7 +414,11 @@ export default function Index() {
                 price: "1.650.000",
               },
             ].map((car, index) => (
-              <Link key={index} to={`/car/${index + 1}`} className="block">
+              <div
+                key={index}
+                onClick={(e) => handleCarClick(e, index + 1)}
+                className="block cursor-pointer"
+              >
                 <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer bg-white border border-gray-200 rounded-2xl">
                   {/* Image Section */}
                   <div className="relative">
@@ -457,7 +516,7 @@ export default function Index() {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
@@ -658,9 +717,9 @@ export default function Index() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {[
               {
-                title: "Lái xe an toàn cùng Mioto",
+                title: "Lái xe an toàn cùng BF Car Rental",
                 description:
-                  "Chuyến đi trên Mioto được bảo vệ với Gói bảo hiểm thuê xe tự lái MIC & ĐBV (VNI). Khách thuê xe còn bồi thường tối đa 2.000.000VND trong trường hợp có sự cố ngoài ý muốn.",
+                  "Chuyến đi trên BF Car Rental được bảo vệ với Gói bảo hiểm thuê xe tự lái MIC & ĐBV (VNI). Khách thuê xe còn bồi thường tối đa 2.000.000VND trong trường hợp có sự cố ngoài ý muốn.",
                 image: "/mocks/uudiem/Screenshot 2025-10-02 132842.png",
               },
               {
@@ -672,7 +731,7 @@ export default function Index() {
               {
                 title: "Thủ tục đơn giản",
                 description:
-                  "Chỉ cần có CCCD gắn chip (Hoặc Passport) & Giấy phép lái xe là bạn đã đủ điều kiện thuê xe trên Mioto.",
+                  "Chỉ cần có CCCD gắn chip (Hoặc Passport) & Giấy phép lái xe là bạn đã đủ điều kiện thuê xe trên BF Car Rental.",
                 image: "/mocks/uudiem/Screenshot 2025-10-02 132830.png",
               },
               {
@@ -721,14 +780,14 @@ export default function Index() {
 
       {/* Hướng Dẫn Thuê Xe */}
       <section className="py-16 bg-white">
-        <div className="container">
+        <div className="container max-w-[70%] mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
               Hướng Dẫn Thuê Xe
             </h2>
             <p className="text-gray-600 text-base">
-              Chỉ với 4 bước đơn giản để trải nghiệm thuê xe Mioto một cách
-              nhanh chóng
+              Chỉ với 4 bước đơn giản để trải nghiệm thuê xe BF Car Rental một
+              cách nhanh chóng
             </p>
           </div>
 
@@ -736,7 +795,7 @@ export default function Index() {
             {[
               {
                 step: "01",
-                title: "Đặt xe trên app/web Mioto",
+                title: "Đặt xe trên app/web BF Car Rental",
                 image: "/mocks/huongdan/Screenshot 2025-10-02 132938.png",
                 color: "text-green-500",
               },
@@ -786,8 +845,8 @@ export default function Index() {
         </div>
       </section>
 
-      {/* CTA Section 1 - Bạn muốn biết thêm về Mioto */}
-      {/* CTA Section 1 - Bạn muốn biết thêm về Mioto */}
+      {/* CTA Section 1 - Bạn muốn biết thêm về BF Car Rental */}
+      {/* CTA Section 1 - Bạn muốn biết thêm về BF Car Rental */}
       <section className="py-16 bg-white">
         <div className="bg-gradient-to-br from-green-50 to-green-100 max-w-[80%] mx-auto rounded-3xl p-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
@@ -796,7 +855,7 @@ export default function Index() {
               <div className="relative rounded-3xl overflow-hidden shadow-2xl">
                 <img
                   src="/mocks/thue_xe_co_tai_xe_tphcm_gia_re.84f8483d.png"
-                  alt="Về Mioto"
+                  alt="Về BF Car Rental"
                   className="w-full h-auto object-cover"
                 />
               </div>
@@ -824,16 +883,19 @@ export default function Index() {
               <h2 className="text-3xl md:text-4xl font-bold text-black mb-6">
                 Bạn muốn biết thêm
                 <br />
-                về Mioto?
+                về BF Car Rental?
               </h2>
               <p className="text-gray-700 text-base mb-8 leading-relaxed max-w-md">
-                Mioto kết nối khách hàng có nhu cầu thuê xe với hàng ngàn chủ xe
-                ô tô ở TPHCM, Hà Nội & các tỉnh thành khác. Mioto hướng đến việc
-                xây dựng cộng đồng người dùng ô tô văn minh & uy tín tại Việt
-                Nam.
+                BF Car Rental kết nối khách hàng có nhu cầu thuê xe với hàng
+                ngàn chủ xe ô tô ở TPHCM, Hà Nội & các tỉnh thành khác. BF Car
+                Rental hướng đến việc xây dựng cộng đồng người dùng ô tô văn
+                minh & uy tín tại Việt Nam.
               </p>
-              <Button className="h-12 px-8 text-base bg-green-500 hover:bg-green-600 text-white font-semibold">
-                Tìm hiểu thêm
+              <Button
+                className="h-12 px-8 text-base bg-green-500 hover:bg-green-600 text-white font-semibold"
+                asChild
+              >
+                <Link to="/about">Tìm hiểu thêm</Link>
               </Button>
             </div>
           </div>
@@ -858,7 +920,7 @@ export default function Index() {
                   thuê xe?
                 </h2>
                 <p className="text-gray-700 text-base mb-8 leading-relaxed max-w-md">
-                  Hơn 10.000 chủ xe đang cho thuê hiệu quả trên Mioto
+                  Hơn 10.000 chủ xe đang cho thuê hiệu quả trên BF Car Rental
                   <br />
                   Đăng ký trở thành đối tác của chúng tôi ngay hôm nay để gia
                   <br />
@@ -893,7 +955,7 @@ export default function Index() {
       </section>
 
       <section className="cta-section-new">
-        <div className="container">
+        <div className="container max-w-[90%] mx-auto">
           <div className="cta-header">
             <h2>Dịch Vụ Của BF Car Rental</h2>
           </div>
@@ -914,7 +976,16 @@ export default function Index() {
                     Tự tay cầm lái chiếc xe bạn yêu thích cho hành trình thêm
                     hứng khởi.
                   </p>
-                  <button className="cta-btn primary">Thuê xe tự lái</button>
+                  <button
+                    className="cta-btn primary"
+                    onClick={() =>
+                      handleProtectedAction(() => {
+                        navigate("/services/self-drive");
+                      })
+                    }
+                  >
+                    Thuê xe tự lái
+                  </button>
                 </div>
               </div>
             </div>
@@ -940,6 +1011,11 @@ export default function Index() {
                   <button
                     style={{ marginLeft: "320px" }}
                     className="cta-btn secondary"
+                    onClick={() =>
+                      handleProtectedAction(() => {
+                        navigate("/services/chauffeur");
+                      })
+                    }
                   >
                     Thuê xe có tài xế
                   </button>
