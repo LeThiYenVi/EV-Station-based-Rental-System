@@ -13,6 +13,8 @@ import Blog from "./pages/Customer/Blog/Blog";
 import In4Blog from "./pages/Customer/Blog/In4Blog";
 import HistoryService from "./pages/Customer/HistoryService/HistoryService";
 import OrderDetail from "./pages/Customer/OrderDetail/OrderDetail";
+import SelfDrive from "./pages/Customer/SelfDrive/SelfDrive";
+import UserProfile from "./pages/Customer/User/in4";
 import Login from "./pages/Login/Login";
 import AdminLayout from "./pages/Admin/AdminLayout";
 import StaffLayout from "./pages/Staff/StaffLayout";
@@ -84,6 +86,22 @@ const App = () => (
             element={
               <Layout>
                 <OrderDetail />
+              </Layout>
+            }
+          />
+          <Route
+            path="/services/self-drive"
+            element={
+              <Layout>
+                <SelfDrive />
+              </Layout>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <Layout>
+                <UserProfile />
               </Layout>
             }
           />
