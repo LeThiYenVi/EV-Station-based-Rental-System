@@ -295,7 +295,7 @@ export default function About() {
                 src="https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=400&h=300&fit=crop&crop=center"
                 alt="Thuê xe có tài"
               />
-              <div className="service-price">Từ 800k/ngày</div>
+              <div className="coming-soon-overlay">COMING SOON</div>
             </div>
             <div className="service-content">
               <h3>Thuê xe có tài</h3>
@@ -303,7 +303,6 @@ export default function About() {
                 Dịch vụ đưa đón sân bay, tour du lịch với tài xế kinh nghiệm và
                 am hiểu địa hình.
               </p>
-              <button className="service-button">Tìm hiểu thêm</button>
             </div>
           </div>
 
@@ -493,13 +492,18 @@ export default function About() {
             <div className="cta-card-item">
               <div
                 style={{ marginTop: "65px" }}
-                className="cta-card-image-overlay"
+                className="cta-card-image-overlay relative"
               >
                 <img
                   src="/mocks/thue_xe_oto_tu_lai_va_co_tai.9df79c9f.png"
                   alt="Tài xế của bạn đã đến"
-                  className="cta-image"
+                  className="cta-image opacity-60"
                 />
+                <div className="absolute top-4 right-4 z-10">
+                  <span className="bg-yellow-500 text-white text-lg px-4 py-2 rounded-md font-semibold">
+                    Coming Soon
+                  </span>
+                </div>
                 <div className="cta-overlay-content">
                   <h3 style={{ marginLeft: "198px" }}>
                     Tài xế của bạn đã đến!
@@ -509,12 +513,8 @@ export default function About() {
                   </p>
                   <button
                     style={{ marginLeft: "320px" }}
-                    className="cta-btn secondary"
-                    onClick={() =>
-                      handleProtectedAction(() => {
-                        navigate("/services/chauffeur");
-                      })
-                    }
+                    className="cta-btn secondary opacity-60 cursor-not-allowed"
+                    disabled
                   >
                     Thuê xe có tài xế
                   </button>
