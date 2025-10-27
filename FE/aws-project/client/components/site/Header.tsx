@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
@@ -29,6 +29,7 @@ const serviceItems = [
     subtitle: "Đưa đón sân bay",
     color: "bg-green-500",
     href: "/services/chauffeur",
+    comingSoon: true,
   },
   {
     title: "THUÊ XE SỰ KIỆN",
@@ -48,10 +49,18 @@ const serviceItems = [
 
 export function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { contextHolder, showWarning } = useMessage();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
+
+  // Check if current path matches the link
+  const isActive = (href: string) => {
+    if (href === "/" && location.pathname === "/") return true;
+    if (href !== "/" && location.pathname.startsWith(href)) return true;
+    return false;
+  };
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 8);
@@ -168,7 +177,11 @@ export function Header() {
             <a
               key={item.href}
               onClick={(e) => handleProtectedNavigation(e, item.href)}
-              className="text-gray-700 hover:text-green-500 font-medium transition cursor-pointer"
+              className={`font-medium transition cursor-pointer ${
+                isActive(item.href)
+                  ? "text-green-600 font-bold"
+                  : "text-gray-700 hover:text-green-500"
+              }`}
             >
               {item.label}
             </a>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Car,
   Shield,
@@ -9,14 +9,39 @@ import {
   Search,
   SlidersHorizontal,
   ChevronRight,
+  Filter,
+  User,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function SelfDrive() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedCarType, setSelectedCarType] = useState("all");
+  const [priceRange, setPriceRange] = useState("all");
+
+  const locations = [
+    { value: "all", label: "Tất cả địa điểm" },
+    { value: "hcm", label: "TP. Hồ Chí Minh" },
+    { value: "hanoi", label: "Hà Nội" },
+    { value: "danang", label: "Đà Nẵng" },
+    { value: "dalat", label: "Đà Lạt" },
+    { value: "vungtau", label: "Vũng Tàu" },
+    { value: "nhatrang", label: "Nha Trang" },
+    { value: "phuquoc", label: "Phú Quốc" },
+  ];
 
   const benefits = [
     {
@@ -120,7 +145,7 @@ export default function SelfDrive() {
       rating: 4.7,
       trips: 142,
     },
-        {
+    {
       id: 7,
       name: "VinFast VF 3",
       image:
@@ -133,7 +158,7 @@ export default function SelfDrive() {
       rating: 4.7,
       trips: 142,
     },
-        {
+    {
       id: 8,
       name: "VinFast VF 3",
       image:
@@ -146,7 +171,7 @@ export default function SelfDrive() {
       rating: 4.7,
       trips: 142,
     },
-        {
+    {
       id: 9,
       name: "VinFast VF 3",
       image:
@@ -182,7 +207,7 @@ export default function SelfDrive() {
       title: "Trải nghiệm",
       description: "Tận hưởng hành trình của bạn một cách thoải mái",
     },
-        {
+    {
       id: 10,
       name: "VinFast VF 3",
       image:
@@ -195,7 +220,7 @@ export default function SelfDrive() {
       rating: 4.7,
       trips: 142,
     },
-        {
+    {
       id: 11,
       name: "VinFast VF 3",
       image:
@@ -208,7 +233,7 @@ export default function SelfDrive() {
       rating: 4.7,
       trips: 142,
     },
-        {
+    {
       id: 12,
       name: "VinFast VF 3",
       image:
@@ -268,7 +293,141 @@ export default function SelfDrive() {
       </section>
 
       {/* Search & Filter Section */}
-      <section className="bg-white py-8 border-b">
+      <section className="bg-gray-50 py-8 border-b">
+        <div className="max-w-7xl mx-auto px-5">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    type="text"
+                    placeholder="Tìm kiếm xe..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Location Filter */}
+                <Select
+                  value={selectedLocation}
+                  onValueChange={setSelectedLocation}
+                >
+                  <SelectTrigger>
+                    <MapPin className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Chọn địa điểm" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map((location) => (
+                      <SelectItem key={location.value} value={location.value}>
+                        {location.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Car Type Filter */}
+                <Select
+                  value={selectedCarType}
+                  onValueChange={setSelectedCarType}
+                >
+                  <SelectTrigger>
+                    <Car className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Loại xe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả loại xe</SelectItem>
+                    <SelectItem value="minicar">Minicar</SelectItem>
+                    <SelectItem value="suv">SUV</SelectItem>
+                    <SelectItem value="sedan">Sedan</SelectItem>
+                    <SelectItem value="mpv">MPV</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Price Range Filter */}
+                <Select value={priceRange} onValueChange={setPriceRange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Mức giá" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả mức giá</SelectItem>
+                    <SelectItem value="under-1m">Dưới 1 triệu</SelectItem>
+                    <SelectItem value="1m-1.5m">1 - 1.5 triệu</SelectItem>
+                    <SelectItem value="above-1.5m">Trên 1.5 triệu</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Active Filters Display */}
+              {(selectedLocation !== "all" ||
+                selectedCarType !== "all" ||
+                priceRange !== "all") && (
+                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
+                  <span className="text-sm text-gray-600">
+                    Bộ lọc đang áp dụng:
+                  </span>
+                  {selectedLocation !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {
+                        locations.find((l) => l.value === selectedLocation)
+                          ?.label
+                      }
+                    </Badge>
+                  )}
+                  {selectedCarType !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Car className="w-3 h-3" />
+                      {selectedCarType}
+                    </Badge>
+                  )}
+                  {priceRange !== "all" && (
+                    <Badge variant="secondary">
+                      {priceRange === "under-1m" && "< 1 triệu"}
+                      {priceRange === "1m-1.5m" && "1-1.5 triệu"}
+                      {priceRange === "above-1.5m" && "> 1.5 triệu"}
+                    </Badge>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => {
+                      setSelectedLocation("all");
+                      setSelectedCarType("all");
+                      setPriceRange("all");
+                    }}
+                  >
+                    Xóa bộ lọc
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Results Header */}
+      <section className="bg-white py-4 border-b">
+        <div className="max-w-7xl mx-auto px-5">
+          <div className="flex items-center justify-between">
+            <p className="text-gray-600">
+              Tìm thấy{" "}
+              <span className="font-semibold text-gray-900">12 xe</span> khả
+              dụng
+            </p>
+            <Button variant="outline" size="sm">
+              <SlidersHorizontal className="w-4 h-4 mr-2" />
+              Sắp xếp
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Search & Filter Section OLD */}
+      <section className="bg-white py-8 border-b hidden">
         <div className="max-w-7xl mx-auto px-5">
           <div className="flex gap-4 items-center">
             <div className="flex-1 relative">
@@ -340,6 +499,7 @@ export default function SelfDrive() {
               {cars.map((car) => (
                 <Card
                   key={car.id}
+                  onClick={() => navigate(`/car/${car.id}`)}
                   className="rounded-3xl overflow-hidden border border-gray-200 transition-all hover:-translate-y-2 hover:shadow-2xl cursor-pointer"
                 >
                   <div className="relative h-56 overflow-hidden">
@@ -388,12 +548,10 @@ export default function SelfDrive() {
                           • {car.trips} chuyến
                         </span>
                       </div>
-                      <Link to={`/car/${car.id}`}>
-                        <Button className="bg-green-500 hover:bg-green-600 text-white rounded-xl px-4 py-2 font-semibold transition-all hover:translate-x-1">
-                          Thuê xe
-                          <ChevronRight className="ml-1 h-4 w-4" />
-                        </Button>
-                      </Link>
+                      <Button className="bg-green-500 hover:bg-green-600 text-white rounded-xl px-4 py-2 font-semibold transition-all hover:translate-x-1">
+                        Thuê xe
+                        <ChevronRight className="ml-1 h-4 w-4" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
