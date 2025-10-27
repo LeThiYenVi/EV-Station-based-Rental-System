@@ -16,6 +16,14 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useMessage } from "@/components/ui/message";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   User,
   Mail,
   Phone,
@@ -31,11 +39,33 @@ import {
   FileText,
   CreditCard,
   Lock,
+  Eye,
+  Car,
+  Clock,
 } from "lucide-react";
+
+interface BookingOrder {
+  bookingId: string;
+  carName: string;
+  carImage: string;
+  pickupDate: string;
+  pickupTime: string;
+  returnDate: string;
+  returnTime: string;
+  pickupLocation: string;
+  total: number;
+  status: "completed" | "pending" | "cancelled" | "confirmed";
+  createdAt: string;
+  paymentMethod: string;
+  duration?: string;
+}
 
 export default function UserProfile() {
   const navigate = useNavigate();
   const { contextHolder, showSuccess, showError, showWarning } = useMessage();
+
+  // Booking Orders State
+  const [bookingOrders, setBookingOrders] = useState<BookingOrder[]>([]);
 
   // User Data State
   const [userData, setUserData] = useState({
@@ -91,6 +121,28 @@ export default function UserProfile() {
         fullName: username,
         memberSince: new Date().toLocaleDateString("vi-VN"),
       });
+    }
+
+    // Load booking orders from localStorage
+    const savedOrders = localStorage.getItem("bookingOrders");
+    if (savedOrders) {
+      const parsedOrders = JSON.parse(savedOrders);
+      setBookingOrders(parsedOrders);
+
+      // Update user statistics based on orders
+      const completed = parsedOrders.filter(
+        (order: BookingOrder) => order.status === "completed",
+      ).length;
+      const total = parsedOrders.length;
+
+      setUserData((prev) => ({
+        ...prev,
+        totalTrips: total,
+        completedTrips: completed,
+        cancelledTrips: parsedOrders.filter(
+          (order: BookingOrder) => order.status === "cancelled",
+        ).length,
+      }));
     }
   }, []);
 
@@ -154,6 +206,37 @@ export default function UserProfile() {
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      completed: {
+        label: "Hoàn thành",
+        className: "bg-green-500 text-white hover:bg-green-600",
+      },
+      pending: {
+        label: "Chờ xác nhận",
+        className: "bg-yellow-500 text-white hover:bg-yellow-600",
+      },
+      confirmed: {
+        label: "Đã xác nhận",
+        className: "bg-blue-500 text-white hover:bg-blue-600",
+      },
+      cancelled: {
+        label: "Đã hủy",
+        className: "bg-red-500 text-white hover:bg-red-600",
+      },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig];
+    return <Badge className={config.className}>{config.label}</Badge>;
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
   };
 
   return (
@@ -367,7 +450,7 @@ export default function UserProfile() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="idNumber">CCCD/CMND</Label>
+                    <Label htmlFor="idNumber">CCCD/CMND/CC</Label>
                     <Input
                       id="idNumber"
                       value={userData.idNumber}
@@ -716,13 +799,27 @@ export default function UserProfile() {
           <TabsContent value="trips" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Lịch sử thuê xe</CardTitle>
-                <CardDescription>Xem lại các chuyến đi của bạn</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Lịch sử thuê xe</CardTitle>
+                    <CardDescription>
+                      Xem lại tất cả các chuyến đi của bạn
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/history")}
+                    className="flex items-center gap-2"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Xem tất cả
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                {userData.totalTrips === 0 ? (
+                {bookingOrders.length === 0 ? (
                   <div className="text-center py-12">
-                    <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <Car className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
                       Chưa có chuyến đi nào
                     </h3>
@@ -735,30 +832,169 @@ export default function UserProfile() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg hover:border-green-500 transition">
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-gray-200 rounded"></div>
-                        <div>
-                          <h4 className="font-semibold">VinFast VF 8 Plus</h4>
-                          <p className="text-sm text-gray-600">
-                            15/10/2025 - 18/10/2025
-                          </p>
-                          <Badge className="bg-green-500 text-white mt-1">
-                            Hoàn thành
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-green-600">
-                          5.418.000đ
-                        </p>
-                        <Button variant="outline" size="sm" className="mt-2">
-                          Xem chi tiết
+                  <>
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[100px]">Mã đơn</TableHead>
+                            <TableHead>Xe</TableHead>
+                            <TableHead>Thời gian</TableHead>
+                            <TableHead>Địa điểm</TableHead>
+                            <TableHead>Tổng tiền</TableHead>
+                            <TableHead>Trạng thái</TableHead>
+                            <TableHead className="text-right">
+                              Thao tác
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {bookingOrders.slice(0, 5).map((order) => (
+                            <TableRow
+                              key={order.bookingId}
+                              className="hover:bg-gray-50"
+                            >
+                              <TableCell className="font-medium text-xs">
+                                {order.bookingId.slice(-6)}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <img
+                                    src={order.carImage}
+                                    alt={order.carName}
+                                    className="w-12 h-12 rounded object-cover"
+                                  />
+                                  <div>
+                                    <p className="font-medium text-sm">
+                                      {order.carName}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {order.duration || "N/A"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  <div className="flex items-center gap-1 text-gray-600">
+                                    <Calendar className="w-3 h-3" />
+                                    <span>{order.pickupDate}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-gray-500 text-xs">
+                                    <Clock className="w-3 h-3" />
+                                    <span>{order.pickupTime}</span>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-gray-600">
+                                <div className="flex items-start gap-1 max-w-[150px]">
+                                  <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                  <span className="line-clamp-2">
+                                    {order.pickupLocation}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <p className="font-bold text-green-600">
+                                  {formatCurrency(order.total)}
+                                </p>
+                              </TableCell>
+                              <TableCell>
+                                {getStatusBadge(order.status)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    navigate(`/order/${order.bookingId}`)
+                                  }
+                                  className="flex items-center gap-1"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  Chi tiết
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-4">
+                      {bookingOrders.slice(0, 5).map((order) => (
+                        <Card
+                          key={order.bookingId}
+                          className="shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex gap-3 mb-3">
+                              <img
+                                src={order.carImage}
+                                alt={order.carName}
+                                className="w-20 h-20 rounded object-cover"
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between mb-1">
+                                  <h4 className="font-semibold text-sm">
+                                    {order.carName}
+                                  </h4>
+                                  {getStatusBadge(order.status)}
+                                </div>
+                                <p className="text-xs text-gray-500 mb-1">
+                                  Mã: {order.bookingId.slice(-6)}
+                                </p>
+                                <div className="flex items-center gap-1 text-xs text-gray-600">
+                                  <Calendar className="w-3 h-3" />
+                                  <span>{order.pickupDate}</span>
+                                  <span>•</span>
+                                  <Clock className="w-3 h-3" />
+                                  <span>{order.pickupTime}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator className="my-3" />
+
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">
+                                  Tổng tiền
+                                </p>
+                                <p className="text-lg font-bold text-green-600">
+                                  {formatCurrency(order.total)}
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  navigate(`/order/${order.bookingId}`)
+                                }
+                              >
+                                <Eye className="w-3 h-3 mr-1" />
+                                Chi tiết
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
+                    {bookingOrders.length > 5 && (
+                      <div className="mt-6 text-center">
+                        <Button
+                          variant="outline"
+                          onClick={() => navigate("/history")}
+                          className="w-full md:w-auto"
+                        >
+                          Xem tất cả {bookingOrders.length} giao dịch
                         </Button>
                       </div>
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>

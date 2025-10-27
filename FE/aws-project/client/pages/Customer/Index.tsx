@@ -37,12 +37,16 @@ import {
 } from "@/components/ui/carousel";
 import { useMessage } from "@/components/ui/message";
 import { useState, useEffect } from "react";
+import Autoplay from "embla-carousel-autoplay";
 
 export default function Index() {
   const navigate = useNavigate();
   const { contextHolder, showWarning } = useMessage();
   const [activeTab, setActiveTab] = useState("xe-tu-lai");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [longTermLocation, setLongTermLocation] = useState("quy-nhon");
+  const [selfDriveLocation, setSelfDriveLocation] = useState("hcm");
+  const [selfDriveDateTime, setSelfDriveDateTime] = useState("");
 
   useEffect(() => {
     const checkLoginStatus = () => {
@@ -77,7 +81,7 @@ export default function Index() {
     <div>
       {contextHolder}
       {/* Hero */}
-      <section className="relative bg-white overflow-visible pb-32 md:pb-40">
+      <section className="relative bg-white overflow-visible pb-32 md:pb-10">
         <div className="container py-8">
           {/* Hero Image Container */}
           <div className="relative rounded-3xl overflow-hidden">
@@ -121,7 +125,7 @@ export default function Index() {
             >
               {/* Tab Navigation */}
               <div className="flex justify-center mb-0">
-                <TabsList className="inline-flex w-auto bg-white rounded-lg h-14 p-1 shadow-lg">
+                <TabsList className="inline-flex w-auto bg-white rounded-lg h-12 p-1 shadow-lg">
                   <TabsTrigger
                     value="xe-tu-lai"
                     className="flex items-center gap-2 data-[state=active]:bg-green-500 data-[state=active]:text-white text-gray-600 text-sm rounded-md px-6 py-3"
@@ -165,14 +169,24 @@ export default function Index() {
                           <MapPin className="w-5 h-5" />
                           Địa điểm
                         </Label>
-                        <Select>
+                        <Select
+                          value={selfDriveLocation}
+                          onValueChange={setSelfDriveLocation}
+                        >
                           <SelectTrigger className="h-12 text-base">
-                            <SelectValue placeholder="TP. Hồ Chí Minh" />
+                            <SelectValue placeholder="Chọn địa điểm" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="hcm">TP. Hồ Chí Minh</SelectItem>
                             <SelectItem value="hanoi">Hà Nội</SelectItem>
                             <SelectItem value="danang">Đà Nẵng</SelectItem>
+                            <SelectItem value="dalat">Đà Lạt</SelectItem>
+                            <SelectItem value="vungtau">Vũng Tàu</SelectItem>
+                            <SelectItem value="nhatrang">Nha Trang</SelectItem>
+                            <SelectItem value="phuquoc">Phú Quốc</SelectItem>
+                            <SelectItem value="quy-nhon">Quy Nhơn</SelectItem>
+                            <SelectItem value="long-an">Long An</SelectItem>
+                            <SelectItem value="phu-yen">Phú Yên</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -188,13 +202,23 @@ export default function Index() {
                         <div className="flex gap-3">
                           <Input
                             type="text"
+                            value={selfDriveDateTime}
+                            onChange={(e) =>
+                              setSelfDriveDateTime(e.target.value)
+                            }
                             placeholder="21:00, 02/10/2025 - 20:00, 03/10/2025"
                             className="w-full h-12 text-base"
                           />
                           <Button
                             onClick={() =>
                               handleProtectedAction(() => {
-                                // Logic tìm xe
+                                // Logic tìm xe với selfDriveLocation và selfDriveDateTime
+                                navigate("/services/self-drive", {
+                                  state: {
+                                    location: selfDriveLocation,
+                                    dateTime: selfDriveDateTime,
+                                  },
+                                });
                               })
                             }
                             className="bg-green-500 hover:bg-green-600 text-white h-12 px-8 text-base font-semibold whitespace-nowrap"
@@ -211,83 +235,20 @@ export default function Index() {
               <TabsContent value="xe-co-tai-xe" className="mt-1">
                 <Card className="bg-white shadow-xl rounded-2xl border-0">
                   <CardContent className="p-8">
-                    <div className="space-y-6">
-                      {/* Lộ trình Section */}
-                      <div>
-                        <h3 className="text-lg font-semibold mb-4">Lộ trình</h3>
-                        <div className="flex gap-6 mb-4">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="route"
-                              value="noi-thanh"
-                              defaultChecked
-                              className="w-4 h-4 text-green-500 focus:ring-green-500"
-                            />
-                            <span className="text-sm">Nội thành</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="route"
-                              value="lien-tinh"
-                              className="w-4 h-4 text-green-500 focus:ring-green-500"
-                            />
-                            <span className="text-sm">Liên tỉnh</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="route"
-                              value="lien-tinh-1-chieu"
-                              className="w-4 h-4 text-green-500 focus:ring-green-500"
-                            />
-                            <span className="text-sm">Liên tỉnh (1 chiều)</span>
-                          </label>
-                        </div>
-                        <p className="text-xs text-gray-600 mb-6">
-                          Di chuyển nội thành hoặc lân cận, lộ trình tự do.
-                        </p>
+                    <div className="text-center py-12">
+                      <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Clock className="w-10 h-10 text-yellow-600" />
                       </div>
-
-                      {/* Form Fields */}
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor="pickup"
-                            className="flex items-center gap-2 text-sm font-medium"
-                          >
-                            <MapPin className="w-4 h-4" />
-                          </Label>
-                          <Input
-                            placeholder="Tôi muốn đón tại..."
-                            className="h-10"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="time" className="text-sm font-medium">
-                            Thời gian
-                          </Label>
-                          <div className="flex gap-4 items-end">
-                            <Input
-                              type="text"
-                              placeholder="08:00, 03/10/2025 - 10:00, 03/10/2025"
-                              className="flex-1 h-10"
-                            />
-                            <Button
-                              onClick={() =>
-                                handleProtectedAction(() => {
-                                  // Logic tìm xe
-                                })
-                              }
-                              className="bg-green-500 hover:bg-green-600 text-white h-10 px-6"
-                            >
-                              Tìm Xe
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+                      <h3 className="text-2xl font-bold mb-3 text-gray-900">
+                        Tính năng sắp ra mắt
+                      </h3>
+                      <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                        Dịch vụ thuê xe có tài xế đang được hoàn thiện và sẽ sớm
+                        có mặt để phục vụ bạn.
+                      </p>
+                      <Badge className="bg-yellow-500 text-white px-6 py-2 text-base">
+                        Coming Soon
+                      </Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -303,21 +264,37 @@ export default function Index() {
                           className="flex items-center gap-2 text-sm font-medium"
                         >
                           <MapPin className="w-4 h-4" />
-                          Địa điểm áp dụng hiện tại
+                          Chọn địa điểm
                         </Label>
                         <div className="flex gap-4 items-end">
-                          <Input
-                            value="TP. Hồ Chí Minh"
-                            readOnly
-                            className="bg-gray-50 flex-1 h-10"
-                          />
+                          <Select
+                            value={longTermLocation}
+                            onValueChange={setLongTermLocation}
+                          >
+                            <SelectTrigger className="flex-1 h-12">
+                              <SelectValue placeholder="Chọn địa điểm" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="quy-nhon">Quy Nhơn</SelectItem>
+                              <SelectItem value="phu-quoc">Phú Quốc</SelectItem>
+                              <SelectItem value="long-an">Long An</SelectItem>
+                              <SelectItem value="phu-yen">Phú Yên</SelectItem>
+                              <SelectItem value="da-lat">Đà Lạt</SelectItem>
+                              <SelectItem value="vung-tau">Vũng Tàu</SelectItem>
+                              <SelectItem value="nha-trang">
+                                Nha Trang
+                              </SelectItem>
+                              <SelectItem value="da-nang">Đà Nẵng</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <Button
                             onClick={() =>
                               handleProtectedAction(() => {
-                                // Logic tìm xe
+                                // Logic tìm xe với longTermLocation
+                                navigate(`/place/${longTermLocation}`);
                               })
                             }
-                            className="bg-green-500 hover:bg-green-600 text-white h-10 px-6"
+                            className="bg-green-500 hover:bg-green-600 text-white h-12 px-6"
                           >
                             Tìm Xe
                           </Button>
@@ -335,9 +312,19 @@ export default function Index() {
       {/* Xe Dành Cho Bạn */}
       <section className="py-16 bg-gray-50">
         <div className="container max-w-[75%] mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-black">
-            Xe Dành Cho Bạn
-          </h2>
+          <div className="flex items-center justify-between mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-black">
+              Xe Dành Cho Bạn
+            </h2>
+            <Button
+              variant="outline"
+              className="border-green-500 text-green-600 hover:bg-green-50 font-semibold"
+              onClick={() => navigate("/services/self-drive")}
+            >
+              Xem tất cả
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {[
@@ -534,6 +521,13 @@ export default function Index() {
               align: "start",
               loop: true,
             }}
+            plugins={[
+              Autoplay({
+                delay: 3000,
+                stopOnInteraction: true,
+                stopOnMouseEnter: true,
+              }),
+            ]}
             className="w-full"
           >
             <CarouselContent className="-ml-4">
@@ -542,48 +536,59 @@ export default function Index() {
                   name: "Quy Nhơn",
                   cars: "150+ xe",
                   image: "/mocks/city/binhdinh.jpg",
+                  slug: "quy-nhon",
                 },
                 {
                   name: "Phú Quốc",
                   cars: "150+ xe",
                   image: "/mocks/city/phuquoc.jpg",
+                  slug: "phu-quoc",
                 },
                 {
                   name: "Long An",
                   cars: "100+ xe",
                   image: "/mocks/city/longan.jpg",
+                  slug: "long-an",
                 },
                 {
                   name: "Phú Yên",
                   cars: "100+ xe",
                   image: "/mocks/city/phuyen.jpg",
+                  slug: "phu-yen",
                 },
                 {
                   name: "Đà Lạt",
                   cars: "200+ xe",
                   image: "/mocks/city/dalat.webp",
+                  slug: "da-lat",
                 },
                 {
                   name: "Vũng Tàu",
                   cars: "180+ xe",
                   image: "/mocks/city/vungtau.jpg",
+                  slug: "vung-tau",
                 },
                 {
                   name: "Nha Trang",
                   cars: "250+ xe",
                   image: "/mocks/city/nhatrang.jpg",
+                  slug: "nha-trang",
                 },
                 {
                   name: "Đà Nẵng",
                   cars: "300+ xe",
                   image: "/mocks/city/danang.jpg",
+                  slug: "da-nang",
                 },
               ].map((location, index) => (
                 <CarouselItem
                   key={index}
                   className="pl-4 md:basis-1/2 lg:basis-1/4"
                 >
-                  <div className="relative group cursor-pointer overflow-hidden rounded-3xl h-[400px]">
+                  <div
+                    className="relative group cursor-pointer overflow-hidden rounded-3xl h-[400px]"
+                    onClick={() => navigate(`/place/${location.slug}`)}
+                  >
                     <div
                       className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
                       style={{
@@ -672,7 +677,12 @@ export default function Index() {
                     },
                   ].map((airport, index) => (
                     <CarouselItem key={index} className="pl-4 basis-auto">
-                      <div className="bg-gray-50 rounded-2xl p-6 hover:bg-gray-100 transition cursor-pointer min-w-[200px]">
+                      <div className="bg-gray-50 rounded-2xl p-6 hover:bg-gray-100 transition cursor-not-allowed relative min-w-[200px] opacity-60">
+                        <div className="absolute top-2 right-2 z-10">
+                          <Badge className="bg-yellow-500 text-white">
+                            Coming Soon
+                          </Badge>
+                        </div>
                         <div className="flex flex-col items-center gap-4">
                           <div className="relative w-24 h-24 rounded-full overflow-hidden shadow-md">
                             <div
@@ -994,13 +1004,18 @@ export default function Index() {
             <div className="cta-card-item">
               <div
                 style={{ marginTop: "65px" }}
-                className="cta-card-image-overlay"
+                className="cta-card-image-overlay relative"
               >
                 <img
                   src="/mocks/thue_xe_oto_tu_lai_va_co_tai.9df79c9f.png"
                   alt="Tài xế của bạn đã đến"
-                  className="cta-image"
+                  className="cta-image opacity-60"
                 />
+                <div className="absolute top-4 right-4 z-10">
+                  <Badge className="bg-yellow-500 text-white text-lg px-4 py-2">
+                    Coming Soon
+                  </Badge>
+                </div>
                 <div className="cta-overlay-content">
                   <h3 style={{ marginLeft: "198px" }}>
                     Tài xế của bạn đã đến!
@@ -1010,12 +1025,8 @@ export default function Index() {
                   </p>
                   <button
                     style={{ marginLeft: "320px" }}
-                    className="cta-btn secondary"
-                    onClick={() =>
-                      handleProtectedAction(() => {
-                        navigate("/services/chauffeur");
-                      })
-                    }
+                    className="cta-btn secondary opacity-60 cursor-not-allowed"
+                    disabled
                   >
                     Thuê xe có tài xế
                   </button>
