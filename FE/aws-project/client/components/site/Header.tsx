@@ -12,6 +12,7 @@ import { useMessage } from "@/components/ui/message";
 import "./Header.css";
 
 const links = [
+  { href: "/nearly-stations", label: "Tìm trạm gần bạn" },
   { href: "/about", label: "Về chúng tôi" },
   { href: "/news", label: "Tin tức" },
   { href: "/history", label: "Lịch sử giao dịch" },

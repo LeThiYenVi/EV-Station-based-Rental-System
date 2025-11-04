@@ -24,6 +24,7 @@ import ResultDemo from "./pages/ResultDemo";
 import ComponentsDemo from "./pages/ComponentsDemo";
 import NotFound from "./pages/NotFound";
 import { Layout } from "@/components/site/Layout";
+import NearlyStations from "./pages/Customer/GeoStation/NearlyStations";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,14 @@ const App = () => (
             element={
               <Layout>
                 <Index />
+              </Layout>
+            }
+          />
+          <Route
+            path="/nearly-stations"
+            element={
+              <Layout>
+                <NearlyStations/>
               </Layout>
             }
           />
