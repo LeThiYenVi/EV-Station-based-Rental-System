@@ -13,7 +13,7 @@ export function Footer() {
               <svg viewBox="0 0 120 40" className="footer-logo-svg">
                 <rect x="0" y="8" width="30" height="24" rx="4" fill="#4ade80"/>
                 <rect x="35" y="8" width="30" height="24" rx="4" fill="#4ade80"/>
-                <text x="75" y="20" fontSize="18" fontWeight="bold" fill="#1a1a1a">MIOTO</text>
+                <text x="75" y="20" fontSize="18" fontWeight="bold" fill="#1a1a1a">BF Car Rental</text>
               </svg>
             </div>
             
@@ -26,10 +26,10 @@ export function Footer() {
               </div>
               
               <div className="footer-email">
-                <strong>contact@mioto.vn</strong>
+                <strong>contact@BF Car Rental.vn</strong>
               </div>
               <div className="footer-email-desc">
-                Gửi mail cho Mioto
+                Gửi mail cho BF Car Rental
               </div>
             </div>
             
@@ -72,10 +72,10 @@ export function Footer() {
           <div className="footer-section">
             <h3 className="footer-section-title">Đối Tác</h3>
             <ul className="footer-links">
-              <li><Link to="/about" className="footer-link">Về Mioto</Link></li>
-              <li><Link to="/blog" className="footer-link">Mioto Blog</Link></li>
+              <li><Link to="/about" className="footer-link">Về BF Car Rental</Link></li>
+              <li><Link to="/blog" className="footer-link">BF Car Rental Blog</Link></li>
               <li><Link to="/recruitment" className="footer-link">Tuyển dụng</Link></li>
-              <li><Link to="/register/owner" className="footer-link">Đăng ký chủ xe Mioto</Link></li>
+              <li><Link to="/register/owner" className="footer-link">Đăng ký chủ xe BF Car Rental</Link></li>
               <li><Link to="/register/gps" className="footer-link">Đăng ký GPS MITRACK 4G</Link></li>
               <li><Link to="/register/longterm" className="footer-link">Đăng ký cho thuê xe dài hạn MICAR</Link></li>
             </ul>
@@ -85,7 +85,7 @@ export function Footer() {
         {/* Company Registration Info */}
         <div className="footer-registration">
           <div className="footer-reg-row">
-            <span>© Công ty Cổ phần Mioto Asia</span>
+            <span>© Công ty Cổ phần BF Car Rental Asia</span>
             <span>Số GCNĐKDN: 0317307544</span>
             <span>Ngày cấp: 24-05-22</span>
             <span>Nơi cấp: Sở kế hoạch và Đầu tư TP.HCM</span>
@@ -96,7 +96,7 @@ export function Footer() {
           </div>
           
           <div className="footer-reg-row">
-            <span>Tên TK: CT CP MIOTO ASIA</span>
+            <span>Tên TK: CT CP BF Car Rental ASIA</span>
             <span>Số TK: 102-989-1989</span>
             <span>Ngân hàng Vietcombank - CN Tân Định</span>
           </div>

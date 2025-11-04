@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { useMessage } from "@/components/ui/message";
 
 // Tài khoản test
 const TEST_ACCOUNTS = {
@@ -24,7 +24,7 @@ const TEST_ACCOUNTS = {
 export default function Login() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { contextHolder, showSuccess, showError, showWarning } = useMessage();
 
   const initialMode =
     searchParams.get("mode") === "register" ? "register" : "login";
@@ -59,11 +59,7 @@ export default function Login() {
 
     // Kiểm tra captcha
     if (loginData.captcha.toLowerCase() !== captchaText.toLowerCase()) {
-      toast({
-        title: "Lỗi",
-        description: "Captcha không đúng!",
-        variant: "destructive",
-      });
+      showError("Captcha không đúng!");
       return;
     }
 
@@ -84,10 +80,16 @@ export default function Login() {
     );
 
     if (isValidAccount && userRole) {
-      toast({
-        title: "Đăng nhập thành công!",
-        description: `Chào mừng ${loginData.username}`,
-      });
+      // Save login status to localStorage
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("username", loginData.username);
+      localStorage.setItem("userRole", userRole);
+
+      // Dispatch custom event to notify header
+      window.dispatchEvent(new Event("loginStatusChanged"));
+
+      showSuccess(`Đăng nhập thành công! Chào mừng ${loginData.username}`);
+
       // Điều hướng dựa vào role sau khi đăng nhập thành công
       setTimeout(() => {
         if (userRole === "admin") {
@@ -99,12 +101,9 @@ export default function Login() {
         }
       }, 1000);
     } else {
-      toast({
-        title: "Đăng nhập thất bại",
-        description:
-          "Tài khoản hoặc mật khẩu không đúng. Thử: admin/admin123, staff/staff123 hoặc user/user123",
-        variant: "destructive",
-      });
+      showError(
+        "Tài khoản hoặc mật khẩu không đúng. Thử: admin/admin123, staff/staff123 hoặc user/user123",
+      );
     }
   };
 
@@ -113,42 +112,31 @@ export default function Login() {
 
     // Kiểm tra captcha
     if (registerData.captcha.toLowerCase() !== captchaText.toLowerCase()) {
-      toast({
-        title: "Lỗi",
-        description: "Captcha không đúng!",
-        variant: "destructive",
-      });
+      showError("Captcha không đúng!");
       return;
     }
 
     // Kiểm tra mật khẩu khớp
     if (registerData.password !== registerData.confirmPassword) {
-      toast({
-        title: "Lỗi",
-        description: "Mật khẩu xác nhận không khớp!",
-        variant: "destructive",
-      });
+      showError("Mật khẩu xác nhận không khớp!");
       return;
     }
 
-    toast({
-      title: "Đăng ký thành công!",
-      description: "Tài khoản của bạn đã được tạo. Vui lòng đăng nhập.",
-    });
+    showSuccess(
+      "Đăng ký thành công! Tài khoản của bạn đã được tạo. Vui lòng đăng nhập.",
+    );
 
     // Chuyển sang tab đăng nhập
     setActiveTab("login");
   };
 
   const refreshCaptcha = () => {
-    toast({
-      title: "Captcha đã được làm mới",
-      description: "Captcha mới: " + captchaText,
-    });
+    showWarning("Captcha đã được làm mới: " + captchaText);
   };
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 md:p-8">
+      {contextHolder}
       {/* Background Image with Blur */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"

@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,15 +35,53 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { useState } from "react";
+import { useMessage } from "@/components/ui/message";
+import { useState, useEffect } from "react";
+import Autoplay from "embla-carousel-autoplay";
 
 export default function Index() {
+  const navigate = useNavigate();
+  const { contextHolder, showWarning } = useMessage();
   const [activeTab, setActiveTab] = useState("xe-tu-lai");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [longTermLocation, setLongTermLocation] = useState("quy-nhon");
+  const [selfDriveLocation, setSelfDriveLocation] = useState("hcm");
+  const [selfDriveDateTime, setSelfDriveDateTime] = useState("");
+
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+      setIsLoggedIn(loggedIn);
+    };
+
+    checkLoginStatus();
+    window.addEventListener("loginStatusChanged", checkLoginStatus);
+
+    return () => {
+      window.removeEventListener("loginStatusChanged", checkLoginStatus);
+    };
+  }, []);
+
+  const handleProtectedAction = (callback: () => void) => {
+    if (!isLoggedIn) {
+      showWarning("Vui lòng đăng nhập để sử dụng tính năng này");
+    } else {
+      callback();
+    }
+  };
+
+  const handleCarClick = (e: React.MouseEvent, carId: number) => {
+    e.preventDefault();
+    handleProtectedAction(() => {
+      navigate(`/car/${carId}`);
+    });
+  };
 
   return (
     <div>
+      {contextHolder}
       {/* Hero */}
-      <section className="relative bg-white overflow-visible pb-32 md:pb-40">
+      <section className="relative bg-white overflow-visible pb-32 md:pb-10">
         <div className="container py-8">
           {/* Hero Image Container */}
           <div className="relative rounded-3xl overflow-hidden">
@@ -86,7 +125,7 @@ export default function Index() {
             >
               {/* Tab Navigation */}
               <div className="flex justify-center mb-0">
-                <TabsList className="inline-flex w-auto bg-white rounded-lg h-14 p-1 shadow-lg">
+                <TabsList className="inline-flex w-auto bg-white rounded-lg h-12 p-1 shadow-lg">
                   <TabsTrigger
                     value="xe-tu-lai"
                     className="flex items-center gap-2 data-[state=active]:bg-green-500 data-[state=active]:text-white text-gray-600 text-sm rounded-md px-6 py-3"
@@ -130,14 +169,24 @@ export default function Index() {
                           <MapPin className="w-5 h-5" />
                           Địa điểm
                         </Label>
-                        <Select>
+                        <Select
+                          value={selfDriveLocation}
+                          onValueChange={setSelfDriveLocation}
+                        >
                           <SelectTrigger className="h-12 text-base">
-                            <SelectValue placeholder="TP. Hồ Chí Minh" />
+                            <SelectValue placeholder="Chọn địa điểm" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="hcm">TP. Hồ Chí Minh</SelectItem>
                             <SelectItem value="hanoi">Hà Nội</SelectItem>
                             <SelectItem value="danang">Đà Nẵng</SelectItem>
+                            <SelectItem value="dalat">Đà Lạt</SelectItem>
+                            <SelectItem value="vungtau">Vũng Tàu</SelectItem>
+                            <SelectItem value="nhatrang">Nha Trang</SelectItem>
+                            <SelectItem value="phuquoc">Phú Quốc</SelectItem>
+                            <SelectItem value="quy-nhon">Quy Nhơn</SelectItem>
+                            <SelectItem value="long-an">Long An</SelectItem>
+                            <SelectItem value="phu-yen">Phú Yên</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -153,10 +202,27 @@ export default function Index() {
                         <div className="flex gap-3">
                           <Input
                             type="text"
+                            value={selfDriveDateTime}
+                            onChange={(e) =>
+                              setSelfDriveDateTime(e.target.value)
+                            }
                             placeholder="21:00, 02/10/2025 - 20:00, 03/10/2025"
                             className="w-full h-12 text-base"
                           />
-                          <Button className="bg-green-500 hover:bg-green-600 text-white h-12 px-8 text-base font-semibold whitespace-nowrap">
+                          <Button
+                            onClick={() =>
+                              handleProtectedAction(() => {
+                                // Logic tìm xe với selfDriveLocation và selfDriveDateTime
+                                navigate("/services/self-drive", {
+                                  state: {
+                                    location: selfDriveLocation,
+                                    dateTime: selfDriveDateTime,
+                                  },
+                                });
+                              })
+                            }
+                            className="bg-green-500 hover:bg-green-600 text-white h-12 px-8 text-base font-semibold whitespace-nowrap"
+                          >
                             Tìm Xe
                           </Button>
                         </div>
@@ -169,76 +235,20 @@ export default function Index() {
               <TabsContent value="xe-co-tai-xe" className="mt-1">
                 <Card className="bg-white shadow-xl rounded-2xl border-0">
                   <CardContent className="p-8">
-                    <div className="space-y-6">
-                      {/* Lộ trình Section */}
-                      <div>
-                        <h3 className="text-lg font-semibold mb-4">Lộ trình</h3>
-                        <div className="flex gap-6 mb-4">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="route"
-                              value="noi-thanh"
-                              defaultChecked
-                              className="w-4 h-4 text-green-500 focus:ring-green-500"
-                            />
-                            <span className="text-sm">Nội thành</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="route"
-                              value="lien-tinh"
-                              className="w-4 h-4 text-green-500 focus:ring-green-500"
-                            />
-                            <span className="text-sm">Liên tỉnh</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="route"
-                              value="lien-tinh-1-chieu"
-                              className="w-4 h-4 text-green-500 focus:ring-green-500"
-                            />
-                            <span className="text-sm">Liên tỉnh (1 chiều)</span>
-                          </label>
-                        </div>
-                        <p className="text-xs text-gray-600 mb-6">
-                          Di chuyển nội thành hoặc lân cận, lộ trình tự do.
-                        </p>
+                    <div className="text-center py-12">
+                      <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Clock className="w-10 h-10 text-yellow-600" />
                       </div>
-
-                      {/* Form Fields */}
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor="pickup"
-                            className="flex items-center gap-2 text-sm font-medium"
-                          >
-                            <MapPin className="w-4 h-4" />
-                          </Label>
-                          <Input
-                            placeholder="Tôi muốn đón tại..."
-                            className="h-10"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="time" className="text-sm font-medium">
-                            Thời gian
-                          </Label>
-                          <div className="flex gap-4 items-end">
-                            <Input
-                              type="text"
-                              placeholder="08:00, 03/10/2025 - 10:00, 03/10/2025"
-                              className="flex-1 h-10"
-                            />
-                            <Button className="bg-green-500 hover:bg-green-600 text-white h-10 px-6">
-                              Tìm Xe
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+                      <h3 className="text-2xl font-bold mb-3 text-gray-900">
+                        Tính năng sắp ra mắt
+                      </h3>
+                      <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                        Dịch vụ thuê xe có tài xế đang được hoàn thiện và sẽ sớm
+                        có mặt để phục vụ bạn.
+                      </p>
+                      <Badge className="bg-yellow-500 text-white px-6 py-2 text-base">
+                        Coming Soon
+                      </Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -254,15 +264,38 @@ export default function Index() {
                           className="flex items-center gap-2 text-sm font-medium"
                         >
                           <MapPin className="w-4 h-4" />
-                          Địa điểm áp dụng hiện tại
+                          Chọn địa điểm
                         </Label>
                         <div className="flex gap-4 items-end">
-                          <Input
-                            value="TP. Hồ Chí Minh"
-                            readOnly
-                            className="bg-gray-50 flex-1 h-10"
-                          />
-                          <Button className="bg-green-500 hover:bg-green-600 text-white h-10 px-6">
+                          <Select
+                            value={longTermLocation}
+                            onValueChange={setLongTermLocation}
+                          >
+                            <SelectTrigger className="flex-1 h-12">
+                              <SelectValue placeholder="Chọn địa điểm" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="quy-nhon">Quy Nhơn</SelectItem>
+                              <SelectItem value="phu-quoc">Phú Quốc</SelectItem>
+                              <SelectItem value="long-an">Long An</SelectItem>
+                              <SelectItem value="phu-yen">Phú Yên</SelectItem>
+                              <SelectItem value="da-lat">Đà Lạt</SelectItem>
+                              <SelectItem value="vung-tau">Vũng Tàu</SelectItem>
+                              <SelectItem value="nha-trang">
+                                Nha Trang
+                              </SelectItem>
+                              <SelectItem value="da-nang">Đà Nẵng</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            onClick={() =>
+                              handleProtectedAction(() => {
+                                // Logic tìm xe với longTermLocation
+                                navigate(`/place/${longTermLocation}`);
+                              })
+                            }
+                            className="bg-green-500 hover:bg-green-600 text-white h-12 px-6"
+                          >
                             Tìm Xe
                           </Button>
                         </div>
@@ -278,196 +311,199 @@ export default function Index() {
 
       {/* Xe Dành Cho Bạn */}
       <section className="py-16 bg-gray-50">
-        <div className="container">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-black">
-            Xe Dành Cho Bạn
-          </h2>
+        <div className="container max-w-[75%] mx-auto">
+          <div className="flex items-center justify-between mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-black">
+              Xe Dành Cho Bạn
+            </h2>
+            <Button
+              variant="outline"
+              className="border-green-500 text-green-600 hover:bg-green-50 font-semibold"
+              onClick={() => navigate("/services/self-drive")}
+            >
+              Xem tất cả
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {[
               {
-                name: "MG5 LUXURY 2022",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
+                name: "VinFast VF 3",
+                image:
+                  "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
+                badge: "Miễn phí sóc",
+                transmission: "Minicar",
+                seats: "4 chỗ",
+                fuel: "210km (NEDC)",
+                rating: "460km (NEDC)",
+                originalPrice: "Dung tích cốp 285L",
+                price: "590.000",
+              },
+              {
+                name: "VinFast VF 6 Plus",
+                image:
+                  "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
+                badge: "Miễn phí sóc",
+                transmission: "B-SUV",
                 seats: "5 chỗ",
-                fuel: "Xăng",
-                location: "Phường Linh Đông, TP Thủ Đức",
-                rating: "5.0",
-                trips: "54 Chuyến",
-                price: "762K",
-                originalPrice: "445K",
+                fuel: "460km (NEDC)",
+                rating: "460km (NEDC)",
+                originalPrice: "Dung tích cốp 423L",
+                price: "1.250.000",
               },
               {
-                name: "MG5 LUXURY 2022",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
+                name: "VinFast VF 6S",
+                image:
+                  "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop",
+                badge: "Hết xe",
+                transmission: "B-SUV",
                 seats: "5 chỗ",
-                fuel: "Xăng",
-                location: "Phường Hiệp Bình Chánh, TP Thủ Đức",
-                rating: "5.0",
-                trips: "53 Chuyến",
-                price: "762K",
-                originalPrice: "445K",
+                fuel: "480km (NEDC)",
+                rating: "480km (NEDC)",
+                originalPrice: "Dung tích cốp 423L",
+                price: "1.100.000",
               },
               {
-                name: "MAZDA 6 Luxury 2015",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
+                name: "VinFast VF 5 Plus",
+                image:
+                  "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&h=600&fit=crop",
+                badge: "Miễn phí sóc",
+                transmission: "A-SUV",
                 seats: "5 chỗ",
-                fuel: "Xăng",
-                location: "Phường Hiệp Bình Chánh, TP Thủ Đức",
-                rating: "5.0",
-                trips: "38 Chuyến",
-                price: "610K",
-                originalPrice: "496K",
+                fuel: "380km (NEDC)",
+                rating: "380km (NEDC)",
+                originalPrice: "Dung tích cốp 310L",
+                price: "890.000",
               },
               {
-                name: "MITSUBISHI OUTLANDER Premium",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
-                seats: "7 chỗ",
-                fuel: "Xăng",
-                location: "Phường Hiệp Bình Chánh, TP Thủ Đức",
-                rating: "5.0",
-                trips: "52 Chuyến",
-                price: "884K",
-                originalPrice: "530K",
-              },
-              {
-                name: "TOYOTA FORTUNER 2014",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
-                seats: "7 chỗ",
-                fuel: "Xăng",
-                location: "Phường Linh Đông, TP Thủ Đức",
-                rating: "5.0",
-                trips: "16 Chuyến",
-                price: "805K",
-                originalPrice: "483K",
-              },
-              {
-                name: "KIA SORENTO DELUXE 2018",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
-                seats: "7 chỗ",
-                fuel: "Xăng",
-                location: "Phường Hiệp Bình Chánh, TP Thủ Đức",
-                rating: "5.0",
-                trips: "8 Chuyến",
-                price: "867K",
-                originalPrice: "520K",
-              },
-              {
-                name: "MITSUBISHI OUTLANDER 2019",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
-                seats: "7 chỗ",
-                fuel: "Xăng",
-                location: "Phường Linh Đông, TP Thủ Đức",
-                rating: "5.0",
-                trips: "11 Chuyến",
-                price: "848K",
-                originalPrice: "509K",
-              },
-              {
-                name: "MG5 LUXURY 2024",
-                image: "/placeholder.svg",
-                badge: "Miễn thế chấp",
-                transmission: "Số tự động",
+                name: "VinFast VF 7 Plus",
+                image:
+                  "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
+                badge: "Miễn phí sóc",
+                transmission: "C-SUV",
                 seats: "5 chỗ",
-                fuel: "Xăng",
-                location: "Phường Linh Đông, TP Thủ Đức",
-                rating: "5.0",
-                trips: "65 Chuyến",
-                price: "800K",
-                originalPrice: "480K",
+                fuel: "450km (NEDC)",
+                rating: "450km (NEDC)",
+                originalPrice: "Dung tích cốp 520L",
+                price: "1.450.000",
+              },
+              {
+                name: "VinFast VF 8 Plus",
+                image:
+                  "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
+                badge: "Miễn phí sóc",
+                transmission: "C-SUV",
+                seats: "5 chỗ",
+                fuel: "471km (NEDC)",
+                rating: "471km (NEDC)",
+                originalPrice: "Dung tích cốp 534L",
+                price: "1.650.000",
               },
             ].map((car, index) => (
-              <Card
+              <div
                 key={index}
-                className="overflow-hidden hover:shadow-xl transition-shadow cursor-pointer bg-white"
+                onClick={(e) => handleCarClick(e, index + 1)}
+                className="block cursor-pointer"
               >
-                <div className="relative">
-                  <img
-                    src={car.image}
-                    alt={car.name}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="absolute top-3 left-3">
-                    <Badge className="bg-green-500 text-white border-0 flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" />
-                      {car.badge}
-                    </Badge>
+                <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer bg-white border border-gray-200 rounded-2xl">
+                  {/* Image Section */}
+                  <div className="relative">
+                    <img
+                      src={car.image}
+                      alt={car.name}
+                      className="w-full h-56 object-cover"
+                    />
+                    {/* Badge ở góc trên trái */}
+                    <div className="absolute top-3 left-3">
+                      <Badge
+                        className={`${
+                          car.badge === "Hết xe"
+                            ? "bg-red-500 hover:bg-red-600"
+                            : "bg-green-500 hover:bg-green-600"
+                        } text-white border-0 px-3 py-1 text-xs font-medium rounded-md`}
+                      >
+                        {car.badge}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md">
-                    <svg
-                      className="w-5 h-5 text-yellow-500"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  </div>
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-bold text-lg mb-3 text-black">
-                    {car.name}
-                  </h3>
 
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Car className="w-4 h-4" />
-                        <span>{car.transmission}</span>
+                  {/* Content Section */}
+                  <CardContent className="p-5">
+                    {/* Price Section - Chỉ từ */}
+                    <div className="mb-3">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm text-gray-600">Chỉ từ</span>
+                        <span className="text-2xl font-bold text-green-600">
+                          {car.price}
+                        </span>
+                        <span className="text-sm text-gray-600">VNĐ/Ngày</span>
                       </div>
+                    </div>
+
+                    {/* Car Name */}
+                    <h3 className="font-bold text-xl mb-2 text-gray-900">
+                      {car.name}
+                    </h3>
+
+                    {/* Car Type/Category */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <Car className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">
+                        {car.transmission}
+                      </span>
+                    </div>
+
+                    {/* Specifications */}
+                    <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
                       <div className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        <span>{car.seats}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Zap className="w-4 h-4" />
+                        <Zap className="w-4 h-4 text-gray-500" />
                         <span>{car.fuel}</span>
                       </div>
+                      <div className="flex items-center gap-1">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <span>{car.seats}</span>
+                      </div>
                     </div>
-                    <div className="flex items-start gap-1 text-sm text-gray-600">
-                      <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                      <span className="line-clamp-1">{car.location}</span>
-                    </div>
-                  </div>
 
-                  <div className="border-t pt-3 mt-3">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-yellow-500 font-bold">
-                          {car.rating}
-                        </span>
-                        <span className="text-gray-400">★</span>
-                        <span className="text-gray-600 text-sm">
-                          {car.trips}
-                        </span>
+                    {/* Additional Info */}
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <svg
+                          className="w-4 h-4 text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 10V3L4 14h7v7l9-11h-7z"
+                          />
+                        </svg>
+                        <span>{car.rating}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <svg
+                          className="w-4 h-4 text-gray-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                          />
+                        </svg>
+                        <span>{car.originalPrice}</span>
                       </div>
                     </div>
-                    <div className="flex items-end justify-between">
-                      <div>
-                        <div className="text-xl font-bold text-black">
-                          {car.price}
-                          <span className="text-sm">/ngày</span>
-                        </div>
-                        <div className="text-sm text-blue-500 line-through">
-                          {car.originalPrice} giá áp giờ
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             ))}
           </div>
         </div>
@@ -485,6 +521,13 @@ export default function Index() {
               align: "start",
               loop: true,
             }}
+            plugins={[
+              Autoplay({
+                delay: 3000,
+                stopOnInteraction: true,
+                stopOnMouseEnter: true,
+              }),
+            ]}
             className="w-full"
           >
             <CarouselContent className="-ml-4">
@@ -493,48 +536,59 @@ export default function Index() {
                   name: "Quy Nhơn",
                   cars: "150+ xe",
                   image: "/mocks/city/binhdinh.jpg",
+                  slug: "quy-nhon",
                 },
                 {
                   name: "Phú Quốc",
                   cars: "150+ xe",
                   image: "/mocks/city/phuquoc.jpg",
+                  slug: "phu-quoc",
                 },
                 {
                   name: "Long An",
                   cars: "100+ xe",
                   image: "/mocks/city/longan.jpg",
+                  slug: "long-an",
                 },
                 {
                   name: "Phú Yên",
                   cars: "100+ xe",
                   image: "/mocks/city/phuyen.jpg",
+                  slug: "phu-yen",
                 },
                 {
                   name: "Đà Lạt",
                   cars: "200+ xe",
                   image: "/mocks/city/dalat.webp",
+                  slug: "da-lat",
                 },
                 {
                   name: "Vũng Tàu",
                   cars: "180+ xe",
                   image: "/mocks/city/vungtau.jpg",
+                  slug: "vung-tau",
                 },
                 {
                   name: "Nha Trang",
                   cars: "250+ xe",
                   image: "/mocks/city/nhatrang.jpg",
+                  slug: "nha-trang",
                 },
                 {
                   name: "Đà Nẵng",
                   cars: "300+ xe",
                   image: "/mocks/city/danang.jpg",
+                  slug: "da-nang",
                 },
               ].map((location, index) => (
                 <CarouselItem
                   key={index}
                   className="pl-4 md:basis-1/2 lg:basis-1/4"
                 >
-                  <div className="relative group cursor-pointer overflow-hidden rounded-3xl h-[400px]">
+                  <div
+                    className="relative group cursor-pointer overflow-hidden rounded-3xl h-[400px]"
+                    onClick={() => navigate(`/place/${location.slug}`)}
+                  >
                     <div
                       className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
                       style={{
@@ -623,7 +677,12 @@ export default function Index() {
                     },
                   ].map((airport, index) => (
                     <CarouselItem key={index} className="pl-4 basis-auto">
-                      <div className="bg-gray-50 rounded-2xl p-6 hover:bg-gray-100 transition cursor-pointer min-w-[200px]">
+                      <div className="bg-gray-50 rounded-2xl p-6 hover:bg-gray-100 transition cursor-not-allowed relative min-w-[200px] opacity-60">
+                        <div className="absolute top-2 right-2 z-10">
+                          <Badge className="bg-yellow-500 text-white">
+                            Coming Soon
+                          </Badge>
+                        </div>
                         <div className="flex flex-col items-center gap-4">
                           <div className="relative w-24 h-24 rounded-full overflow-hidden shadow-md">
                             <div
@@ -668,9 +727,9 @@ export default function Index() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {[
               {
-                title: "Lái xe an toàn cùng Mioto",
+                title: "Lái xe an toàn cùng BF Car Rental",
                 description:
-                  "Chuyến đi trên Mioto được bảo vệ với Gói bảo hiểm thuê xe tự lái MIC & ĐBV (VNI). Khách thuê xe còn bồi thường tối đa 2.000.000VND trong trường hợp có sự cố ngoài ý muốn.",
+                  "Chuyến đi trên BF Car Rental được bảo vệ với Gói bảo hiểm thuê xe tự lái MIC & ĐBV (VNI). Khách thuê xe còn bồi thường tối đa 2.000.000VND trong trường hợp có sự cố ngoài ý muốn.",
                 image: "/mocks/uudiem/Screenshot 2025-10-02 132842.png",
               },
               {
@@ -682,7 +741,7 @@ export default function Index() {
               {
                 title: "Thủ tục đơn giản",
                 description:
-                  "Chỉ cần có CCCD gắn chip (Hoặc Passport) & Giấy phép lái xe là bạn đã đủ điều kiện thuê xe trên Mioto.",
+                  "Chỉ cần có CCCD gắn chip (Hoặc Passport) & Giấy phép lái xe là bạn đã đủ điều kiện thuê xe trên BF Car Rental.",
                 image: "/mocks/uudiem/Screenshot 2025-10-02 132830.png",
               },
               {
@@ -731,14 +790,14 @@ export default function Index() {
 
       {/* Hướng Dẫn Thuê Xe */}
       <section className="py-16 bg-white">
-        <div className="container">
+        <div className="container max-w-[70%] mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
               Hướng Dẫn Thuê Xe
             </h2>
             <p className="text-gray-600 text-base">
-              Chỉ với 4 bước đơn giản để trải nghiệm thuê xe Mioto một cách
-              nhanh chóng
+              Chỉ với 4 bước đơn giản để trải nghiệm thuê xe BF Car Rental một
+              cách nhanh chóng
             </p>
           </div>
 
@@ -746,7 +805,7 @@ export default function Index() {
             {[
               {
                 step: "01",
-                title: "Đặt xe trên app/web Mioto",
+                title: "Đặt xe trên app/web BF Car Rental",
                 image: "/mocks/huongdan/Screenshot 2025-10-02 132938.png",
                 color: "text-green-500",
               },
@@ -796,8 +855,8 @@ export default function Index() {
         </div>
       </section>
 
-      {/* CTA Section 1 - Bạn muốn biết thêm về Mioto */}
-      {/* CTA Section 1 - Bạn muốn biết thêm về Mioto */}
+      {/* CTA Section 1 - Bạn muốn biết thêm về BF Car Rental */}
+      {/* CTA Section 1 - Bạn muốn biết thêm về BF Car Rental */}
       <section className="py-16 bg-white">
         <div className="bg-gradient-to-br from-green-50 to-green-100 max-w-[80%] mx-auto rounded-3xl p-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
@@ -806,7 +865,7 @@ export default function Index() {
               <div className="relative rounded-3xl overflow-hidden shadow-2xl">
                 <img
                   src="/mocks/thue_xe_co_tai_xe_tphcm_gia_re.84f8483d.png"
-                  alt="Về Mioto"
+                  alt="Về BF Car Rental"
                   className="w-full h-auto object-cover"
                 />
               </div>
@@ -834,16 +893,19 @@ export default function Index() {
               <h2 className="text-3xl md:text-4xl font-bold text-black mb-6">
                 Bạn muốn biết thêm
                 <br />
-                về Mioto?
+                về BF Car Rental?
               </h2>
               <p className="text-gray-700 text-base mb-8 leading-relaxed max-w-md">
-                Mioto kết nối khách hàng có nhu cầu thuê xe với hàng ngàn chủ xe
-                ô tô ở TPHCM, Hà Nội & các tỉnh thành khác. Mioto hướng đến việc
-                xây dựng cộng đồng người dùng ô tô văn minh & uy tín tại Việt
-                Nam.
+                BF Car Rental kết nối khách hàng có nhu cầu thuê xe với hàng
+                ngàn chủ xe ô tô ở TPHCM, Hà Nội & các tỉnh thành khác. BF Car
+                Rental hướng đến việc xây dựng cộng đồng người dùng ô tô văn
+                minh & uy tín tại Việt Nam.
               </p>
-              <Button className="h-12 px-8 text-base bg-green-500 hover:bg-green-600 text-white font-semibold">
-                Tìm hiểu thêm
+              <Button
+                className="h-12 px-8 text-base bg-green-500 hover:bg-green-600 text-white font-semibold"
+                asChild
+              >
+                <Link to="/about">Tìm hiểu thêm</Link>
               </Button>
             </div>
           </div>
@@ -868,7 +930,7 @@ export default function Index() {
                   thuê xe?
                 </h2>
                 <p className="text-gray-700 text-base mb-8 leading-relaxed max-w-md">
-                  Hơn 10.000 chủ xe đang cho thuê hiệu quả trên Mioto
+                  Hơn 10.000 chủ xe đang cho thuê hiệu quả trên BF Car Rental
                   <br />
                   Đăng ký trở thành đối tác của chúng tôi ngay hôm nay để gia
                   <br />
@@ -903,7 +965,7 @@ export default function Index() {
       </section>
 
       <section className="cta-section-new">
-        <div className="container">
+        <div className="container max-w-[90%] mx-auto">
           <div className="cta-header">
             <h2>Dịch Vụ Của BF Car Rental</h2>
           </div>
@@ -924,7 +986,16 @@ export default function Index() {
                     Tự tay cầm lái chiếc xe bạn yêu thích cho hành trình thêm
                     hứng khởi.
                   </p>
-                  <button className="cta-btn primary">Thuê xe tự lái</button>
+                  <button
+                    className="cta-btn primary"
+                    onClick={() =>
+                      handleProtectedAction(() => {
+                        navigate("/services/self-drive");
+                      })
+                    }
+                  >
+                    Thuê xe tự lái
+                  </button>
                 </div>
               </div>
             </div>
@@ -933,13 +1004,18 @@ export default function Index() {
             <div className="cta-card-item">
               <div
                 style={{ marginTop: "65px" }}
-                className="cta-card-image-overlay"
+                className="cta-card-image-overlay relative"
               >
                 <img
                   src="/mocks/thue_xe_oto_tu_lai_va_co_tai.9df79c9f.png"
                   alt="Tài xế của bạn đã đến"
-                  className="cta-image"
+                  className="cta-image opacity-60"
                 />
+                <div className="absolute top-4 right-4 z-10">
+                  <Badge className="bg-yellow-500 text-white text-lg px-4 py-2">
+                    Coming Soon
+                  </Badge>
+                </div>
                 <div className="cta-overlay-content">
                   <h3 style={{ marginLeft: "198px" }}>
                     Tài xế của bạn đã đến!
@@ -949,7 +1025,8 @@ export default function Index() {
                   </p>
                   <button
                     style={{ marginLeft: "320px" }}
-                    className="cta-btn secondary"
+                    className="cta-btn secondary opacity-60 cursor-not-allowed"
+                    disabled
                   >
                     Thuê xe có tài xế
                   </button>
