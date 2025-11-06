@@ -1,33 +1,98 @@
-HELP.md
+# .gitignore cho dự án Java (Maven/Gradle)
+# Bao gồm: build artifacts, IDE files (IntelliJ/Eclipse/NetBeans), hệ điều hành, test reports, và file môi trường
+
+### Build / package ###
+# Maven
 target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+!.mvn/wrapper/maven-wrapper.jar
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
 
-### IntelliJ IDEA ###
-.idea
+### Compiled class files ###
+*.class
+
+### Logs and crash reports ###
+*.log
+logs/
+hs_err_pid*
+
+### Test / reports / coverage ###
+/surefire-reports/
+/failsafe-reports/
+TEST-*.xml
+jacoco.exec
+coverage/
+
+### IDEs ###
+# IntelliJ IDEA
+.idea/
 *.iws
 *.iml
 *.ipr
+out/
 
-### NetBeans ###
+# Eclipse
+.metadata/
+.classpath
+.project
+.settings/
+bin/
+
+# STS
+.apt_generated
+.factorypath
+.springBeans
+.sts4-cache
+
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
+
+# VS Code
+.vscode/
+
+### Generated sources ###
+/generated-sources/
+/generated-test-sources/
+
+### OS generated files ###
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+### Sensitive files / local env ###
+.env
+.env.*
+local.properties
+*.jks
+*.keystore
+
+### Misc / editor temp files ###
+*.swp
+*~
+*.tmp
+*.bak
+*.orig
+
+### Optional: module-level exceptions
+!**/src/main/**/target/
+!**/src/test/**/target/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+# End of file
