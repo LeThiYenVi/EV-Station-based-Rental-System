@@ -1,6 +1,7 @@
 package com.project.evrental.domain.entity;
 
 import com.project.evrental.domain.common.BookingStatus;
+import com.project.evrental.domain.common.BookingType;
 import com.project.evrental.domain.common.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -40,6 +41,10 @@ public class Booking {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "station_id", nullable = false)
     private Station station;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "booking_type")
+    private BookingType bookingType;
 
     @Column(name = "start_time")
     private LocalDateTime startTime;

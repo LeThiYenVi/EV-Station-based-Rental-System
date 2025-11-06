@@ -18,5 +18,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByCognitoSub(String cognitoSub);
 
+    List<User> findByStationIdAndRole(UUID stationId, UserRole role);
+
     boolean existsByEmail(String email);
 }

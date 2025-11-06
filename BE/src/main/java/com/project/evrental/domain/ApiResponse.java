@@ -19,4 +19,5 @@ public class ApiResponse<T> {
     T data;
 
     LocalDateTime responseAt = LocalDateTime.now();
+
 }

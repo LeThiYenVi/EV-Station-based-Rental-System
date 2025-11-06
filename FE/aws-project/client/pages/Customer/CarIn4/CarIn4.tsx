@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "@/components/ui/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +17,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import { useMessage } from "@/components/ui/message";
 import SuccessResult from "@/components/ui/result-success";
 import CardCredit from "@/components/ui/CardCredit";
 import {
@@ -96,7 +97,8 @@ const center = {
 export default function CarIn4() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { contextHolder, showSuccess, showError, showWarning, showInfo } =
+    useMessage();
   const [selectedImage, setSelectedImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showMap, setShowMap] = useState(false);
@@ -124,6 +126,14 @@ export default function CarIn4() {
     "pickup",
   );
   const [deliveryAddress, setDeliveryAddress] = useState("");
+
+  // Additional insurance state
+  const [additionalInsurance, setAdditionalInsurance] = useState(false);
+  const additionalInsuranceFee = 40000; // 40K/ngày
+
+  // Terms acceptance state
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [policyAccepted, setPolicyAccepted] = useState(false);
 
   // Store booking ID (generated once when booking starts)
   const [currentBookingId, setCurrentBookingId] = useState<string>("");
@@ -164,6 +174,11 @@ export default function CarIn4() {
     // Phí dịch vụ (5% giá xe)
     const serviceFee = Math.round(carPrice * 0.05);
 
+    // Bảo hiểm bổ sung (nếu có)
+    const additionalInsuranceCost = additionalInsurance
+      ? additionalInsuranceFee * rentalDays
+      : 0;
+
     // Tiền cọc (5 triệu mặc định)
     const deposit = 5000000;
 
@@ -171,13 +186,19 @@ export default function CarIn4() {
     const discountAmount = Math.round(carPrice * (carData.discount / 100));
 
     // Tổng tiền
-    const total = carPrice + insurance + serviceFee - discountAmount;
+    const total =
+      carPrice +
+      insurance +
+      serviceFee +
+      additionalInsuranceCost -
+      discountAmount;
 
     return {
       duration: `${rentalDays} ngày`,
       carPrice,
       insurance,
       serviceFee,
+      additionalInsurance: additionalInsuranceCost,
       deposit,
       discount: discountAmount,
       total,
@@ -256,11 +277,7 @@ export default function CarIn4() {
 
     // Kiểm tra captcha
     if (loginData.captcha.toLowerCase() !== captchaText.toLowerCase()) {
-      toast({
-        title: "Lỗi",
-        description: "Captcha không đúng!",
-        variant: "destructive",
-      });
+      showError("Captcha không đúng!");
       return;
     }
 
@@ -299,16 +316,10 @@ export default function CarIn4() {
 
       if (hasVerified) {
         setShowPaymentDialog(true);
-        toast({
-          title: "Đăng nhập thành công!",
-          description: `Chào mừng ${loginData.username}`,
-        });
+        showSuccess(`Đăng nhập thành công! Chào mừng ${loginData.username}`);
       } else {
         setShowVerifyDialog(true);
-        toast({
-          title: "Đăng nhập thành công!",
-          description: "Vui lòng xác thực GPLX để tiếp tục",
-        });
+        showInfo("Đăng nhập thành công! Vui lòng xác thực GPLX để tiếp tục");
       }
 
       // Reset login form
@@ -318,12 +329,9 @@ export default function CarIn4() {
         captcha: "",
       });
     } else {
-      toast({
-        title: "Đăng nhập thất bại",
-        description:
-          "Tài khoản hoặc mật khẩu không đúng. Thử: admin/admin123, staff/staff123 hoặc user/user123",
-        variant: "destructive",
-      });
+      showError(
+        "Tài khoản hoặc mật khẩu không đúng. Thử: admin/admin123, staff/staff123 hoặc user/user123",
+      );
     }
   };
 
@@ -371,20 +379,16 @@ export default function CarIn4() {
     }
 
     // Simulate verification process
-    toast({
-      title: "Đang xác thực...",
-      description: "Vui lòng đợi trong giây lát",
-    });
+    showInfo("Đang xác thực... Vui lòng đợi trong giây lát");
 
     setTimeout(() => {
       setIsVerified(true);
       setShowVerifyDialog(false);
       setShowPaymentDialog(true);
 
-      toast({
-        title: "Xác thực thành công!",
-        description: "GPLX của bạn đã được xác thực. Bạn có thể đặt xe ngay.",
-      });
+      showSuccess(
+        "Xác thực thành công! GPLX của bạn đã được xác thực. Bạn có thể đặt xe ngay.",
+      );
     }, 2000);
   };
 
@@ -461,14 +465,12 @@ export default function CarIn4() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast({
-      title: "Đã sao chép!",
-      description: "Nội dung đã được sao chép vào clipboard.",
-    });
+    showSuccess("Đã sao chép! Nội dung đã được sao chép vào clipboard.");
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {contextHolder}
       <div className="mx-auto px-6 sm:px-12 md:px-24 lg:px-[150px] py-8">
         {/* Back Button */}
         <button
@@ -603,8 +605,8 @@ export default function CarIn4() {
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Mô tả</h3>
                 <div className="space-y-3 text-gray-700 text-sm leading-relaxed">
                   <p>
-                    - Ngoài các ưu đãi về giá MICARRO còn hỗ trợ thêm cho Quý
-                    Khách hàng các Chính sách như sau:
+                    - Ngoài các ưu đãi về giá BF Car Rental còn hỗ trợ thêm cho
+                    Quý Khách hàng các Chính sách như sau:
                   </p>
                   <p>* Hoàn Tiền do xăng dư.</p>
                   <p>* Miễn phí vượt dưới 1h.</p>
@@ -832,8 +834,8 @@ export default function CarIn4() {
                   </p>
                   <p>
                     * Tiền giữ chỗ & bồi thường do chủ xe hủy chuyến (nếu có) sẽ
-                    được Mioto hoàn trả đến khách thuê bằng chuyển khoản ngân
-                    hàng trong vòng 1-3 ngày làm việc kể tiếp. Xem thêm{" "}
+                    được BF Car Rental hoàn trả đến khách thuê bằng chuyển khoản
+                    ngân hàng trong vòng 1-3 ngày làm việc kể tiếp. Xem thêm{" "}
                     <button className="text-green-600 font-semibold hover:underline">
                       Thủ tục hoàn tiền & bồi thường hủy chuyến
                     </button>
@@ -940,10 +942,24 @@ export default function CarIn4() {
 
                   <div className="space-y-3">
                     {/* Insurance Option 1 */}
-                    <div className="flex items-start gap-3 p-3 rounded-lg border-2 border-gray-200 hover:border-green-500 cursor-pointer transition-colors">
+                    <div
+                      className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                        additionalInsurance
+                          ? "border-green-500 bg-green-50"
+                          : "border-gray-200 hover:border-green-500"
+                      }`}
+                      onClick={() =>
+                        setAdditionalInsurance(!additionalInsurance)
+                      }
+                    >
                       <input
                         type="checkbox"
+                        checked={additionalInsurance}
+                        onChange={(e) =>
+                          setAdditionalInsurance(e.target.checked)
+                        }
                         className="mt-0.5 w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        onClick={(e) => e.stopPropagation()}
                       />
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
@@ -962,7 +978,10 @@ export default function CarIn4() {
                           </span>
                           .
                         </p>
-                        <button className="text-green-600 text-xs font-semibold hover:underline">
+                        <button
+                          className="text-green-600 text-xs font-semibold hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           Xem thêm ›
                         </button>
                       </div>
@@ -1189,6 +1208,20 @@ export default function CarIn4() {
                         {rentalCalc.serviceFee.toLocaleString()}đ
                       </span>
                     </div>
+                    {additionalInsurance &&
+                      rentalCalc.additionalInsurance > 0 && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">
+                            Bảo hiểm người trên xe{" "}
+                            <span className="text-gray-400">
+                              (40.000đ x {rentalCalc.rentalDays} ngày)
+                            </span>
+                          </span>
+                          <span className="font-semibold text-gray-900">
+                            {rentalCalc.additionalInsurance.toLocaleString()}đ
+                          </span>
+                        </div>
+                      )}
                     {rentalCalc.discount > 0 && (
                       <div className="flex items-center justify-between text-sm text-green-600">
                         <span>Giảm giá ({carData.discount}%)</span>
@@ -1742,6 +1775,21 @@ export default function CarIn4() {
                               {bookingDetails.serviceFee.toLocaleString()}đ
                             </span>
                           </div>
+                          {additionalInsurance &&
+                            bookingDetails.additionalInsurance > 0 && (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">
+                                  Bảo hiểm người trên xe{" "}
+                                  <span className="text-gray-400">
+                                    (40.000đ x {rentalCalc.rentalDays} ngày)
+                                  </span>
+                                </span>
+                                <span className="font-semibold">
+                                  {bookingDetails.additionalInsurance.toLocaleString()}
+                                  đ
+                                </span>
+                              </div>
+                            )}
                           {bookingDetails.discount > 0 && (
                             <div className="flex justify-between text-sm text-green-600">
                               <span>Giảm giá ({carData.discount}%)</span>
@@ -1884,10 +1932,16 @@ export default function CarIn4() {
                     {/* Điều khoản */}
                     <div className="space-y-2">
                       <div className="flex items-start gap-2">
-                        <input type="checkbox" id="terms1" className="mt-1" />
+                        <input
+                          type="checkbox"
+                          id="terms1"
+                          className="mt-1"
+                          checked={termsAccepted}
+                          onChange={(e) => setTermsAccepted(e.target.checked)}
+                        />
                         <label
                           htmlFor="terms1"
-                          className="text-xs text-gray-700"
+                          className="text-xs text-gray-700 cursor-pointer"
                         >
                           Đã đọc và đồng ý với{" "}
                           <a href="#" className="text-blue-600 underline">
@@ -1897,10 +1951,16 @@ export default function CarIn4() {
                         </label>
                       </div>
                       <div className="flex items-start gap-2">
-                        <input type="checkbox" id="terms2" className="mt-1" />
+                        <input
+                          type="checkbox"
+                          id="terms2"
+                          className="mt-1"
+                          checked={policyAccepted}
+                          onChange={(e) => setPolicyAccepted(e.target.checked)}
+                        />
                         <label
                           htmlFor="terms2"
-                          className="text-xs text-gray-700"
+                          className="text-xs text-gray-700 cursor-pointer"
                         >
                           Tôi đồng ý để lại thông tin tìm có nhận theo{" "}
                           <a href="#" className="text-blue-600 underline">
@@ -1912,15 +1972,29 @@ export default function CarIn4() {
                     </div>
 
                     <Button
-                      onClick={() => setCurrentStep(2)}
+                      onClick={() => {
+                        if (!termsAccepted || !policyAccepted) {
+                          showWarning(
+                            "Vui lòng đồng ý với các điều khoản để tiếp tục",
+                          );
+                          return;
+                        }
+                        if (!paymentMethod) {
+                          showWarning("Vui lòng chọn phương thức thanh toán");
+                          return;
+                        }
+                        setCurrentStep(2);
+                      }}
                       className={`w-full h-12 font-semibold ${
-                        paymentMethod
+                        paymentMethod && termsAccepted && policyAccepted
                           ? "bg-green-600 hover:bg-green-700 text-white"
                           : "bg-gray-300 text-gray-500 cursor-not-allowed"
                       }`}
-                      disabled={!paymentMethod}
+                      disabled={
+                        !paymentMethod || !termsAccepted || !policyAccepted
+                      }
                     >
-                      Thanh toán {bookingDetails.total}đ
+                      Thanh toán {bookingDetails.total.toLocaleString()}đ
                     </Button>
                   </div>
                 )}
