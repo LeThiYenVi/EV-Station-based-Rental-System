@@ -1,5 +1,6 @@
 package com.project.evrental.repository;
 
+import com.project.evrental.domain.common.VehicleStatus;
 import com.project.evrental.domain.entity.Vehicle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -50,4 +52,30 @@ public interface VehicleRepository extends JpaRepository<Vehicle, UUID> {
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
+
+    List<Vehicle> findByStationIdAndStatus(UUID stationId, VehicleStatus status);
+
+    @Query(value = """
+            SELECT v.*
+            FROM vehicles v
+            WHERE v.station_id = :stationId
+            AND v.status = 'AVAILABLE'
+            AND NOT EXISTS(
+                SELECT 1
+                FROM bookings b
+                WHERE b.vehicle_id = :v.id
+                AND b.status IN('CONFIRMED', 'ONGOING')
+                AND ((b.start_time <= :endTime) AND (b.expected_end_time >= :startTime))
+            )
+            """, nativeQuery = true)
+    List<Vehicle> findAvailableVehicles(
+            @Param("stationId") UUID stationId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime
+    );
+
+    @Query("SELECT v FROM Vehicle v WHERE v.station.id = :stationId")
+    List<Vehicle> findByStationId(@Param("stationId") UUID stationId);
+
+    Optional<Vehicle> findByLicensePlate(String licensePlate);
 }
