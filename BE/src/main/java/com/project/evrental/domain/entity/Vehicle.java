@@ -37,6 +37,8 @@ public class Vehicle {
 
     private String brand;
 
+    private String color;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "fuel_type")
     private FuelType fuelType;
@@ -65,9 +67,6 @@ public class Vehicle {
 
     @Column(name = "deposit_amount")
     private BigDecimal depositAmount;
-
-    @Column(name = "polices", columnDefinition = "text[]")
-    private String[] polices;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

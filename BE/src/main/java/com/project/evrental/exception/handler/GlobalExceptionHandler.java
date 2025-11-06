@@ -1,11 +1,13 @@
 package com.project.evrental.exception.handler;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.project.evrental.domain.ErrorResponse;
 import com.project.evrental.exception.custom.AuthException;
 import com.project.evrental.exception.custom.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
@@ -33,7 +35,28 @@ public class GlobalExceptionHandler {
         log.error("Resource not found: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(ErrorResponse.<String>builder().statusCode(401).errors((ex.getMessage())).build());
+                .body(ErrorResponse.<String>builder().statusCode(404).errors((ex.getMessage())).build());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse<String>> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        String message = "Invalid request body";
+        
+        if (ex.getCause() instanceof InvalidFormatException) {
+            InvalidFormatException ife = (InvalidFormatException) ex.getCause();
+            if (ife.getTargetType() != null && ife.getTargetType().getName().contains("UUID")) {
+                message = "Invalid UUID format. UUID must be 36 characters (e.g., 550e8400-e29b-41d4-a716-446655440000)";
+            }
+        }
+        
+        log.error("Invalid request body: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.<String>builder()
+                        .statusCode(400)
+                        .message(message)
+                        .errors(ex.getMostSpecificCause().getMessage())
+                        .build());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -86,6 +109,17 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.<String>builder()
                         .statusCode(400)
                         .message("Illegal argument")
+                        .errors(ex.getMessage()).build());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse<String>> handleIllegalStateException(IllegalStateException ex) {
+        log.error("Illegal state: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.<String>builder()
+                        .statusCode(400)
+                        .message("Invalid operation")
                         .errors(ex.getMessage()).build());
     }
 

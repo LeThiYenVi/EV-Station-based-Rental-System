@@ -7,6 +7,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @Configuration
 public class AwsClientConfig {
@@ -14,11 +15,17 @@ public class AwsClientConfig {
     @Value("${aws.cognito.region}")
     private String region;
 
-    @Value("${aws.cognito.access-key}")
-    private String accessKey;
+    @Value("${aws.cognito.cognito-access-key}")
+    private String cognito_accessKey;
 
-    @Value("${aws.cognito.secret-key}")
-    private String secretKey;
+    @Value("${aws.cognito.cognito-secret-key}")
+    private String cognito_secretKey;
+
+    @Value("${aws.s3.s3-access-key}")
+    private String s3_accessKey;
+
+    @Value("${aws.s3.s3-secret-key}")
+    private String s3_secretKey;
 
     @Bean
     public CognitoIdentityProviderClient cognitoClient() {
@@ -26,7 +33,19 @@ public class AwsClientConfig {
                 .region(Region.of(region))
                 .credentialsProvider(
                         StaticCredentialsProvider.create(
-                                AwsBasicCredentials.create(accessKey, secretKey)
+                                AwsBasicCredentials.create(cognito_accessKey, cognito_secretKey)
+                        )
+                )
+                .build();
+    }
+
+    @Bean
+    public S3Client s3Client() {
+        return S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(
+                        StaticCredentialsProvider.create(
+                                AwsBasicCredentials.create(s3_accessKey, s3_secretKey)
                         )
                 )
                 .build();

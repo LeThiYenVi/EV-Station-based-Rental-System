@@ -1,8 +1,5 @@
 package com.project.evrental.domain.dto.response;
 
-import com.project.evrental.domain.common.FuelType;
-import com.project.evrental.domain.common.VehicleStatus;
-import com.project.evrental.domain.entity.Station;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -15,12 +12,14 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class VehicleResponse {
+public class VehicleDetailResponse {
 
     UUID id;
-    
+
     UUID stationId;
-    
+
+    String stationName;
+
     String licensePlate;
 
     String name;
@@ -28,7 +27,7 @@ public class VehicleResponse {
     String brand;
 
     String color;
-    
+
     String fuelType;
 
     BigDecimal rating;
@@ -38,16 +37,16 @@ public class VehicleResponse {
     Integer rentCount;
 
     String[] photos;
-    
+
     String status;
-    
+
     BigDecimal hourlyRate;
 
     BigDecimal dailyRate;
 
     BigDecimal depositAmount;
 
-    String[] polices;
+    Boolean isAvailable;
 
     LocalDateTime createdAt;
 

@@ -11,7 +11,15 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    public String[] public_endpoints = {"/api/auth/*"};
+    public String[] public_endpoints = {
+            "/api/auth/**",
+            "/swagger-ui/**",
+            "/api-docs/**",
+            "/swagger-ui.html",
+            "/api/stations/**",
+            "/api/vehicles/**",
+            "/api/payments/momo/callback"
+    };
 
     @Bean
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
