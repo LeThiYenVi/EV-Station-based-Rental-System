@@ -181,7 +181,7 @@ INSERT INTO stations (name, address, latitude, longitude, hotline, status, photo
 -- Insert users with explicit UUIDs
 INSERT INTO users (id, email, full_name, phone, cognito_sub, avatar_url, role, license_number, identity_number, license_card_image_url, is_license_verified, verified_at, station_id, created_at, updated_at) VALUES
 ('fb698478-d7a4-430d-b89a-c076037cad64', 'tranngocchuongtnc@gmail.com', 'tranngocchuong', '0123456789', '998af50c-90d1-704b-62eb-2706228d2fe1', 'https://avatar.iran.liara.run/public/84', 'RENTER', NULL, NULL, NULL, false, NULL, NULL, '2025-11-06 09:27:37.308294', '2025-11-06 09:27:37.308294'),
-('54b1154a-a2b8-45ef-804d-624a4988089b', 'nguyenthienandzpro@gmail.com', 'nguyen thien an', '0397812502', '095a655c-a051-7011-98a3-3c570dffc4b9', 'https://s3-upload-files-sys.s3.amazonaws.com/assets/avatars/06f33517-591d-4bb2-88a4-667e99951c20.jpg', 'ADMIN', NULL, NULL, NULL, false, NULL, NULL, '2025-11-04 15:03:59.693771', '2025-11-04 15:15:11.124447');
+('54b1154a-a2b8-45ef-804d-624a4988089b', 'nguyenthienandzpro@gmail.com', 'nguyen thien an', '0397812502', '299ad5dc-0021-7093-562b-e26888bcce37', 'https://s3-upload-files-sys.s3.amazonaws.com/assets/avatars/06f33517-591d-4bb2-88a4-667e99951c20.jpg', 'ADMIN', NULL, NULL, NULL, false, NULL, NULL, '2025-11-04 15:03:59.693771', '2025-11-04 15:15:11.124447');
 
 
 INSERT INTO vehicles (station_id, license_plate, name, brand, color, fuel_type, capacity, status, hourly_rate, daily_rate, deposit_amount, rating, rent_count) 

@@ -267,3 +267,6 @@ Mọi đóng góp đều được chào đón! Tạo Pull Request hoặc Issue t
 ---
 
 **EV-Station-based-Rental-System** – Giải pháp thuê xe điện hiện đại! 🚗⚡
+
+
+- init sql:   Get-Content init.sql | docker exec -i evrental-postgres psql -U postgres -d vehicle_rental
