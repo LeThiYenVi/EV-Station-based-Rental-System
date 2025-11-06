@@ -32,14 +32,34 @@ aws:
     domainPrefix: ${AWS_COGNITO_DOMAIN_PREFIX}
     region: ${AWS_REGION:ap-southeast-1}
     jwt-set-uri: https://cognito-idp.${aws.cognito.region}.amazonaws.com/${aws.cognito.userPoolId}/.well-known/jwks.json
-    access-key: ${AWS_ACCESS_KEY}
-    secret-key: ${AWS_SECRET_KEY}
+    access-key: ${AWS_COGNITO_ACCESS_KEY}
+    secret-key: ${AWS_COGNITO_SECRET_KEY}
     urlCallback: ${OAUTH2_CLIENT_COGNITO_CALLBACK:http://localhost:8080/api/auth/callback}
+  s3:
+    bucket-name: ${BUCKET_NAME:s3-upload-files-sys}
+    region: ${AWS_REGION:ap-southeast-1}
+    access-key: ${AWS_S3_ACCESS_KEY}
+    secret-key: ${AWS_S3_SECRET_KEY}
+    base-path: assets/
+  upload:
+    allowed-extensions:
+      - jpg
+      - png
+      - webapp
+      - jpeg
+    max-file-size: 10485760
+    station-path: stations/
+    vehicles: vehicles/
 
 oauth:
   state:
     ttl: 5
     prefix: "oauth:state:"
+
+logging:
+  level:
+    software.amazon.awssdk: WARN
+    com.project.evrental: DEBUG
 
 
 
