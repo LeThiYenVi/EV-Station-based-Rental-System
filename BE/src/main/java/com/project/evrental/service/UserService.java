@@ -23,6 +23,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.Objects;
+import lombok.NonNull;
 
 @Slf4j
 @Service
@@ -57,10 +59,11 @@ public class UserService {
 
     @CacheEvict(value = "users", allEntries = true)
     public UserResponse createUser(User user) {
-        return UserMapper.fromEntity(userRepository.save(user));
+        var saved = Objects.requireNonNull(userRepository.save(user));
+        return UserMapper.fromEntity(saved);
     }
 
-    public UserResponse getUserById(UUID id) {
+    public UserResponse getUserById(@NonNull UUID id) {
         var loadedUser = userRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("User not found with id: " + id)
         );
@@ -69,15 +72,15 @@ public class UserService {
 
     @Transactional
     @CacheEvict(value = "users", key = "#id")
-    public UserResponse verifyLicenceUserAccount(UUID id) {
+    public UserResponse verifyLicenceUserAccount(@NonNull UUID id) {
         var loadedUser = userRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("User not found with id: " + id)
         );
 
         loadedUser.setIsLicenseVerified(true);
         loadedUser.setVerifiedAt(LocalDateTime.now());
-        loadedUser = userRepository.save(loadedUser);
-        return UserMapper.fromEntity(loadedUser);
+        var saved = Objects.requireNonNull(userRepository.save(loadedUser));
+        return UserMapper.fromEntity(saved);
     }
 
     @Cacheable(value = "users", key = "#role")
@@ -85,9 +88,15 @@ public class UserService {
         return userRepository.findByRole(role).stream().map(UserMapper::fromEntity).toList();
     }
 
+    @Cacheable(value = "users", key = "'staff-station-' + #stationId")
+    public List<UserResponse> getStaffByStation(@NonNull UUID stationId) {
+        return userRepository.findByStationIdAndRole(stationId, UserRole.STAFF)
+                .stream().map(UserMapper::fromEntity).toList();
+    }
+
     @Transactional
     @CacheEvict(value = "users", allEntries = true)
-    public void deleteUser(UUID id) {
+    public void deleteUser(@NonNull UUID id) {
         var loadedUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
@@ -109,7 +118,7 @@ public class UserService {
 
     @Transactional
     @CacheEvict(value = "users", allEntries = true)
-    public UserResponse updateUser(UUID id, UpdateUserRequest request) {
+    public UserResponse updateUser(@NonNull UUID id, UpdateUserRequest request) {
         log.info("Updating user: {}", id);
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -132,23 +141,25 @@ public class UserService {
             user.setStationId(request.getStationId());
         }
 
-        return UserMapper.fromEntity(userRepository.save(user));
+        var saved = Objects.requireNonNull(userRepository.save(user));
+        return UserMapper.fromEntity(saved);
     }
 
     @Transactional
     @CacheEvict(value = "users", allEntries = true)
-    public UserResponse updateUserRole(UUID id, UserRole role) {
+    public UserResponse updateUserRole(@NonNull UUID id, UserRole role) {
         log.info("Updating user role: {} to {}", id, role);
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
         user.setRole(role);
-        return UserMapper.fromEntity(userRepository.save(user));
+        var saved = Objects.requireNonNull(userRepository.save(user));
+        return UserMapper.fromEntity(saved);
     }
 
     @Transactional
     @CacheEvict(value = "users", allEntries = true)
-    public UserResponse uploadAvatar(UUID id, MultipartFile file) {
+    public UserResponse uploadAvatar(@NonNull UUID id, MultipartFile file) {
         log.info("Uploading avatar for user: {}", id);
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -160,12 +171,13 @@ public class UserService {
         String avatarUrl = s3Service.uploadFile(file, "assets/avatars");
         user.setAvatarUrl(avatarUrl);
 
-        return UserMapper.fromEntity(userRepository.save(user));
+        var saved = Objects.requireNonNull(userRepository.save(user));
+        return UserMapper.fromEntity(saved);
     }
 
     @Transactional
     @CacheEvict(value = "users", allEntries = true)
-    public UserResponse uploadLicenseCard(UUID id, MultipartFile file) {
+    public UserResponse uploadLicenseCard(@NonNull UUID id, MultipartFile file) {
         log.info("Uploading license card for user: {}", id);
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -177,7 +189,8 @@ public class UserService {
         String licenseCardUrl = s3Service.uploadFile(file, "assets/license-cards");
         user.setLicenseCardImageUrl(licenseCardUrl);
 
-        return UserMapper.fromEntity(userRepository.save(user));
+        var saved = Objects.requireNonNull(userRepository.save(user));
+        return UserMapper.fromEntity(saved);
     }
 
 }
