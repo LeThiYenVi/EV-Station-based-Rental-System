@@ -36,17 +36,29 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { useMessage } from "@/components/ui/message";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Autoplay from "embla-carousel-autoplay";
+import { gsap } from "gsap";
+import { useStation } from "@/hooks/useStation";
+import { useVehicle } from "@/hooks/useVehicle";
 
 export default function Index() {
   const navigate = useNavigate();
   const { contextHolder, showWarning } = useMessage();
+  const { getAllStations, loading: stationsLoading } = useStation();
+  const { getAllVehicles, loading: vehiclesLoading } = useVehicle();
   const [activeTab, setActiveTab] = useState("xe-tu-lai");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [longTermLocation, setLongTermLocation] = useState("quy-nhon");
   const [selfDriveLocation, setSelfDriveLocation] = useState("hcm");
   const [selfDriveDateTime, setSelfDriveDateTime] = useState("");
+  const [featuredStations, setFeaturedStations] = useState<any[]>([]);
+  const [featuredVehicles, setFeaturedVehicles] = useState<any[]>([]);
+
+  // Refs for split text animation
+  const title1Ref = useRef<HTMLHeadingElement>(null);
+  const title2Ref = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     const checkLoginStatus = () => {
@@ -62,6 +74,109 @@ export default function Index() {
     };
   }, []);
 
+  // Load featured stations from API
+  useEffect(() => {
+    const loadStations = async () => {
+      try {
+        const result = await getAllStations({
+          page: 0,
+          size: 10,
+          sortBy: "createdAt",
+          sortDirection: "DESC",
+        });
+
+        console.log("Stations API result:", result);
+
+        if (result.success && result.data) {
+          console.log("Setting featured stations:", result.data.content);
+          setFeaturedStations(result.data.content);
+        }
+      } catch (error) {
+        console.error("Error loading stations:", error);
+      }
+    };
+
+    loadStations();
+  }, [getAllStations]);
+
+  // Load featured vehicles from API
+  useEffect(() => {
+    const loadVehicles = async () => {
+      try {
+        const result = await getAllVehicles({
+          page: 0,
+          size: 10,
+          sortBy: "createdAt",
+          sortDirection: "DESC",
+        });
+
+        console.log("Vehicles API result:", result);
+
+        if (result.success && result.data) {
+          console.log("Setting featured vehicles:", result.data.content);
+          setFeaturedVehicles(result.data.content);
+        }
+      } catch (error) {
+        console.error("Error loading vehicles:", error);
+      }
+    };
+
+    loadVehicles();
+  }, [getAllVehicles]);
+
+  // Split text animation effect
+  useEffect(() => {
+    const splitText = (element: HTMLElement) => {
+      const text = element.textContent || "";
+      element.innerHTML = text
+        .split("")
+        .map(
+          (char) =>
+            `<span class="char" style="display: inline-block;">${char === " " ? "&nbsp;" : char}</span>`,
+        )
+        .join("");
+    };
+
+    if (title1Ref.current && title2Ref.current && subtitleRef.current) {
+      // Split the text into characters
+      splitText(title1Ref.current);
+      splitText(title2Ref.current);
+      splitText(subtitleRef.current);
+
+      // Animate the characters
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      tl.from(title1Ref.current.querySelectorAll(".char"), {
+        opacity: 0,
+        y: 50,
+        rotationX: -90,
+        stagger: 0.02,
+        duration: 0.8,
+      })
+        .from(
+          title2Ref.current.querySelectorAll(".char"),
+          {
+            opacity: 0,
+            y: 50,
+            rotationX: -90,
+            stagger: 0.02,
+            duration: 0.8,
+          },
+          "-=0.6",
+        )
+        .from(
+          subtitleRef.current.querySelectorAll(".char"),
+          {
+            opacity: 0,
+            y: 20,
+            stagger: 0.01,
+            duration: 0.5,
+          },
+          "-=0.4",
+        );
+    }
+  }, []);
+
   const handleProtectedAction = (callback: () => void) => {
     if (!isLoggedIn) {
       showWarning("Vui lòng đăng nhập để sử dụng tính năng này");
@@ -75,6 +190,32 @@ export default function Index() {
     handleProtectedAction(() => {
       navigate(`/car/${carId}`);
     });
+  };
+
+  // Helper function to convert station name to URL slug
+  const getStationSlug = (name: string): string => {
+    return name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+      .replace(/đ/g, "d")
+      .replace(/\s+/g, "-");
+  };
+
+  // Helper function to get car count text (placeholder since API doesn't provide vehicle count)
+  const getCarCountText = (stationName: string): string => {
+    // Fallback text - in production, you might want to fetch actual vehicle count from API
+    const carCounts: { [key: string]: string } = {
+      "Quy Nhơn": "150+ xe",
+      "Phú Quốc": "150+ xe",
+      "Long An": "100+ xe",
+      "Phú Yên": "100+ xe",
+      "Đà Lạt": "200+ xe",
+      "Vũng Tàu": "180+ xe",
+      "Nha Trang": "250+ xe",
+      "Đà Nẵng": "300+ xe",
+    };
+    return carCounts[stationName] || "100+ xe";
   };
 
   return (
@@ -98,14 +239,20 @@ export default function Index() {
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               {/* Main Title */}
               <div className="text-center text-white mb-8">
-                <h1 className="text-4xl md:text-5xl font-bold mb-2">
+                <h1
+                  ref={title1Ref}
+                  className="text-4xl md:text-5xl font-bold mb-2"
+                >
                   BF Car Rental - Cùng Bạn
                 </h1>
-                <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                <h2
+                  ref={title2Ref}
+                  className="text-4xl md:text-5xl font-bold mb-4"
+                >
                   Trên Mọi Hành Trình
                 </h2>
                 <div className="w-20 h-0.5 bg-white mx-auto mb-4"></div>
-                <p className="text-lg md:text-xl">
+                <p ref={subtitleRef} className="text-lg md:text-xl">
                   Trải nghiệm sự khác biệt từ{" "}
                   <span className="text-green-400 font-semibold">
                     hơn 10.000
@@ -326,186 +473,136 @@ export default function Index() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {[
-              {
-                name: "VinFast VF 3",
-                image:
-                  "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
-                badge: "Miễn phí sóc",
-                transmission: "Minicar",
-                seats: "4 chỗ",
-                fuel: "210km (NEDC)",
-                rating: "460km (NEDC)",
-                originalPrice: "Dung tích cốp 285L",
-                price: "590.000",
-              },
-              {
-                name: "VinFast VF 6 Plus",
-                image:
-                  "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
-                badge: "Miễn phí sóc",
-                transmission: "B-SUV",
-                seats: "5 chỗ",
-                fuel: "460km (NEDC)",
-                rating: "460km (NEDC)",
-                originalPrice: "Dung tích cốp 423L",
-                price: "1.250.000",
-              },
-              {
-                name: "VinFast VF 6S",
-                image:
-                  "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop",
-                badge: "Hết xe",
-                transmission: "B-SUV",
-                seats: "5 chỗ",
-                fuel: "480km (NEDC)",
-                rating: "480km (NEDC)",
-                originalPrice: "Dung tích cốp 423L",
-                price: "1.100.000",
-              },
-              {
-                name: "VinFast VF 5 Plus",
-                image:
-                  "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&h=600&fit=crop",
-                badge: "Miễn phí sóc",
-                transmission: "A-SUV",
-                seats: "5 chỗ",
-                fuel: "380km (NEDC)",
-                rating: "380km (NEDC)",
-                originalPrice: "Dung tích cốp 310L",
-                price: "890.000",
-              },
-              {
-                name: "VinFast VF 7 Plus",
-                image:
-                  "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
-                badge: "Miễn phí sóc",
-                transmission: "C-SUV",
-                seats: "5 chỗ",
-                fuel: "450km (NEDC)",
-                rating: "450km (NEDC)",
-                originalPrice: "Dung tích cốp 520L",
-                price: "1.450.000",
-              },
-              {
-                name: "VinFast VF 8 Plus",
-                image:
-                  "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
-                badge: "Miễn phí sóc",
-                transmission: "C-SUV",
-                seats: "5 chỗ",
-                fuel: "471km (NEDC)",
-                rating: "471km (NEDC)",
-                originalPrice: "Dung tích cốp 534L",
-                price: "1.650.000",
-              },
-            ].map((car, index) => (
-              <div
-                key={index}
-                onClick={(e) => handleCarClick(e, index + 1)}
-                className="block cursor-pointer"
-              >
-                <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer bg-white border border-gray-200 rounded-2xl">
-                  {/* Image Section */}
-                  <div className="relative">
-                    <img
-                      src={car.image}
-                      alt={car.name}
-                      className="w-full h-56 object-cover"
-                    />
-                    {/* Badge ở góc trên trái */}
-                    <div className="absolute top-3 left-3">
-                      <Badge
-                        className={`${
-                          car.badge === "Hết xe"
-                            ? "bg-red-500 hover:bg-red-600"
-                            : "bg-green-500 hover:bg-green-600"
-                        } text-white border-0 px-3 py-1 text-xs font-medium rounded-md`}
-                      >
-                        {car.badge}
-                      </Badge>
+          {vehiclesLoading ? (
+            <div className="flex justify-center items-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+              {featuredVehicles.slice(0, 6).map((vehicle, index) => (
+                <div
+                  key={vehicle.id || index}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleProtectedAction(() => {
+                      navigate(`/car/${vehicle.id}`);
+                    });
+                  }}
+                  className="block cursor-pointer"
+                >
+                  <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer bg-white border border-gray-200 rounded-2xl">
+                    {/* Image Section */}
+                    <div className="relative">
+                      <img
+                        src={
+                          vehicle.photos?.[0] ||
+                          vehicle.photo ||
+                          "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop"
+                        }
+                        alt={vehicle.name || vehicle.model}
+                        className="w-full h-56 object-cover"
+                      />
+                      {/* Badge ở góc trên trái */}
+                      <div className="absolute top-3 left-3">
+                        <Badge
+                          className={`${
+                            vehicle.status === "AVAILABLE"
+                              ? "bg-green-500 hover:bg-green-600"
+                              : "bg-red-500 hover:bg-red-600"
+                          } text-white border-0 px-3 py-1 text-xs font-medium rounded-md`}
+                        >
+                          {vehicle.status === "AVAILABLE"
+                            ? "Sẵn sàng"
+                            : "Không khả dụng"}
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Content Section */}
-                  <CardContent className="p-5">
-                    {/* Price Section - Chỉ từ */}
-                    <div className="mb-3">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm text-gray-600">Chỉ từ</span>
-                        <span className="text-2xl font-bold text-green-600">
-                          {car.price}
+                    {/* Content Section */}
+                    <CardContent className="p-5">
+                      {/* Price Section */}
+                      <div className="mb-3">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-sm text-gray-600">Chỉ từ</span>
+                          <span className="text-2xl font-bold text-green-600">
+                            {vehicle.pricePerDay?.toLocaleString("vi-VN") ||
+                              "0"}
+                          </span>
+                          <span className="text-sm text-gray-600">
+                            VNĐ/Ngày
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Car Name */}
+                      <h3 className="font-bold text-xl mb-2 text-gray-900">
+                        {vehicle.name || `${vehicle.brand} ${vehicle.model}`}
+                      </h3>
+
+                      {/* Car Type/Category */}
+                      <div className="flex items-center gap-2 mb-4">
+                        <Car className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">
+                          {vehicle.category || vehicle.type || "SUV"}
                         </span>
-                        <span className="text-sm text-gray-600">VNĐ/Ngày</span>
                       </div>
-                    </div>
 
-                    {/* Car Name */}
-                    <h3 className="font-bold text-xl mb-2 text-gray-900">
-                      {car.name}
-                    </h3>
+                      {/* Specifications */}
+                      <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                        <div className="flex items-center gap-1">
+                          <Zap className="w-4 h-4 text-gray-500" />
+                          <span>
+                            {vehicle.batteryCapacity || vehicle.range || "N/A"}{" "}
+                            km
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="w-4 h-4 text-gray-500" />
+                          <span>{vehicle.seatingCapacity || 5} chỗ</span>
+                        </div>
+                      </div>
 
-                    {/* Car Type/Category */}
-                    <div className="flex items-center gap-2 mb-4">
-                      <Car className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">
-                        {car.transmission}
-                      </span>
-                    </div>
-
-                    {/* Specifications */}
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
-                      <div className="flex items-center gap-1">
-                        <Zap className="w-4 h-4 text-gray-500" />
-                        <span>{car.fuel}</span>
+                      {/* Additional Info */}
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <svg
+                            className="w-4 h-4 text-gray-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 10V3L4 14h7v7l9-11h-7z"
+                            />
+                          </svg>
+                          <span>{vehicle.transmission || "Tự động"}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <svg
+                            className="w-4 h-4 text-gray-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                            />
+                          </svg>
+                          <span>{vehicle.year || "Mới"}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <User className="w-4 h-4 text-gray-500" />
-                        <span>{car.seats}</span>
-                      </div>
-                    </div>
-
-                    {/* Additional Info */}
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <svg
-                          className="w-4 h-4 text-gray-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 10V3L4 14h7v7l9-11h-7z"
-                          />
-                        </svg>
-                        <span>{car.rating}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <svg
-                          className="w-4 h-4 text-gray-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                          />
-                        </svg>
-                        <span>{car.originalPrice}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ))}
-          </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -516,99 +613,64 @@ export default function Index() {
             Địa Điểm Nổi Bật
           </h2>
 
-          <Carousel
-            opts={{
-              align: "start",
-              loop: true,
-            }}
-            plugins={[
-              Autoplay({
-                delay: 3000,
-                stopOnInteraction: true,
-                stopOnMouseEnter: true,
-              }),
-            ]}
-            className="w-full"
-          >
-            <CarouselContent className="-ml-4">
-              {[
-                {
-                  name: "Quy Nhơn",
-                  cars: "150+ xe",
-                  image: "/mocks/city/binhdinh.jpg",
-                  slug: "quy-nhon",
-                },
-                {
-                  name: "Phú Quốc",
-                  cars: "150+ xe",
-                  image: "/mocks/city/phuquoc.jpg",
-                  slug: "phu-quoc",
-                },
-                {
-                  name: "Long An",
-                  cars: "100+ xe",
-                  image: "/mocks/city/longan.jpg",
-                  slug: "long-an",
-                },
-                {
-                  name: "Phú Yên",
-                  cars: "100+ xe",
-                  image: "/mocks/city/phuyen.jpg",
-                  slug: "phu-yen",
-                },
-                {
-                  name: "Đà Lạt",
-                  cars: "200+ xe",
-                  image: "/mocks/city/dalat.webp",
-                  slug: "da-lat",
-                },
-                {
-                  name: "Vũng Tàu",
-                  cars: "180+ xe",
-                  image: "/mocks/city/vungtau.jpg",
-                  slug: "vung-tau",
-                },
-                {
-                  name: "Nha Trang",
-                  cars: "250+ xe",
-                  image: "/mocks/city/nhatrang.jpg",
-                  slug: "nha-trang",
-                },
-                {
-                  name: "Đà Nẵng",
-                  cars: "300+ xe",
-                  image: "/mocks/city/danang.jpg",
-                  slug: "da-nang",
-                },
-              ].map((location, index) => (
-                <CarouselItem
-                  key={index}
-                  className="pl-4 md:basis-1/2 lg:basis-1/4"
-                >
-                  <div
-                    className="relative group cursor-pointer overflow-hidden rounded-3xl h-[400px]"
-                    onClick={() => navigate(`/place/${location.slug}`)}
+          {stationsLoading ? (
+            <div className="flex justify-center items-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+            </div>
+          ) : featuredStations.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-gray-500">Không có địa điểm nào</p>
+            </div>
+          ) : (
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              plugins={[
+                Autoplay({
+                  delay: 3000,
+                  stopOnInteraction: true,
+                  stopOnMouseEnter: true,
+                }),
+              ]}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-4">
+                {featuredStations.map((station, index) => (
+                  <CarouselItem
+                    key={station.id || index}
+                    className="pl-4 md:basis-1/2 lg:basis-1/4"
                   >
                     <div
-                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                      style={{
-                        backgroundImage: `url('${location.image}')`,
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                    <div className="absolute bottom-6 left-6 text-white">
-                      <h3 className="text-2xl font-bold mb-1">
-                        {location.name}
-                      </h3>
-                      <p className="text-sm opacity-90">{location.cars}</p>
+                      className="relative group cursor-pointer overflow-hidden rounded-3xl h-[400px]"
+                      onClick={() =>
+                        navigate(`/place/${getStationSlug(station.name)}`)
+                      }
+                    >
+                      <div
+                        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                        style={{
+                          backgroundImage: `url('${station.photo}')`,
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                      <div className="absolute bottom-6 left-6 text-white">
+                        <h3 className="text-2xl font-bold mb-1">
+                          {station.name}
+                        </h3>
+                        <p className="text-sm opacity-90">
+                          {getCarCountText(station.name)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="left-4 bg-black text-white hover:bg-black/80 border-black" />
-            <CarouselNext className="right-4 bg-black text-white hover:bg-black/80 border-black" />
-          </Carousel>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="left-4 bg-black text-white hover:bg-black/80 border-black" />
+              <CarouselNext className="right-4 bg-black text-white hover:bg-black/80 border-black" />
+            </Carousel>
+          )}
         </div>
       </section>
 

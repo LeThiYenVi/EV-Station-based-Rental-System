@@ -1,3 +1,35 @@
+/**
+ * HistoryService - Lịch sử đơn thuê xe
+ *
+ * TODO: Tích hợp API thực tế (hiện đang dùng mock data)
+ *
+ * Migration guide:
+ * 1. Import hooks:
+ *    import { useBooking } from "@/hooks/useBooking";
+ *    import { useAuth } from "@/hooks/useAuth";
+ *
+ * 2. Use hooks:
+ *    const { getUserBookings, getStatusText, getStatusColor, formatPrice, loading } = useBooking();
+ *    const { getCurrentUser } = useAuth();
+ *
+ * 3. Load data:
+ *    useEffect(() => {
+ *      const loadBookings = async () => {
+ *        const userId = localStorage.getItem('userId');
+ *        const result = await getUserBookings(userId);
+ *        if (result.success && result.data) {
+ *          setOrders(result.data);
+ *          setFilteredOrders(result.data);
+ *        }
+ *      };
+ *      loadBookings();
+ *    }, []);
+ *
+ * 4. Update UI để dùng BookingResponse type thay vì BookingOrder
+ *
+ * Xem chi tiết: CUSTOMER_PAGES_INTEGRATION.md
+ */
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";

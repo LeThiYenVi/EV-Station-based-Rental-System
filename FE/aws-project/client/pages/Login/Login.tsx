@@ -13,8 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMessage } from "@/components/ui/message";
+import { useAuth } from "@/hooks/useAuth";
+import { authService } from "@/service/auth/authService";
 
-// Tài khoản test
+// Tài khoản test (fallback khi API không khả dụng)
 const TEST_ACCOUNTS = {
   admin: { username: "admin", password: "admin123" },
   user: { username: "user", password: "user123" },
@@ -25,6 +27,9 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { contextHolder, showSuccess, showError, showWarning } = useMessage();
+
+  // Sử dụng API thực tế
+  const { login, register, loginWithGoogle, loading } = useAuth();
 
   const initialMode =
     searchParams.get("mode") === "register" ? "register" : "login";
@@ -52,9 +57,17 @@ export default function Login() {
     if (mode === "register") {
       setActiveTab("register");
     }
+
+    // Handle Google OAuth callback
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
+
+    if (code && state) {
+      handleGoogleCallback(code, state);
+    }
   }, [searchParams]);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Kiểm tra captcha
@@ -63,51 +76,83 @@ export default function Login() {
       return;
     }
 
-    // Kiểm tra tài khoản test và lấy role
-    let userRole: string | null = null;
+    try {
+      // Gọi API login thực tế
+      const result = await login({
+        email: loginData.username, // Backend expects email
+        password: loginData.password,
+      });
 
-    const isValidAccount = Object.entries(TEST_ACCOUNTS).some(
-      ([role, account]) => {
-        if (
-          account.username === loginData.username &&
-          account.password === loginData.password
-        ) {
-          userRole = role;
-          return true;
-        }
-        return false;
-      },
-    );
+      if (result && result.user) {
+        const user = result.user;
 
-    if (isValidAccount && userRole) {
-      // Save login status to localStorage
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("username", loginData.username);
-      localStorage.setItem("userRole", userRole);
+        // Save login status to localStorage
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("username", user.email);
+        localStorage.setItem("userRole", user.role || "user");
+        localStorage.setItem("userId", user.id);
 
-      // Dispatch custom event to notify header
-      window.dispatchEvent(new Event("loginStatusChanged"));
+        // Dispatch custom event to notify header
+        window.dispatchEvent(new Event("loginStatusChanged"));
 
-      showSuccess(`Đăng nhập thành công! Chào mừng ${loginData.username}`);
+        showSuccess(
+          `Đăng nhập thành công! Chào mừng ${user.fullName || user.email}`,
+        );
 
-      // Điều hướng dựa vào role sau khi đăng nhập thành công
-      setTimeout(() => {
-        if (userRole === "admin") {
-          navigate("/admin");
-        } else if (userRole === "staff") {
-          navigate("/staff");
+        // Điều hướng dựa vào role
+        setTimeout(() => {
+          const userRole = user.role?.toLowerCase();
+          if (userRole === "admin") {
+            navigate("/admin");
+          } else if (userRole === "staff") {
+            navigate("/staff");
+          } else {
+            navigate("/");
+          }
+        }, 1000);
+      } else {
+        // Fallback: Kiểm tra tài khoản test
+        let userRole: string | null = null;
+        const isValidAccount = Object.entries(TEST_ACCOUNTS).some(
+          ([role, account]) => {
+            if (
+              account.username === loginData.username &&
+              account.password === loginData.password
+            ) {
+              userRole = role;
+              return true;
+            }
+            return false;
+          },
+        );
+
+        if (isValidAccount && userRole) {
+          localStorage.setItem("isLoggedIn", "true");
+          localStorage.setItem("username", loginData.username);
+          localStorage.setItem("userRole", userRole);
+          window.dispatchEvent(new Event("loginStatusChanged"));
+          showSuccess(`Đăng nhập thành công! Chào mừng ${loginData.username}`);
+
+          setTimeout(() => {
+            if (userRole === "admin") {
+              navigate("/admin");
+            } else if (userRole === "staff") {
+              navigate("/staff");
+            } else {
+              navigate("/");
+            }
+          }, 1000);
         } else {
-          navigate("/");
+          showError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
         }
-      }, 1000);
-    } else {
-      showError(
-        "Tài khoản hoặc mật khẩu không đúng. Thử: admin/admin123, staff/staff123 hoặc user/user123",
-      );
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      showError("Lỗi kết nối đến server. Vui lòng thử lại sau.");
     }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Kiểm tra captcha
@@ -122,16 +167,106 @@ export default function Login() {
       return;
     }
 
-    showSuccess(
-      "Đăng ký thành công! Tài khoản của bạn đã được tạo. Vui lòng đăng nhập.",
-    );
+    try {
+      // Gọi API register thực tế
+      const result = await register({
+        email: registerData.email,
+        password: registerData.password,
+        fullName: registerData.fullName,
+      });
 
-    // Chuyển sang tab đăng nhập
-    setActiveTab("login");
+      if (result) {
+        showSuccess(
+          "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.",
+        );
+        // Chuyển sang tab đăng nhập
+        setActiveTab("login");
+        // Clear form
+        setRegisterData({
+          fullName: "",
+          email: "",
+          username: "",
+          password: "",
+          confirmPassword: "",
+          captcha: "",
+        });
+      } else {
+        showError("Đăng ký thất bại. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      console.error("Register error:", error);
+      showError("Lỗi kết nối đến server. Vui lòng thử lại sau.");
+    }
   };
 
   const refreshCaptcha = () => {
     showWarning("Captcha đã được làm mới: " + captchaText);
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+      // User will be redirected to Google OAuth page
+    } catch (error) {
+      console.error("Google login error:", error);
+      showError("Không thể kết nối với Google. Vui lòng thử lại.");
+    }
+  };
+
+  const handleGoogleCallback = async (code: string, state: string) => {
+    try {
+      // Verify state to prevent CSRF attacks
+      const savedState = sessionStorage.getItem("oauth_state");
+      if (savedState !== state) {
+        showError("Xác thực không hợp lệ. Vui lòng thử lại.");
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      // Call API to exchange code for tokens
+      const result = await authService.loginWithGoogle(code, state);
+
+      if (result && result.user) {
+        const user = result.user;
+
+        // Save login status
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("username", user.email);
+        localStorage.setItem("userRole", user.role || "user");
+        localStorage.setItem("userId", user.id);
+
+        // Dispatch event to notify header
+        window.dispatchEvent(new Event("loginStatusChanged"));
+
+        showSuccess(
+          `Đăng nhập Google thành công! Chào mừng ${user.fullName || user.email}`,
+        );
+
+        // Clean up
+        sessionStorage.removeItem("oauth_state");
+
+        // Navigate based on role
+        setTimeout(() => {
+          const userRole = user.role?.toLowerCase();
+          if (userRole === "admin") {
+            navigate("/admin", { replace: true });
+          } else if (userRole === "staff") {
+            navigate("/staff", { replace: true });
+          } else {
+            navigate("/", { replace: true });
+          }
+        }, 1000);
+      } else {
+        showError("Đăng nhập Google thất bại. Vui lòng thử lại.");
+        navigate("/login", { replace: true });
+      }
+    } catch (error: any) {
+      console.error("Google callback error:", error);
+      const errorMessage =
+        error?.response?.data?.message || "Đăng nhập Google thất bại.";
+      showError(errorMessage);
+      navigate("/login", { replace: true });
+    }
   };
 
   return (
@@ -396,8 +531,54 @@ export default function Login() {
                     <Button
                       type="submit"
                       className="w-full h-11 bg-green-700 hover:bg-green-800 text-white font-semibold text-sm"
+                      disabled={loading}
                     >
-                      TRUY CẬP HỆ THỐNG
+                      {loading ? "Đang xử lý..." : "TRUY CẬP HỆ THỐNG"}
+                    </Button>
+
+                    {/* Divider */}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-gray-300" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-white px-2 text-gray-500">
+                          Hoặc đăng nhập với
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Google Login Button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-11 border-gray-300 hover:bg-gray-50"
+                      onClick={handleGoogleLogin}
+                      disabled={loading}
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          fill="#4285F4"
+                        />
+                        <path
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          fill="#34A853"
+                        />
+                        <path
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                          fill="#FBBC05"
+                        />
+                        <path
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                          fill="#EA4335"
+                        />
+                      </svg>
+                      Đăng nhập với Google
                     </Button>
 
                     <div className="text-center space-y-2">

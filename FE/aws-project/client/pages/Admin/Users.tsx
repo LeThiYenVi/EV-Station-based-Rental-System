@@ -2,16 +2,66 @@
  * Users Management Page
  * Trang quản lý người dùng cho Admin
  * Route: /admin/users
+ *
+ * NOTE: File này đang dùng MOCK_USERS với snake_case fields
+ * TODO: Migrate sang API thực tế (xem API_INTEGRATION_GUIDE.md)
  */
 
 import { useState, useMemo } from "react";
-import {
-  User,
-  UserFilterParams,
-  CreateUserDto,
-  UpdateUserDto,
-  UserStatus,
-} from "@shared/types";
+
+// Type aliases để tương thích với mock data
+interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  phone: string;
+  avatar_url?: string | null;
+  role: string;
+  license_number?: string | null;
+  identity_number?: string | null;
+  license_card_image_url?: string | null;
+  is_verified: boolean;
+  verified_at?: string | null;
+  status: "active" | "pending" | "blocked";
+  stationid?: string | null;
+  created_at: string;
+  updated_at: string;
+  total_bookings?: number;
+  total_spent?: number;
+}
+
+interface UserFilterParams {
+  search?: string;
+  role?: string;
+  status?: string;
+  is_verified?: boolean;
+  date_from?: string;
+  date_to?: string;
+}
+
+interface CreateUserDto {
+  email: string;
+  full_name: string;
+  phone: string;
+  role: string;
+  license_number?: string;
+  identity_number?: string;
+  stationid?: string;
+}
+
+interface UpdateUserDto {
+  id: string;
+  full_name?: string;
+  phone?: string;
+  role?: string;
+  license_number?: string;
+  identity_number?: string;
+  status?: string;
+  stationid?: string;
+}
+
+type UserStatus = "active" | "pending" | "blocked";
+
 import UserTable from "@/components/admin/UserTable";
 import UserFilter from "@/components/admin/UserFilter";
 import UserForm from "@/components/admin/UserForm";
@@ -255,6 +305,7 @@ export default function Users() {
           ? {
               ...user,
               ...data,
+              status: (data.status as UserStatus) || user.status,
               updated_at: new Date().toISOString(),
             }
           : user,

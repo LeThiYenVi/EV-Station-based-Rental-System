@@ -116,7 +116,7 @@ const App = () => (
             }
           />
           <Route
-            path="/profile"
+            path="/user/info"
             element={
               <Layout>
                 <UserProfile />

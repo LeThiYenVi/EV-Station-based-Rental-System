@@ -7,6 +7,15 @@ export default defineConfig({
   server: {
     host: "::",
     port: 5173,
+    strictPort: false, // Allow using another port if 5173 is busy
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path, // Keep the /api prefix
+      },
+    },
   },
   build: {
     outDir: "dist",
