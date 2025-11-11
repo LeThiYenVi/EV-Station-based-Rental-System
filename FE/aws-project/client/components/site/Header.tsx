@@ -193,7 +193,7 @@ export function Header() {
           {isLoggedIn ? (
             <>
               <Link
-                to="/profile"
+                to="/user/info"
                 className="hidden md:flex text-gray-700 font-medium hover:text-green-600 transition-colors"
               >
                 Xin chào,{" "}

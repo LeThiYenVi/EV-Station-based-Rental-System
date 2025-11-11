@@ -101,7 +101,7 @@ export default function NearlyStations() {
       {
         <section className="py-10 bg-white">
           <div className="max-w-5xl mx-auto px-5">
-            <h3 className="text-2xl font-bold mb-8 text-center">
+            <h3 className="text-2xl font-bold mb-8 text-center text-black">
               Các trạm gần vị trí của bạn
             </h3>
 
