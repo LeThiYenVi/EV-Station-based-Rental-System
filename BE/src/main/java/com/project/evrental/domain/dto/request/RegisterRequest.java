@@ -24,6 +24,8 @@ public class RegisterRequest {
     @NotBlank(message = "Phone is not blank!")
     String phone;
 
+    String address;
+
     @Length(min = 8, max = 20)
     String password;
 

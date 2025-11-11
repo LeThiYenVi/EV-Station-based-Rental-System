@@ -1,3 +1,23 @@
 {
-    "java.compile.nullAnalysis.mode": "automatic"
+    "java.compile.nullAnalysis.mode": "automatic",
+    "python.defaultInterpreterPath": "F:/dev/java/aws/EV-Station-based-Rental-System/ai-service/venv/Scripts/python.exe",
+    "python.analysis.extraPaths": [
+        "F:/dev/java/aws/EV-Station-based-Rental-System/ai-service"
+    ],
+    "python.autoComplete.extraPaths": [
+        "F:/dev/java/aws/EV-Station-based-Rental-System/ai-service"
+    ],
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.formatting.provider": "black",
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
+    },
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true
+    }
 }

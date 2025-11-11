@@ -20,6 +20,9 @@ public class UpdateUserRequest {
     @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone number must be between 10 and 15 digits")
     String phone;
 
+    @Size(max = 500, message = "Address must not exceed 500 characters")
+    String address;
+
     @Size(min = 5, max = 50, message = "License number must be between 5 and 50 characters")
     String licenseNumber;
 

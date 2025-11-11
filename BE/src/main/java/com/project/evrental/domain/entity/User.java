@@ -33,6 +33,8 @@ public class User {
 
     private String phone;
 
+    private String address;
+
     @Column(name = "cognito_sub")
     private String cognitoSub;
 
@@ -48,9 +50,13 @@ public class User {
     @Column(name = "identity_number")
     private String identityNumber;
 
-    @Column(name = "license_card_image_url")
-    private String licenseCardImageUrl;
+    @Column(name = "license_card_front_image_url")
+    private String licenseCardFrontImageUrl;
 
+    @Column(name = "license_card_back_image_url")
+    private String licenseCardBackImageUrl;
+
+    @Builder.Default
     @Column(name = "is_license_verified")
     private Boolean isLicenseVerified = false;
 

@@ -21,6 +21,8 @@ public class UserResponse {
 
     String phone;
 
+    String address;
+
     String cognitoSub;
 
     String avatarUrl;
@@ -31,7 +33,9 @@ public class UserResponse {
 
     String identityNumber;
 
-    String licenseCardImageUrl;
+    String licenseCardFrontImageUrl;
+
+    String licenseCardBackImageUrl;
 
     Boolean isLicenseVerified;
 
