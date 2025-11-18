@@ -47,7 +47,7 @@ const App = () => (
             path="/nearly-stations"
             element={
               <Layout>
-                <NearlyStations/>
+                <NearlyStations />
               </Layout>
             }
           />
