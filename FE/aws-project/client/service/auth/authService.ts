@@ -2,6 +2,7 @@ import { apiClient } from '../api/apiClient';
 import { API_ENDPOINTS } from '../config/apiConfig';
 import {
   RegisterRequest,
+  VerifyOtpRequest,
   LoginRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
@@ -13,16 +14,56 @@ import {
 
 class AuthService {
   /**
-   * Register a new user
+   * Register a new user - Step 1: Create user and send OTP to email
+   * Backend creates user in "unconfirmed" state and sends OTP code to email
+   * Response format: {statusCode: 200, message: "created user!", data: {user: {...}, accessToken: null}}
    */
-  async register(data: RegisterRequest): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>(
+  async register(data: RegisterRequest): Promise<{ message: string }> {
+    console.log('AuthService.register called with data:', {
+      email: data.email,
+      fullName: data.fullName,
+      phone: data.phone,
+      role: data.role,
+    });
+    
+    const response = await apiClient.post<any>(
       API_ENDPOINTS.AUTH.REGISTER,
       data
     );
     
-    // Don't store tokens yet - user needs to verify account first
-    return response.data!;
+    console.log('Register API response:', response);
+    
+    // Backend response format: {statusCode: 200, message: "created user!", data: {...}}
+    // Return message to show user
+    return { 
+      message: response.message || 'User created! Please check your email for OTP code.' 
+    };
+  }
+
+  /**
+   * Verify OTP after registration - Step 2: Confirm account with OTP
+   * This confirms the user account and returns auth tokens
+   * Response format: {statusCode: 200, data: {accessToken, refreshToken, user}}
+   */
+  async verifyOtp(data: VerifyOtpRequest): Promise<AuthResponse> {
+    console.log('AuthService.verifyOtp called with:', { email: data.email, otpCode: data.otpCode });
+    
+    const response = await apiClient.post<AuthResponse>(
+      API_ENDPOINTS.AUTH.CONFIRM,
+      data
+    );
+    
+    console.log('Verify OTP API response:', response);
+    
+    // Response format: {statusCode, message, data: {accessToken, refreshToken, user}}
+    // Extract the actual auth data from response.data
+    const authData = response.data!;
+    
+    // Save tokens to localStorage
+    this.saveTokens(authData);
+    this.updateLoginStatus(true);
+    
+    return authData;
   }
 
   /**

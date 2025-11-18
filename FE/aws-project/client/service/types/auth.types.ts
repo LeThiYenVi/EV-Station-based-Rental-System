@@ -2,8 +2,15 @@
 export interface RegisterRequest {
   email: string;
   password: string;
+  confirmPassword: string;
   fullName: string;
-  phoneNumber?: string;
+  phone: string;
+  role: string;
+}
+
+export interface VerifyOtpRequest {
+  email: string;
+  otpCode: string;
 }
 
 export interface LoginRequest {

@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, ArrowLeft } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMessage } from "@/components/ui/message";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,11 +29,16 @@ export default function Login() {
   const { contextHolder, showSuccess, showError, showWarning } = useMessage();
 
   // Sử dụng API thực tế
-  const { login, register, loginWithGoogle, loading } = useAuth();
+  const { login, register, verifyOtp, loginWithGoogle, loading } = useAuth();
 
   const initialMode =
     searchParams.get("mode") === "register" ? "register" : "login";
   const [activeTab, setActiveTab] = useState(initialMode);
+
+  // Register OTP state
+  const [showOtpForm, setShowOtpForm] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
 
   const [loginData, setLoginData] = useState({
     username: "",
@@ -44,7 +49,7 @@ export default function Login() {
   const [registerData, setRegisterData] = useState({
     fullName: "",
     email: "",
-    username: "",
+    phone: "",
     password: "",
     confirmPassword: "",
     captcha: "",
@@ -155,6 +160,8 @@ export default function Login() {
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    console.log("=== REGISTER SUBMIT START ===");
+
     // Kiểm tra captcha
     if (registerData.captcha.toLowerCase() !== captchaText.toLowerCase()) {
       showError("Captcha không đúng!");
@@ -167,36 +174,131 @@ export default function Login() {
       return;
     }
 
+    // Clear any existing tokens before registration
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("idToken");
+    localStorage.removeItem("refreshToken");
+
+    // Also clear all cookies to avoid authentication conflicts
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+
+    console.log("Cleared localStorage tokens and cookies");
+
+    // CRITICAL: Also clear sessionStorage
+    sessionStorage.clear();
+
+    // Debug: Check all cookies
+    console.log("Current cookies:", document.cookie);
+    console.log("Current localStorage:", { ...localStorage });
+
+    console.log("=== STARTING FRESH REGISTRATION (no auth data) ===");
+
     try {
-      // Gọi API register thực tế
-      const result = await register({
+      const requestData = {
         email: registerData.email,
         password: registerData.password,
+        confirmPassword: registerData.confirmPassword,
         fullName: registerData.fullName,
-      });
+        phone: registerData.phone,
+        role: "RENTER" as const,
+      };
+
+      console.log("Submitting registration with data:", requestData);
+
+      // TEMPORARY FIX: Check if backend is properly configured
+      // If you see 401 on /auth/register, backend config is wrong
+      // Register endpoint SHOULD NOT require authentication
+
+      const result = await register(requestData);
+
+      console.log("Register result:", result);
+      console.log("=== REGISTER SUBMIT SUCCESS ===");
 
       if (result) {
         showSuccess(
-          "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.",
+          result.message ||
+            "Đăng ký thành công! Vui lòng kiểm tra email để nhận mã OTP.",
         );
-        // Chuyển sang tab đăng nhập
-        setActiveTab("login");
-        // Clear form
-        setRegisterData({
-          fullName: "",
-          email: "",
-          username: "",
-          password: "",
-          confirmPassword: "",
-          captcha: "",
-        });
+
+        // Show OTP verification form
+        setRegisteredEmail(registerData.email);
+        setShowOtpForm(true);
       } else {
-        showError("Đăng ký thất bại. Vui lòng thử lại.");
+        showError(
+          "Đăng ký thất bại. Vui lòng kiểm tra lại thông tin hoặc email đã được sử dụng.",
+        );
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Register error:", error);
-      showError("Lỗi kết nối đến server. Vui lòng thử lại sau.");
+      console.error("Error response:", error?.response);
+
+      // Parse error message from backend response
+      let errorMessage = "Lỗi kết nối đến server. Vui lòng thử lại sau.";
+
+      if (error?.response?.data?.errors) {
+        // Backend returns: {statusCode, message, errors}
+        errorMessage = error.response.data.errors;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.response?.status === 401) {
+        errorMessage =
+          "Email này đã được đăng ký. Vui lòng đăng nhập hoặc sử dụng email khác.";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      showError(errorMessage);
     }
+  };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!otpCode || otpCode.length !== 6) {
+      showError("Vui lòng nhập mã OTP 6 số!");
+      return;
+    }
+
+    try {
+      const result = await verifyOtp({
+        email: registeredEmail,
+        otpCode: otpCode,
+      });
+
+      if (result && result.accessToken) {
+        showSuccess("Xác thực thành công! Đăng nhập tự động...");
+
+        // User is now logged in with tokens saved
+        // Redirect to home or dashboard
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1500);
+      } else {
+        showError("Mã OTP không đúng. Vui lòng thử lại.");
+      }
+    } catch (error: any) {
+      console.error("OTP verification error:", error);
+
+      let errorMessage = "Lỗi xác thực OTP. Vui lòng thử lại.";
+
+      if (error?.response?.data?.errors) {
+        // Backend error format: {statusCode, message, errors}
+        errorMessage = error.response.data.errors;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      showError(errorMessage);
+    }
+  };
+
+  const handleBackToRegister = () => {
+    setShowOtpForm(false);
+    setOtpCode("");
   };
 
   const refreshCaptcha = () => {
@@ -588,6 +690,15 @@ export default function Login() {
                       >
                         Quên mật khẩu?
                       </Link>
+                      <p className="text-sm text-gray-600">
+                        Chưa có tài khoản?{" "}
+                        <Link
+                          to="/register"
+                          className="text-green-600 hover:text-green-700 font-semibold"
+                        >
+                          Đăng ký ngay
+                        </Link>
+                      </p>
                       <p className="text-xs text-gray-500">
                         Tài khoản test:{" "}
                         <span className="font-semibold">admin/admin123</span>,{" "}
@@ -600,189 +711,255 @@ export default function Login() {
 
                 {/* Register Tab */}
                 <TabsContent value="register">
-                  <form onSubmit={handleRegisterSubmit} className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="register-fullname"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Họ và tên<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="register-fullname"
-                        type="text"
-                        placeholder="Nguyễn Văn A"
-                        value={registerData.fullName}
-                        onChange={(e) =>
-                          setRegisterData({
-                            ...registerData,
-                            fullName: e.target.value,
-                          })
-                        }
-                        className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                        required
-                      />
-                    </div>
+                  {showOtpForm ? (
+                    /* OTP Verification Form */
+                    <form onSubmit={handleOtpSubmit} className="space-y-4">
+                      <div className="text-center space-y-2 mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Xác thực OTP
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          Mã OTP đã được gửi đến email: <br />
+                          <span className="font-semibold text-green-600">
+                            {registeredEmail}
+                          </span>
+                        </p>
+                      </div>
 
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="register-email"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Email<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="register-email"
-                        type="email"
-                        placeholder="example@email.com"
-                        value={registerData.email}
-                        onChange={(e) =>
-                          setRegisterData({
-                            ...registerData,
-                            email: e.target.value,
-                          })
-                        }
-                        className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="register-username"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Tài khoản<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="register-username"
-                        type="text"
-                        placeholder="username"
-                        value={registerData.username}
-                        onChange={(e) =>
-                          setRegisterData({
-                            ...registerData,
-                            username: e.target.value,
-                          })
-                        }
-                        className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="register-password"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Mật khẩu<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="register-password"
-                        type="password"
-                        placeholder="Tối thiểu 6 ký tự"
-                        value={registerData.password}
-                        onChange={(e) =>
-                          setRegisterData({
-                            ...registerData,
-                            password: e.target.value,
-                          })
-                        }
-                        className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                        minLength={6}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="register-confirm-password"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Xác nhận mật khẩu<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="register-confirm-password"
-                        type="password"
-                        placeholder="Nhập lại mật khẩu"
-                        value={registerData.confirmPassword}
-                        onChange={(e) =>
-                          setRegisterData({
-                            ...registerData,
-                            confirmPassword: e.target.value,
-                          })
-                        }
-                        className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="register-captcha"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Captcha<span className="text-red-500">*</span>
-                      </Label>
-                      <div className="flex gap-2">
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="otp-code"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Mã OTP (6 số)<span className="text-red-500">*</span>
+                        </Label>
                         <Input
-                          id="register-captcha"
+                          id="otp-code"
                           type="text"
-                          placeholder="Nhập captcha"
-                          value={registerData.captcha}
+                          placeholder="000000"
+                          value={otpCode}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, "");
+                            if (value.length <= 6) {
+                              setOtpCode(value);
+                            }
+                          }}
+                          className="h-12 text-center text-2xl tracking-widest border-gray-300 focus:border-green-500 focus:ring-green-500"
+                          maxLength={6}
+                          required
+                        />
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full h-11 bg-green-700 hover:bg-green-800 text-white font-semibold text-sm"
+                        disabled={loading || otpCode.length !== 6}
+                      >
+                        {loading ? "Đang xác thực..." : "XÁC THỰC OTP"}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-11"
+                        onClick={handleBackToRegister}
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Quay lại đăng ký
+                      </Button>
+
+                      <div className="text-center text-xs text-gray-500">
+                        Không nhận được mã? Kiểm tra email hoặc liên hệ hỗ trợ
+                      </div>
+                    </form>
+                  ) : (
+                    /* Registration Form */
+                    <form onSubmit={handleRegisterSubmit} className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="register-fullname"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Họ và tên<span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="register-fullname"
+                          type="text"
+                          placeholder="Nguyễn Văn A"
+                          value={registerData.fullName}
                           onChange={(e) =>
                             setRegisterData({
                               ...registerData,
-                              captcha: e.target.value,
+                              fullName: e.target.value,
                             })
                           }
                           className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
                           required
                         />
-                        <div className="flex items-center gap-1">
-                          <div
-                            className="h-10 px-4 bg-white border-2 border-gray-300 rounded-md flex items-center justify-center font-bold text-lg tracking-widest select-none"
-                            style={{
-                              fontFamily: "monospace",
-                              letterSpacing: "0.2em",
-                              textDecoration: "line-through",
-                            }}
-                          >
-                            {captchaText}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="register-email"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Email<span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="register-email"
+                          type="email"
+                          placeholder="example@email.com"
+                          value={registerData.email}
+                          onChange={(e) =>
+                            setRegisterData({
+                              ...registerData,
+                              email: e.target.value,
+                            })
+                          }
+                          className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="register-phone"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Số điện thoại<span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="register-phone"
+                          type="tel"
+                          placeholder="0912345678"
+                          value={registerData.phone}
+                          onChange={(e) =>
+                            setRegisterData({
+                              ...registerData,
+                              phone: e.target.value,
+                            })
+                          }
+                          className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="register-password"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Mật khẩu<span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="register-password"
+                          type="password"
+                          placeholder="Tối thiểu 8 ký tự"
+                          value={registerData.password}
+                          onChange={(e) =>
+                            setRegisterData({
+                              ...registerData,
+                              password: e.target.value,
+                            })
+                          }
+                          className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                          minLength={8}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="register-confirm-password"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Xác nhận mật khẩu
+                          <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="register-confirm-password"
+                          type="password"
+                          placeholder="Nhập lại mật khẩu"
+                          value={registerData.confirmPassword}
+                          onChange={(e) =>
+                            setRegisterData({
+                              ...registerData,
+                              confirmPassword: e.target.value,
+                            })
+                          }
+                          className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="register-captcha"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Captcha<span className="text-red-500">*</span>
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="register-captcha"
+                            type="text"
+                            placeholder="Nhập captcha"
+                            value={registerData.captcha}
+                            onChange={(e) =>
+                              setRegisterData({
+                                ...registerData,
+                                captcha: e.target.value,
+                              })
+                            }
+                            className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                            required
+                          />
+                          <div className="flex items-center gap-1">
+                            <div
+                              className="h-10 px-4 bg-white border-2 border-gray-300 rounded-md flex items-center justify-center font-bold text-lg tracking-widest select-none"
+                              style={{
+                                fontFamily: "monospace",
+                                letterSpacing: "0.2em",
+                                textDecoration: "line-through",
+                              }}
+                            >
+                              {captchaText}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={refreshCaptcha}
+                              className="h-10 w-10 hover:bg-green-50"
+                            >
+                              <RefreshCw className="h-4 w-4 text-gray-600" />
+                            </Button>
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={refreshCaptcha}
-                            className="h-10 w-10 hover:bg-green-50"
-                          >
-                            <RefreshCw className="h-4 w-4 text-gray-600" />
-                          </Button>
                         </div>
                       </div>
-                    </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full h-11 bg-green-700 hover:bg-green-800 text-white font-semibold text-sm"
-                    >
-                      ĐĂNG KÝ TÀI KHOẢN
-                    </Button>
+                      <Button
+                        type="submit"
+                        className="w-full h-11 bg-green-700 hover:bg-green-800 text-white font-semibold text-sm"
+                        disabled={loading}
+                      >
+                        {loading ? "Đang xử lý..." : "ĐĂNG KÝ TÀI KHOẢN"}
+                      </Button>
 
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600">
-                        Đã có tài khoản?{" "}
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab("login")}
-                          className="text-blue-600 hover:underline font-medium"
-                        >
-                          Đăng nhập ngay
-                        </button>
-                      </p>
-                    </div>
-                  </form>
+                      <div className="text-center">
+                        <p className="text-sm text-gray-600">
+                          Đã có tài khoản?{" "}
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab("login")}
+                            className="text-blue-600 hover:underline font-medium"
+                          >
+                            Đăng nhập ngay
+                          </button>
+                        </p>
+                      </div>
+                    </form>
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>

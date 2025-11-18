@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '@/service';
 import type {
   RegisterRequest,
+  VerifyOtpRequest,
   LoginRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
@@ -16,7 +17,8 @@ interface UseAuthReturn {
   error: string | null;
   
   // Methods
-  register: (data: RegisterRequest) => Promise<AuthResponse | null>;
+  register: (data: RegisterRequest) => Promise<{ message: string } | null>;
+  verifyOtp: (data: VerifyOtpRequest) => Promise<AuthResponse | null>;
   login: (data: LoginRequest) => Promise<AuthResponse | null>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
@@ -55,18 +57,36 @@ export const useAuth = (): UseAuthReturn => {
     setError(null);
   }, []);
 
-  const register = useCallback(async (data: RegisterRequest): Promise<AuthResponse | null> => {
+  const register = useCallback(async (data: RegisterRequest): Promise<{ message: string } | null> => {
     try {
       setLoading(true);
       setError(null);
       
       const response = await authService.register(data);
       
-      // Don't navigate here - let the component decide
+      // Return message, don't navigate - component will show OTP form
       return response;
       
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Registration failed';
+      const errorMessage = err.response?.data?.message || 'Đăng ký thất bại';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const verifyOtp = useCallback(async (data: VerifyOtpRequest): Promise<AuthResponse | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await authService.verifyOtp(data);
+      
+      return response;
+      
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Xác thực OTP thất bại';
       setError(errorMessage);
       return null;
     } finally {
@@ -214,6 +234,7 @@ export const useAuth = (): UseAuthReturn => {
     loading,
     error,
     register,
+    verifyOtp,
     login,
     loginWithGoogle,
     logout,
