@@ -1,11 +1,36 @@
-import React from "react";
-import { Stack } from "expo-router";
-import { TouchableOpacity, Text } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { theme } from "@/utils";
+import apiClient from "@/api/apiClient";
 import { AuthProvider } from "@/context/authContext";
+import { useNotifications } from "@/hooks/useNotifications";
+import { theme } from "@/utils";
+import { startOfflineQueueProcessor } from "@/utils/offlineQueue";
+import { useNavigation } from "@react-navigation/native";
+import { Stack } from "expo-router";
+import { useEffect } from "react";
+import { Text, TouchableOpacity } from "react-native";
 
 export default function RootLayout() {
+  // Initialize notifications
+  const { expoPushToken, permissions } = useNotifications();
+
+  useEffect(() => {
+    // Start offline queue processor when app launches
+    const stop = startOfflineQueueProcessor(apiClient, (info) => {
+      console.log(`Queue action ${info.actionId}: ${info.status}`, info.error);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      stop();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (expoPushToken) {
+      console.log("Push token:", expoPushToken);
+      // TODO: Send token to backend to register for push notifications
+    }
+  }, [expoPushToken]);
+
   return (
     <AuthProvider>
       <Stack screenOptions={{ headerShown: false }}>

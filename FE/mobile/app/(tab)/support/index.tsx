@@ -1,18 +1,20 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Alert,
-  Linking,
-} from "react-native";
 import { theme } from "@/utils";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { mockInsuranceCompanies, mockInfoCards } from "../../../mocks/mockData";
+import { useRouter } from "expo-router";
+import {
+  Alert,
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { mockInfoCards, mockInsuranceCompanies } from "../../../mocks/mockData";
 
 export default function Support() {
+  const router = useRouter();
   // Using mock data from centralized file
   const insuranceCompanies = mockInsuranceCompanies;
   const infoCards = mockInfoCards;
@@ -29,6 +31,10 @@ export default function Support() {
 
   const handleGuidePress = () => {
     Alert.alert("Hướng dẫn đặt xe", "Chức năng đang phát triển");
+  };
+
+  const handleContactPress = () => {
+    router.push("/support/contact" as any);
   };
 
   const handleInfoCardPress = (title: string) => {
@@ -59,6 +65,24 @@ export default function Support() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Hướng dẫn</Text>
+        <TouchableOpacity
+          style={{ marginTop: theme.spacing.sm }}
+          onPress={handleContactPress}
+          activeOpacity={0.8}
+        >
+          <View
+            style={{
+              backgroundColor: theme.colors.primary,
+              padding: theme.spacing.sm,
+              borderRadius: theme.radius.md,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "700" }}>
+              Liên hệ hỗ trợ
+            </Text>
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.guideCard}
           activeOpacity={0.8}

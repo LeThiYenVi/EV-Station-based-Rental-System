@@ -1,27 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  View,
-  TextInput,
-  StyleSheet,
-  StatusBar,
-  FlatList,
-  ListRenderItem,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { theme } from "@/utils";
-import { Avatar, Button, Card, Text } from "react-native-paper";
-import { Section } from "../../../components/Section";
-import { Promo } from "@/types/Promo";
-import { Place } from "@/types/Place";
-import { usePromo } from "@/hooks/usePromo";
-import { placeFetch } from "@/hooks/placeFetch";
 import { useAuth } from "@/context/authContext";
+import { usePromo } from "@/hooks/usePromo";
+import { useStations } from "@/hooks/useStations";
+import { StationResponse } from "@/types";
+import { Promo } from "@/types/Promo";
+import { theme } from "@/utils";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Alert } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  Image,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Chip, Text } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Section } from "../../../components/Section";
 import { mockAboutUsData, mockInsuranceData } from "../../../mocks/mockData";
 
 export default function DashboardPage() {
@@ -39,12 +36,17 @@ export default function DashboardPage() {
     error: PromoError,
     refetch: fetchPromos,
   } = usePromo();
-  const { Places, isLoading: isPlaceLoading, error: PlaceError } = placeFetch();
+  const {
+    stations,
+    isLoading: isStationLoading,
+    error: StationError,
+    refetch: fetchStations,
+  } = useStations();
   const PROMO_CARD_WIDTH = 280;
-  const PLACE_CARD_WIDTH = 220;
+  const STATION_CARD_WIDTH = 280;
   useEffect(() => {
     if (user) {
-      setName(user.userName);
+      setName(user.fullName || "User");
     }
   }, [user]);
 
@@ -136,13 +138,13 @@ export default function DashboardPage() {
         <TouchableOpacity
           activeOpacity={0.7}
           style={{
-            marginTop: theme.spacing.sm,
             alignSelf: "flex-start",
             backgroundColor: theme.colors.primary,
             paddingHorizontal: theme.spacing.md,
             paddingVertical: theme.spacing.xs,
             borderRadius: theme.radius.lg,
           }}
+          onPress={() => router.push("/dashboard/map" as any)}
         >
           <Text style={{ color: theme.colors.background, fontWeight: "600" }}>
             Tìm hiểu thêm
@@ -209,26 +211,26 @@ export default function DashboardPage() {
       itemWidth: PROMO_CARD_WIDTH,
     },
     {
-      key: "places",
-      title: "Địa điểm nổi bật",
-      data: Places,
-      loading: isPlaceLoading,
-      error: PlaceError,
+      key: "stations",
+      title: "Trạm sạc nổi bật",
+      data: stations,
+      loading: isStationLoading,
+      error: StationError,
       layout: "horizontal",
       numColumns: 2,
-      renderItem: ({ item }: { item: Place }) => (
+      renderItem: ({ item }: { item: StationResponse }) => (
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => {
             router.push({
-              pathname: "/dashboard/place-detail",
-              params: { place: JSON.stringify(item) },
+              pathname: "/dashboard/station-detail" as any,
+              params: { stationId: item.id },
             });
           }}
         >
           <View
             style={{
-              width: PLACE_CARD_WIDTH,
+              width: STATION_CARD_WIDTH,
               backgroundColor: theme.colors.background,
               borderRadius: theme.radius.xl,
               borderWidth: 1,
@@ -237,29 +239,103 @@ export default function DashboardPage() {
             }}
           >
             <Image
-              source={{ uri: item.thumbnail }}
-              style={{ width: "100%", height: 120 }}
+              source={{
+                uri: item.photo || "https://via.placeholder.com/280x140",
+              }}
+              style={{ width: "100%", height: 140 }}
               resizeMode="cover"
             />
-            <View style={{ padding: theme.spacing.sm }}>
-              <Text
-                style={{ fontWeight: "700", color: theme.colors.foreground }}
+            <View style={{ padding: theme.spacing.md }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  marginBottom: 8,
+                }}
               >
-                {item.cityName}
-              </Text>
-              <Text
-                style={{ color: theme.colors.mutedForeground, marginTop: 2 }}
+                <Text
+                  style={{
+                    fontWeight: "700",
+                    color: theme.colors.foreground,
+                    flex: 1,
+                  }}
+                  numberOfLines={1}
+                >
+                  {item.name}
+                </Text>
+                <Chip mode="flat" compact style={{ height: 24 }}>
+                  {item.status}
+                </Chip>
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 4,
+                }}
               >
-                {item.carQuantity} xe có sẵn
-              </Text>
+                <Ionicons
+                  name="location"
+                  size={14}
+                  color={theme.colors.mutedForeground}
+                />
+                <Text
+                  style={{
+                    color: theme.colors.mutedForeground,
+                    marginLeft: 4,
+                    flex: 1,
+                  }}
+                  numberOfLines={1}
+                >
+                  {item.address}
+                </Text>
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: 8,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Ionicons name="car" size={16} color={theme.colors.primary} />
+                  <Text
+                    style={{
+                      marginLeft: 4,
+                      fontWeight: "600",
+                      color: theme.colors.primary,
+                    }}
+                  >
+                    Xe có sẵn
+                  </Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Ionicons
+                    name="time"
+                    size={14}
+                    color={theme.colors.mutedForeground}
+                  />
+                  <Text
+                    style={{
+                      marginLeft: 4,
+                      fontSize: 12,
+                      color: theme.colors.mutedForeground,
+                    }}
+                  >
+                    {item.startTime} - {item.endTime}
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
         </TouchableOpacity>
       ),
-      keyExtractor: (pl: Place) => pl.id,
+      keyExtractor: (st: StationResponse) => st.id,
       autoScroll: true,
-      autoScrollInterval: 5000,
-      itemWidth: PLACE_CARD_WIDTH,
+      autoScrollInterval: 6000,
+      itemWidth: STATION_CARD_WIDTH,
     },
     {
       key: "about",
@@ -336,10 +412,10 @@ export default function DashboardPage() {
                       />
                       <View style={styles.userTextInfo}>
                         <Text style={styles.userName}>
-                          {user ? user.userName : "Guest"}
+                          {user ? user.fullName : "Guest"}
                         </Text>
                         <Text style={styles.userIdText}>
-                          {user ? user.id : ""}
+                          {user ? user.email : ""}
                         </Text>
                         {user && (
                           <View style={styles.userPointRow}>
@@ -483,6 +559,73 @@ export default function DashboardPage() {
                     <Text style={styles.searchButtonText}>Tìm xe</Text>
                   </TouchableOpacity>
                 </View>
+              </View>
+
+              {/* Quick Actions */}
+              <View style={styles.quickActionsContainer}>
+                <TouchableOpacity
+                  style={styles.quickActionCard}
+                  activeOpacity={0.8}
+                  onPress={() => router.push("/dashboard/map" as any)}
+                >
+                  <View
+                    style={[
+                      styles.quickActionIcon,
+                      { backgroundColor: "#E3F2FD" },
+                    ]}
+                  >
+                    <Ionicons name="map" size={24} color="#2196F3" />
+                  </View>
+                  <Text style={styles.quickActionText}>Bản đồ trạm</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.quickActionCard}
+                  activeOpacity={0.8}
+                  onPress={() => router.push("/trip")}
+                >
+                  <View
+                    style={[
+                      styles.quickActionIcon,
+                      { backgroundColor: "#FFF3E0" },
+                    ]}
+                  >
+                    <Ionicons name="car" size={24} color="#FF9800" />
+                  </View>
+                  <Text style={styles.quickActionText}>Chuyến đi</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.quickActionCard}
+                  activeOpacity={0.8}
+                  onPress={() => router.push("/profile")}
+                >
+                  <View
+                    style={[
+                      styles.quickActionIcon,
+                      { backgroundColor: "#F3E5F5" },
+                    ]}
+                  >
+                    <Ionicons name="person" size={24} color="#9C27B0" />
+                  </View>
+                  <Text style={styles.quickActionText}>Hồ sơ</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.quickActionCard}
+                  activeOpacity={0.8}
+                  onPress={() => router.push("/support")}
+                >
+                  <View
+                    style={[
+                      styles.quickActionIcon,
+                      { backgroundColor: "#E8F5E9" },
+                    ]}
+                  >
+                    <Ionicons name="help-circle" size={24} color="#4CAF50" />
+                  </View>
+                  <Text style={styles.quickActionText}>Hỗ trợ</Text>
+                </TouchableOpacity>
               </View>
             </>
           }
@@ -659,5 +802,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#fff",
+  },
+  quickActionsContainer: {
+    flexDirection: "row",
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    gap: theme.spacing.sm,
+  },
+  quickActionCard: {
+    flex: 1,
+    alignItems: "center",
+    backgroundColor: "#fff",
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.radius.lg,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  quickActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: theme.spacing.xs,
+  },
+  quickActionText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#333",
+    textAlign: "center",
   },
 });

@@ -1,21 +1,21 @@
 import RerquiredLoginButton from "@/components/RequireLoginButton";
 import { useAuth } from "@/context/authContext";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  Alert,
-} from "react-native";
 import { theme } from "@/utils";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { mockProfileMenuSections } from "../../../mocks/mockData";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";
+import {
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { mockProfileMenuSections } from "../../../mocks/mockData";
 
 export default function Profile() {
   const { logout, user } = useAuth();
@@ -68,7 +68,7 @@ export default function Profile() {
             />
             <View style={styles.userDetails}>
               <Text style={styles.userName}>
-                {user?.userName || "Khang Lê Duy"}
+                {user?.fullName || "Khang Lê Duy"}
               </Text>
               <Text style={styles.userId}>{user?.id || "SE183186"}</Text>
             </View>

@@ -1,25 +1,47 @@
-import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+
+import { PromoApi } from "@/api/PromoApi";
+import { SimpleHeader } from "@/components/SimpleHeader";
+import { Promo } from "@/types/Promo";
 import { theme } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Promo } from "@/types/Promo";
-import { SimpleHeader } from "@/components/SimpleHeader";
 
 export default function PromoDetailPage() {
   const params = useLocalSearchParams();
+  const router = useRouter();
   const [promo, setPromo] = useState<Promo | null>(null);
 
   useEffect(() => {
     // Parse promo data from params
-    if (params.promo) {
-      try {
-        const promoData = JSON.parse(params.promo as string);
-        setPromo(promoData);
-      } catch (error) {
-        console.error("Error parsing promo data:", error);
+    const init = async () => {
+      if (params.promo) {
+        try {
+          const promoData = JSON.parse(params.promo as string);
+          setPromo(promoData);
+          return;
+        } catch (error) {
+          console.error("Error parsing promo data:", error);
+        }
       }
-    }
+
+      // If a promoId was provided instead, fetch from API
+      if (params.promoId) {
+        try {
+          const fetched = await PromoApi.getById(params.promoId as string);
+          setPromo(fetched);
+          return;
+        } catch (err) {
+          console.error("Error fetching promo by id:", err);
+        }
+      }
+
+      // If nothing found, navigate back
+      router.back();
+    };
+
+    init();
   }, [params]);
 
   if (!promo) {
