@@ -183,7 +183,7 @@ public class UserService {
 
     @Transactional
     @CacheEvict(value = "users", allEntries = true)
-    public UserResponse uploadLicenseCard(@NonNull UUID id, MultipartFile file) {
+    public UserResponse uploadLicenseCardFront(@NonNull UUID id, MultipartFile file) {
         log.info("Uploading license card for user: {}", id);
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
