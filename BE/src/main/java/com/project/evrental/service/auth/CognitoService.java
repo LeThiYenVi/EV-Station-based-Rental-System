@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -270,18 +271,30 @@ public class CognitoService {
 
     public UserResponse getUserInfo(String accessToken) {
         try {
-            GetUserRequest getUserRequest = GetUserRequest.builder()
-                    .accessToken(accessToken)
-                    .build();
+            GetUserResponse r = cognitoIdentityProviderClient.getUser(
+                    GetUserRequest.builder().accessToken(accessToken).build()
+            );
+            Map<String, String> attrs = r.userAttributes().stream()
+                    .collect(Collectors.toMap(
+                            AttributeType::name,
+                            AttributeType::value,
+                            (a, b) -> a
+                    ));
 
-            GetUserResponse getUserResponse = cognitoIdentityProviderClient.getUser(getUserRequest);
-            var user = userService.getByCognitoSub(getUserResponse.username());
-            return UserMapper.fromEntity(user);
+            log.debug(attrs.toString());
+            String email = attrs.get("email");
+            log.debug("EMAIL: " + email);
+            if (email == null) {
+                throw new AuthException("Missing 'sub' in Cognito user attributes");
+            }
+
+            return userService.getUserByEmail(email);
         } catch (CognitoIdentityProviderException e) {
             log.error("Get user info error: {}", e.awsErrorDetails().errorMessage());
             throw new AuthException("Failed to get user info: " + e.awsErrorDetails().errorMessage());
         }
     }
+
 
     public AuthResponse refreshToken(String refreshToken) {
         try {

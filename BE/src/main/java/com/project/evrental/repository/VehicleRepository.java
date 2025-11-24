@@ -55,6 +55,8 @@ public interface VehicleRepository extends JpaRepository<Vehicle, UUID> {
 
     List<Vehicle> findByStationIdAndStatus(UUID stationId, VehicleStatus status);
 
+        long countByStationIdAndStatus(UUID stationId, VehicleStatus status);
+
     @Query(value = """
             SELECT v.*
             FROM vehicles v
