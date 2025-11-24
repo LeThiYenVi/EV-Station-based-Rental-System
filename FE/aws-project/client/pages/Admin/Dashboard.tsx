@@ -1,6 +1,9 @@
 /**
  * Dashboard Page - Trang tổng quan hệ thống EV Station
  * Hiển thị các thống kê, biểu đồ, và hoạt động gần đây
+ *
+ * TODO: Tích hợp API khi backend cung cấp endpoint analytics tổng hợp
+ * Hiện tại sử dụng mock data để demo UI
  */
 
 import { useState } from "react";
@@ -43,8 +46,18 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+// Import hooks để sẵn sàng tích hợp API
+// import { useReport } from "@/hooks/useReport";
+// import { useVehicle } from "@/hooks/useVehicle";
+// import { useBooking } from "@/hooks/useBooking";
+
 export default function Dashboard() {
-  // Mock data - Replace with API calls using React Query
+  // TODO: Kích hoạt khi backend cung cấp API analytics
+  // const { getRevenueByStation, getUtilization } = useReport();
+  // const { getAllVehicles, getVehicleStats } = useVehicle();
+  // const { getAllBookings } = useBooking();
+
+  // Mock data - Thay thế bằng API calls
   const stats = {
     users: {
       total: 1234,

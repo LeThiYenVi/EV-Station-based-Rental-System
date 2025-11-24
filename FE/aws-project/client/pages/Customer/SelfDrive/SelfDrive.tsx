@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Car,
@@ -24,23 +24,101 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useVehicle } from "@/hooks/useVehicle";
+import { useStation } from "@/hooks/useStation";
+import { VehicleStatus } from "@/service";
 
 export default function SelfDrive() {
   const navigate = useNavigate();
+
+  // ✅ Sử dụng API hooks
+  const {
+    getAvailableVehicles,
+    searchVehicles,
+    filterByPriceRange,
+    formatPricePerDay,
+    getVehicleName,
+    loading: vehiclesLoading,
+  } = useVehicle();
+
+  const { getAllStations, loading: stationsLoading } = useStation();
+
+  // State
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [selectedCarType, setSelectedCarType] = useState("all");
   const [priceRange, setPriceRange] = useState("all");
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [stations, setStations] = useState<any[]>([]);
+  const [filteredVehicles, setFilteredVehicles] = useState<any[]>([]);
 
+  // ✅ Load stations từ API
+  useEffect(() => {
+    loadStations();
+  }, []);
+
+  // ✅ Load vehicles khi thay đổi location
+  useEffect(() => {
+    loadVehicles();
+  }, [selectedLocation]);
+
+  // ✅ Filter vehicles khi search/filter thay đổi
+  useEffect(() => {
+    filterVehicles();
+  }, [vehicles, searchTerm, selectedCarType, priceRange]);
+
+  const loadStations = async () => {
+    const result = await getAllStations();
+    if (result.success && result.data) {
+      setStations(result.data.content || []);
+    }
+  };
+
+  const loadVehicles = async () => {
+    const filters: any = {
+      status: VehicleStatus.AVAILABLE,
+    };
+
+    if (selectedLocation !== "all") {
+      filters.stationId = selectedLocation;
+    }
+
+    const result = await getAvailableVehicles(filters);
+    if (result.success && result.data) {
+      setVehicles(result.data);
+      setFilteredVehicles(result.data);
+    }
+  };
+
+  const filterVehicles = () => {
+    let result = [...vehicles];
+
+    // Search filter
+    if (searchTerm) {
+      result = searchVehicles(result, searchTerm);
+    }
+
+    // Fuel type filter
+    if (selectedCarType !== "all") {
+      result = result.filter((v) => v.fuelType === selectedCarType);
+    }
+
+    // Price range filter
+    if (priceRange !== "all") {
+      const [min, max] = priceRange.split("-").map(Number);
+      result = filterByPriceRange(result, min, max);
+    }
+
+    setFilteredVehicles(result);
+  };
+
+  // Convert stations to locations format
   const locations = [
     { value: "all", label: "Tất cả địa điểm" },
-    { value: "hcm", label: "TP. Hồ Chí Minh" },
-    { value: "hanoi", label: "Hà Nội" },
-    { value: "danang", label: "Đà Nẵng" },
-    { value: "dalat", label: "Đà Lạt" },
-    { value: "vungtau", label: "Vũng Tàu" },
-    { value: "nhatrang", label: "Nha Trang" },
-    { value: "phuquoc", label: "Phú Quốc" },
+    ...stations.map((station) => ({
+      value: station.id,
+      label: station.name,
+    })),
   ];
 
   const benefits = [
@@ -415,8 +493,10 @@ export default function SelfDrive() {
           <div className="flex items-center justify-between">
             <p className="text-gray-600">
               Tìm thấy{" "}
-              <span className="font-semibold text-gray-900">12 xe</span> khả
-              dụng
+              <span className="font-semibold text-gray-900">
+                {filteredVehicles.length} xe
+              </span>{" "}
+              khả dụng
             </p>
             <Button variant="outline" size="sm">
               <SlidersHorizontal className="w-4 h-4 mr-2" />
@@ -495,21 +575,45 @@ export default function SelfDrive() {
               </p>
             </div>
 
+            {/* Loading state */}
+            {vehiclesLoading && (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-transparent"></div>
+                <p className="mt-4 text-gray-600">Đang tải danh sách xe...</p>
+              </div>
+            )}
+
+            {/* Empty state */}
+            {!vehiclesLoading && filteredVehicles.length === 0 && (
+              <div className="text-center py-12">
+                <Car className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-600">Không tìm thấy xe phù hợp</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Vui lòng thử thay đổi bộ lọc
+                </p>
+              </div>
+            )}
+
+            {/* ✅ Vehicles Grid - Dữ liệu từ API */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
-              {cars.map((car) => (
+              {filteredVehicles.map((vehicle) => (
                 <Card
-                  key={car.id}
-                  onClick={() => navigate(`/car/${car.id}`)}
+                  key={vehicle.id}
+                  onClick={() => navigate(`/car/${vehicle.id}`)}
                   className="rounded-3xl overflow-hidden border border-gray-200 transition-all hover:-translate-y-2 hover:shadow-2xl cursor-pointer"
                 >
                   <div className="relative h-56 overflow-hidden">
                     <img
-                      src={car.image}
-                      alt={car.name}
+                      src={
+                        vehicle.photoUrls?.[0] ||
+                        "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop"
+                      }
+                      alt={vehicle.name}
                       className="w-full h-full object-cover transition-transform hover:scale-105"
                     />
                     <Badge className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">
-                      {car.badge}
+                      <Zap className="w-3 h-3 inline mr-1" />
+                      {vehicle.fuelType}
                     </Badge>
                   </div>
 
@@ -519,33 +623,33 @@ export default function SelfDrive() {
                         Chỉ từ
                       </span>
                       <span className="text-xl font-bold text-green-600">
-                        {car.price} VNĐ/Ngày
+                        {formatPricePerDay(vehicle.pricePerDay)}
                       </span>
                     </div>
 
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {car.name}
+                      {getVehicleName(vehicle)}
                     </h3>
                     <p className="text-sm text-gray-600 mb-4">
-                      {car.transmission}
+                      {vehicle.transmission || "Tự động"} • {vehicle.brand}
                     </p>
 
                     <div className="flex gap-4 mb-6 pb-6 border-b border-gray-200">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Car className="w-4 h-4" />
-                        <span>{car.seats}</span>
+                        <User className="w-4 h-4" />
+                        <span>{vehicle.seats} chỗ</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <span>{car.fuel}</span>
+                        <Zap className="w-4 h-4" />
+                        <span>{vehicle.fuelType}</span>
                       </div>
                     </div>
 
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2 text-sm text-gray-900">
-                        <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                        <span className="font-medium">{car.rating}</span>
-                        <span className="text-gray-400">
-                          • {car.trips} chuyến
+                        <MapPin className="w-4 h-4 text-green-500" />
+                        <span className="text-gray-600 text-xs">
+                          {vehicle.stationName || "Trạm"}
                         </span>
                       </div>
                       <Button className="bg-green-500 hover:bg-green-600 text-white rounded-xl px-4 py-2 font-semibold transition-all hover:translate-x-1">

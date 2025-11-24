@@ -10,11 +10,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, ArrowLeft } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMessage } from "@/components/ui/message";
+import { useAuth } from "@/hooks/useAuth";
+import { authService } from "@/service/auth/authService";
 
-// Tài khoản test
+// Tài khoản test (fallback khi API không khả dụng)
 const TEST_ACCOUNTS = {
   admin: { username: "admin", password: "admin123" },
   user: { username: "user", password: "user123" },
@@ -26,9 +28,17 @@ export default function Login() {
   const navigate = useNavigate();
   const { contextHolder, showSuccess, showError, showWarning } = useMessage();
 
+  // Sử dụng API thực tế
+  const { login, register, verifyOtp, loginWithGoogle, loading } = useAuth();
+
   const initialMode =
     searchParams.get("mode") === "register" ? "register" : "login";
   const [activeTab, setActiveTab] = useState(initialMode);
+
+  // Register OTP state
+  const [showOtpForm, setShowOtpForm] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
 
   const [loginData, setLoginData] = useState({
     username: "",
@@ -39,7 +49,7 @@ export default function Login() {
   const [registerData, setRegisterData] = useState({
     fullName: "",
     email: "",
-    username: "",
+    phone: "",
     password: "",
     confirmPassword: "",
     captcha: "",
@@ -52,9 +62,17 @@ export default function Login() {
     if (mode === "register") {
       setActiveTab("register");
     }
+
+    // Handle Google OAuth callback
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
+
+    if (code && state) {
+      handleGoogleCallback(code, state);
+    }
   }, [searchParams]);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Kiểm tra captcha
@@ -63,52 +81,86 @@ export default function Login() {
       return;
     }
 
-    // Kiểm tra tài khoản test và lấy role
-    let userRole: string | null = null;
+    try {
+      // Gọi API login thực tế
+      const result = await login({
+        email: loginData.username, // Backend expects email
+        password: loginData.password,
+      });
 
-    const isValidAccount = Object.entries(TEST_ACCOUNTS).some(
-      ([role, account]) => {
-        if (
-          account.username === loginData.username &&
-          account.password === loginData.password
-        ) {
-          userRole = role;
-          return true;
-        }
-        return false;
-      },
-    );
+      if (result && result.user) {
+        const user = result.user;
 
-    if (isValidAccount && userRole) {
-      // Save login status to localStorage
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("username", loginData.username);
-      localStorage.setItem("userRole", userRole);
+        // Save login status to localStorage
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("username", user.email);
+        localStorage.setItem("userRole", user.role || "user");
+        localStorage.setItem("userId", user.id);
 
-      // Dispatch custom event to notify header
-      window.dispatchEvent(new Event("loginStatusChanged"));
+        // Dispatch custom event to notify header
+        window.dispatchEvent(new Event("loginStatusChanged"));
 
-      showSuccess(`Đăng nhập thành công! Chào mừng ${loginData.username}`);
+        showSuccess(
+          `Đăng nhập thành công! Chào mừng ${user.fullName || user.email}`,
+        );
 
-      // Điều hướng dựa vào role sau khi đăng nhập thành công
-      setTimeout(() => {
-        if (userRole === "admin") {
-          navigate("/admin");
-        } else if (userRole === "staff") {
-          navigate("/staff");
+        // Điều hướng dựa vào role
+        setTimeout(() => {
+          const userRole = user.role?.toLowerCase();
+          if (userRole === "admin") {
+            navigate("/admin");
+          } else if (userRole === "staff") {
+            navigate("/staff");
+          } else {
+            navigate("/");
+          }
+        }, 1000);
+      } else {
+        // Fallback: Kiểm tra tài khoản test
+        let userRole: string | null = null;
+        const isValidAccount = Object.entries(TEST_ACCOUNTS).some(
+          ([role, account]) => {
+            if (
+              account.username === loginData.username &&
+              account.password === loginData.password
+            ) {
+              userRole = role;
+              return true;
+            }
+            return false;
+          },
+        );
+
+        if (isValidAccount && userRole) {
+          localStorage.setItem("isLoggedIn", "true");
+          localStorage.setItem("username", loginData.username);
+          localStorage.setItem("userRole", userRole);
+          window.dispatchEvent(new Event("loginStatusChanged"));
+          showSuccess(`Đăng nhập thành công! Chào mừng ${loginData.username}`);
+
+          setTimeout(() => {
+            if (userRole === "admin") {
+              navigate("/admin");
+            } else if (userRole === "staff") {
+              navigate("/staff");
+            } else {
+              navigate("/");
+            }
+          }, 1000);
         } else {
-          navigate("/");
+          showError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
         }
-      }, 1000);
-    } else {
-      showError(
-        "Tài khoản hoặc mật khẩu không đúng. Thử: admin/admin123, staff/staff123 hoặc user/user123",
-      );
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      showError("Lỗi kết nối đến server. Vui lòng thử lại sau.");
     }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    console.log("=== REGISTER SUBMIT START ===");
 
     // Kiểm tra captcha
     if (registerData.captcha.toLowerCase() !== captchaText.toLowerCase()) {
@@ -122,16 +174,201 @@ export default function Login() {
       return;
     }
 
-    showSuccess(
-      "Đăng ký thành công! Tài khoản của bạn đã được tạo. Vui lòng đăng nhập.",
-    );
+    // Clear any existing tokens before registration
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("idToken");
+    localStorage.removeItem("refreshToken");
 
-    // Chuyển sang tab đăng nhập
-    setActiveTab("login");
+    // Also clear all cookies to avoid authentication conflicts
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+
+    console.log("Cleared localStorage tokens and cookies");
+
+    // CRITICAL: Also clear sessionStorage
+    sessionStorage.clear();
+
+    // Debug: Check all cookies
+    console.log("Current cookies:", document.cookie);
+    console.log("Current localStorage:", { ...localStorage });
+
+    console.log("=== STARTING FRESH REGISTRATION (no auth data) ===");
+
+    try {
+      const requestData = {
+        email: registerData.email,
+        password: registerData.password,
+        confirmPassword: registerData.confirmPassword,
+        fullName: registerData.fullName,
+        phone: registerData.phone,
+        role: "RENTER" as const,
+      };
+
+      console.log("Submitting registration with data:", requestData);
+
+      // TEMPORARY FIX: Check if backend is properly configured
+      // If you see 401 on /auth/register, backend config is wrong
+      // Register endpoint SHOULD NOT require authentication
+
+      const result = await register(requestData);
+
+      console.log("Register result:", result);
+      console.log("=== REGISTER SUBMIT SUCCESS ===");
+
+      if (result) {
+        showSuccess(
+          result.message ||
+            "Đăng ký thành công! Vui lòng kiểm tra email để nhận mã OTP.",
+        );
+
+        // Show OTP verification form
+        setRegisteredEmail(registerData.email);
+        setShowOtpForm(true);
+      } else {
+        showError(
+          "Đăng ký thất bại. Vui lòng kiểm tra lại thông tin hoặc email đã được sử dụng.",
+        );
+      }
+    } catch (error: any) {
+      console.error("Register error:", error);
+      console.error("Error response:", error?.response);
+
+      // Parse error message from backend response
+      let errorMessage = "Lỗi kết nối đến server. Vui lòng thử lại sau.";
+
+      if (error?.response?.data?.errors) {
+        // Backend returns: {statusCode, message, errors}
+        errorMessage = error.response.data.errors;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.response?.status === 401) {
+        errorMessage =
+          "Email này đã được đăng ký. Vui lòng đăng nhập hoặc sử dụng email khác.";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      showError(errorMessage);
+    }
+  };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!otpCode || otpCode.length !== 6) {
+      showError("Vui lòng nhập mã OTP 6 số!");
+      return;
+    }
+
+    try {
+      const result = await verifyOtp({
+        email: registeredEmail,
+        otpCode: otpCode,
+      });
+
+      if (result && result.accessToken) {
+        showSuccess("Xác thực thành công! Đăng nhập tự động...");
+
+        // User is now logged in with tokens saved
+        // Redirect to home or dashboard
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1500);
+      } else {
+        showError("Mã OTP không đúng. Vui lòng thử lại.");
+      }
+    } catch (error: any) {
+      console.error("OTP verification error:", error);
+
+      let errorMessage = "Lỗi xác thực OTP. Vui lòng thử lại.";
+
+      if (error?.response?.data?.errors) {
+        // Backend error format: {statusCode, message, errors}
+        errorMessage = error.response.data.errors;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      showError(errorMessage);
+    }
+  };
+
+  const handleBackToRegister = () => {
+    setShowOtpForm(false);
+    setOtpCode("");
   };
 
   const refreshCaptcha = () => {
     showWarning("Captcha đã được làm mới: " + captchaText);
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+      // User will be redirected to Google OAuth page
+    } catch (error) {
+      console.error("Google login error:", error);
+      showError("Không thể kết nối với Google. Vui lòng thử lại.");
+    }
+  };
+
+  const handleGoogleCallback = async (code: string, state: string) => {
+    try {
+      // Verify state to prevent CSRF attacks
+      const savedState = sessionStorage.getItem("oauth_state");
+      if (savedState !== state) {
+        showError("Xác thực không hợp lệ. Vui lòng thử lại.");
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      // Call API to exchange code for tokens
+      const result = await authService.loginWithGoogle(code, state);
+
+      if (result && result.user) {
+        const user = result.user;
+
+        // Save login status
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("username", user.email);
+        localStorage.setItem("userRole", user.role || "user");
+        localStorage.setItem("userId", user.id);
+
+        // Dispatch event to notify header
+        window.dispatchEvent(new Event("loginStatusChanged"));
+
+        showSuccess(
+          `Đăng nhập Google thành công! Chào mừng ${user.fullName || user.email}`,
+        );
+
+        // Clean up
+        sessionStorage.removeItem("oauth_state");
+
+        // Navigate based on role
+        setTimeout(() => {
+          const userRole = user.role?.toLowerCase();
+          if (userRole === "admin") {
+            navigate("/admin", { replace: true });
+          } else if (userRole === "staff") {
+            navigate("/staff", { replace: true });
+          } else {
+            navigate("/", { replace: true });
+          }
+        }, 1000);
+      } else {
+        showError("Đăng nhập Google thất bại. Vui lòng thử lại.");
+        navigate("/login", { replace: true });
+      }
+    } catch (error: any) {
+      console.error("Google callback error:", error);
+      const errorMessage =
+        error?.response?.data?.message || "Đăng nhập Google thất bại.";
+      showError(errorMessage);
+      navigate("/login", { replace: true });
+    }
   };
 
   return (
@@ -396,8 +633,54 @@ export default function Login() {
                     <Button
                       type="submit"
                       className="w-full h-11 bg-green-700 hover:bg-green-800 text-white font-semibold text-sm"
+                      disabled={loading}
                     >
-                      TRUY CẬP HỆ THỐNG
+                      {loading ? "Đang xử lý..." : "TRUY CẬP HỆ THỐNG"}
+                    </Button>
+
+                    {/* Divider */}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-gray-300" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-white px-2 text-gray-500">
+                          Hoặc đăng nhập với
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Google Login Button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-11 border-gray-300 hover:bg-gray-50"
+                      onClick={handleGoogleLogin}
+                      disabled={loading}
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                          fill="#4285F4"
+                        />
+                        <path
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                          fill="#34A853"
+                        />
+                        <path
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                          fill="#FBBC05"
+                        />
+                        <path
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                          fill="#EA4335"
+                        />
+                      </svg>
+                      Đăng nhập với Google
                     </Button>
 
                     <div className="text-center space-y-2">
@@ -407,6 +690,15 @@ export default function Login() {
                       >
                         Quên mật khẩu?
                       </Link>
+                      <p className="text-sm text-gray-600">
+                        Chưa có tài khoản?{" "}
+                        <Link
+                          to="/register"
+                          className="text-green-600 hover:text-green-700 font-semibold"
+                        >
+                          Đăng ký ngay
+                        </Link>
+                      </p>
                       <p className="text-xs text-gray-500">
                         Tài khoản test:{" "}
                         <span className="font-semibold">admin/admin123</span>,{" "}
@@ -419,189 +711,255 @@ export default function Login() {
 
                 {/* Register Tab */}
                 <TabsContent value="register">
-                  <form onSubmit={handleRegisterSubmit} className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="register-fullname"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Họ và tên<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="register-fullname"
-                        type="text"
-                        placeholder="Nguyễn Văn A"
-                        value={registerData.fullName}
-                        onChange={(e) =>
-                          setRegisterData({
-                            ...registerData,
-                            fullName: e.target.value,
-                          })
-                        }
-                        className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                        required
-                      />
-                    </div>
+                  {showOtpForm ? (
+                    /* OTP Verification Form */
+                    <form onSubmit={handleOtpSubmit} className="space-y-4">
+                      <div className="text-center space-y-2 mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Xác thực OTP
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          Mã OTP đã được gửi đến email: <br />
+                          <span className="font-semibold text-green-600">
+                            {registeredEmail}
+                          </span>
+                        </p>
+                      </div>
 
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="register-email"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Email<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="register-email"
-                        type="email"
-                        placeholder="example@email.com"
-                        value={registerData.email}
-                        onChange={(e) =>
-                          setRegisterData({
-                            ...registerData,
-                            email: e.target.value,
-                          })
-                        }
-                        className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="register-username"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Tài khoản<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="register-username"
-                        type="text"
-                        placeholder="username"
-                        value={registerData.username}
-                        onChange={(e) =>
-                          setRegisterData({
-                            ...registerData,
-                            username: e.target.value,
-                          })
-                        }
-                        className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="register-password"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Mật khẩu<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="register-password"
-                        type="password"
-                        placeholder="Tối thiểu 6 ký tự"
-                        value={registerData.password}
-                        onChange={(e) =>
-                          setRegisterData({
-                            ...registerData,
-                            password: e.target.value,
-                          })
-                        }
-                        className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                        minLength={6}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="register-confirm-password"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Xác nhận mật khẩu<span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="register-confirm-password"
-                        type="password"
-                        placeholder="Nhập lại mật khẩu"
-                        value={registerData.confirmPassword}
-                        onChange={(e) =>
-                          setRegisterData({
-                            ...registerData,
-                            confirmPassword: e.target.value,
-                          })
-                        }
-                        className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="register-captcha"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Captcha<span className="text-red-500">*</span>
-                      </Label>
-                      <div className="flex gap-2">
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="otp-code"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Mã OTP (6 số)<span className="text-red-500">*</span>
+                        </Label>
                         <Input
-                          id="register-captcha"
+                          id="otp-code"
                           type="text"
-                          placeholder="Nhập captcha"
-                          value={registerData.captcha}
+                          placeholder="000000"
+                          value={otpCode}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, "");
+                            if (value.length <= 6) {
+                              setOtpCode(value);
+                            }
+                          }}
+                          className="h-12 text-center text-2xl tracking-widest border-gray-300 focus:border-green-500 focus:ring-green-500"
+                          maxLength={6}
+                          required
+                        />
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full h-11 bg-green-700 hover:bg-green-800 text-white font-semibold text-sm"
+                        disabled={loading || otpCode.length !== 6}
+                      >
+                        {loading ? "Đang xác thực..." : "XÁC THỰC OTP"}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-11"
+                        onClick={handleBackToRegister}
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Quay lại đăng ký
+                      </Button>
+
+                      <div className="text-center text-xs text-gray-500">
+                        Không nhận được mã? Kiểm tra email hoặc liên hệ hỗ trợ
+                      </div>
+                    </form>
+                  ) : (
+                    /* Registration Form */
+                    <form onSubmit={handleRegisterSubmit} className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="register-fullname"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Họ và tên<span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="register-fullname"
+                          type="text"
+                          placeholder="Nguyễn Văn A"
+                          value={registerData.fullName}
                           onChange={(e) =>
                             setRegisterData({
                               ...registerData,
-                              captcha: e.target.value,
+                              fullName: e.target.value,
                             })
                           }
                           className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
                           required
                         />
-                        <div className="flex items-center gap-1">
-                          <div
-                            className="h-10 px-4 bg-white border-2 border-gray-300 rounded-md flex items-center justify-center font-bold text-lg tracking-widest select-none"
-                            style={{
-                              fontFamily: "monospace",
-                              letterSpacing: "0.2em",
-                              textDecoration: "line-through",
-                            }}
-                          >
-                            {captchaText}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="register-email"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Email<span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="register-email"
+                          type="email"
+                          placeholder="example@email.com"
+                          value={registerData.email}
+                          onChange={(e) =>
+                            setRegisterData({
+                              ...registerData,
+                              email: e.target.value,
+                            })
+                          }
+                          className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="register-phone"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Số điện thoại<span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="register-phone"
+                          type="tel"
+                          placeholder="0912345678"
+                          value={registerData.phone}
+                          onChange={(e) =>
+                            setRegisterData({
+                              ...registerData,
+                              phone: e.target.value,
+                            })
+                          }
+                          className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="register-password"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Mật khẩu<span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="register-password"
+                          type="password"
+                          placeholder="Tối thiểu 8 ký tự"
+                          value={registerData.password}
+                          onChange={(e) =>
+                            setRegisterData({
+                              ...registerData,
+                              password: e.target.value,
+                            })
+                          }
+                          className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                          minLength={8}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="register-confirm-password"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Xác nhận mật khẩu
+                          <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="register-confirm-password"
+                          type="password"
+                          placeholder="Nhập lại mật khẩu"
+                          value={registerData.confirmPassword}
+                          onChange={(e) =>
+                            setRegisterData({
+                              ...registerData,
+                              confirmPassword: e.target.value,
+                            })
+                          }
+                          className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="register-captcha"
+                          className="text-gray-700 font-medium text-sm"
+                        >
+                          Captcha<span className="text-red-500">*</span>
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="register-captcha"
+                            type="text"
+                            placeholder="Nhập captcha"
+                            value={registerData.captcha}
+                            onChange={(e) =>
+                              setRegisterData({
+                                ...registerData,
+                                captcha: e.target.value,
+                              })
+                            }
+                            className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                            required
+                          />
+                          <div className="flex items-center gap-1">
+                            <div
+                              className="h-10 px-4 bg-white border-2 border-gray-300 rounded-md flex items-center justify-center font-bold text-lg tracking-widest select-none"
+                              style={{
+                                fontFamily: "monospace",
+                                letterSpacing: "0.2em",
+                                textDecoration: "line-through",
+                              }}
+                            >
+                              {captchaText}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={refreshCaptcha}
+                              className="h-10 w-10 hover:bg-green-50"
+                            >
+                              <RefreshCw className="h-4 w-4 text-gray-600" />
+                            </Button>
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={refreshCaptcha}
-                            className="h-10 w-10 hover:bg-green-50"
-                          >
-                            <RefreshCw className="h-4 w-4 text-gray-600" />
-                          </Button>
                         </div>
                       </div>
-                    </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full h-11 bg-green-700 hover:bg-green-800 text-white font-semibold text-sm"
-                    >
-                      ĐĂNG KÝ TÀI KHOẢN
-                    </Button>
+                      <Button
+                        type="submit"
+                        className="w-full h-11 bg-green-700 hover:bg-green-800 text-white font-semibold text-sm"
+                        disabled={loading}
+                      >
+                        {loading ? "Đang xử lý..." : "ĐĂNG KÝ TÀI KHOẢN"}
+                      </Button>
 
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600">
-                        Đã có tài khoản?{" "}
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab("login")}
-                          className="text-blue-600 hover:underline font-medium"
-                        >
-                          Đăng nhập ngay
-                        </button>
-                      </p>
-                    </div>
-                  </form>
+                      <div className="text-center">
+                        <p className="text-sm text-gray-600">
+                          Đã có tài khoản?{" "}
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab("login")}
+                            className="text-blue-600 hover:underline font-medium"
+                          >
+                            Đăng nhập ngay
+                          </button>
+                        </p>
+                      </div>
+                    </form>
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>

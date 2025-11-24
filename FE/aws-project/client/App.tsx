@@ -47,7 +47,7 @@ const App = () => (
             path="/nearly-stations"
             element={
               <Layout>
-                <NearlyStations/>
+                <NearlyStations />
               </Layout>
             }
           />
@@ -116,7 +116,7 @@ const App = () => (
             }
           />
           <Route
-            path="/profile"
+            path="/user/info"
             element={
               <Layout>
                 <UserProfile />

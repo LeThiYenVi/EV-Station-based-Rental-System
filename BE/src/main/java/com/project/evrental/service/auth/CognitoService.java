@@ -427,13 +427,6 @@ public class CognitoService {
         }
     }
 
-    private String calculateBasicAuth() {
-        return Base64.getEncoder().encodeToString(
-                (cognitoConfig.getClientId()+":"+cognitoConfig.getClientSecret()).getBytes()
-        );
-    }
-
-
     private String randomPlaceholderAvatar() {
         return "https://avatar.iran.liara.run/public/" + ThreadLocalRandom.current().nextInt(1, 101);
     }
