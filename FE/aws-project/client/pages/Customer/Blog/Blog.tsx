@@ -12,7 +12,7 @@ import { useState } from "react";
 const blogData = [
   {
     id: 1,
-    title: "Top 10 xe tự lái được yêu thích nhất năm 2025",
+    title: "Top 10 xe tự lái được yêu thích nhất năm 2028",
     excerpt:
       "Khám phá danh sách những mẫu xe tự lái được khách hàng đánh giá cao nhất với dịch vụ hoàn hảo và giá cả hợp lý...",
     category: "Xu hướng",
