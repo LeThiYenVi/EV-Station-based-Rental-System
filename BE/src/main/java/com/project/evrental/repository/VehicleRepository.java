@@ -80,4 +80,10 @@ public interface VehicleRepository extends JpaRepository<Vehicle, UUID> {
     List<Vehicle> findByStationId(@Param("stationId") UUID stationId);
 
     Optional<Vehicle> findByLicensePlate(String licensePlate);
+
+    // Count vehicles by status
+    long countByStatus(VehicleStatus status);
+
+    // Find vehicles created after a specific date
+    List<Vehicle> findByCreatedAtAfter(LocalDateTime date);
 }

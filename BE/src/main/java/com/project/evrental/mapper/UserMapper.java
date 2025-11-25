@@ -2,10 +2,10 @@ package com.project.evrental.mapper;
 
 import com.project.evrental.domain.dto.response.UserResponse;
 import com.project.evrental.domain.entity.User;
+import org.springframework.stereotype.Component;
 
+@Component
 public class UserMapper {
-
-    private UserMapper() {}
 
     public static UserResponse fromEntity(User user) {
         return UserResponse.builder()
@@ -27,6 +27,15 @@ public class UserMapper {
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
+    }
+
+    // Instance methods for dependency injection
+    public UserResponse toResponse(User user) {
+        return fromEntity(user);
+    }
+
+    public UserResponse toUserResponse(User user) {
+        return fromEntity(user);
     }
 
 }
