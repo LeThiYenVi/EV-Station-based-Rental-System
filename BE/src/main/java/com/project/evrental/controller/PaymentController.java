@@ -76,4 +76,9 @@ public class PaymentController {
                         .data(paymentService.getPaymentByTransactionId(transactionId))
                         .build());
     }
+
+    @GetMapping("/result")
+    public ResponseEntity<String> result() {
+        return ResponseEntity.status(HttpStatus.OK).body("Payment successful!");
+    }
 }

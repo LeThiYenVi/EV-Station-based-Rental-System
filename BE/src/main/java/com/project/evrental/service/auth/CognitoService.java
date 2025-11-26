@@ -90,6 +90,7 @@ public class CognitoService {
                     .cognitoSub(signUpResponse.userSub())
                     .email(request.getEmail())
                     .phone(request.getPhone())
+                    .address(request.getAddress())
                     .role(UserRole.valueOf(request.getRole()))
                     .fullName(request.getFullName())
                     .avatarUrl(randomPlaceholderAvatar())

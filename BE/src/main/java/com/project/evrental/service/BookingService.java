@@ -63,6 +63,14 @@ public class BookingService {
         User renter = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
+        if (renter.getLicenseCardFrontImageUrl() == null || renter.getLicenseCardBackImageUrl() == null) {
+            throw new IllegalStateException("You must upload both front and back of your driver's license before booking");
+        }
+
+        if (renter.getLicenseNumber() == null || renter.getLicenseNumber().trim().isEmpty()) {
+            throw new IllegalStateException("License number is required before booking");
+        }
+
         Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with ID: " + request.getVehicleId()));
 
@@ -389,7 +397,6 @@ public class BookingService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof Jwt) {
             Jwt jwt = (Jwt) authentication.getPrincipal();
-
             String sub = jwt.getClaimAsString("sub");
             if (sub != null) {
                 log.debug("Using sub claim as cognito_sub: {}", sub);
