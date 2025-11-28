@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -271,30 +270,18 @@ public class CognitoService {
 
     public UserResponse getUserInfo(String accessToken) {
         try {
-            GetUserResponse r = cognitoIdentityProviderClient.getUser(
-                    GetUserRequest.builder().accessToken(accessToken).build()
-            );
-            Map<String, String> attrs = r.userAttributes().stream()
-                    .collect(Collectors.toMap(
-                            AttributeType::name,
-                            AttributeType::value,
-                            (a, b) -> a
-                    ));
+            GetUserRequest getUserRequest = GetUserRequest.builder()
+                    .accessToken(accessToken)
+                    .build();
 
-            log.debug(attrs.toString());
-            String email = attrs.get("email");
-            log.debug("EMAIL: " + email);
-            if (email == null) {
-                throw new AuthException("Missing 'sub' in Cognito user attributes");
-            }
-
-            return userService.getUserByEmail(email);
+            GetUserResponse getUserResponse = cognitoIdentityProviderClient.getUser(getUserRequest);
+            var user = userService.getByCognitoSub(getUserResponse.username());
+            return UserMapper.fromEntity(user);
         } catch (CognitoIdentityProviderException e) {
             log.error("Get user info error: {}", e.awsErrorDetails().errorMessage());
             throw new AuthException("Failed to get user info: " + e.awsErrorDetails().errorMessage());
         }
     }
-
 
     public AuthResponse refreshToken(String refreshToken) {
         try {
@@ -426,6 +413,13 @@ public class CognitoService {
             throw new RuntimeException("Error calculating secret hash", e);
         }
     }
+
+    private String calculateBasicAuth() {
+        return Base64.getEncoder().encodeToString(
+                (cognitoConfig.getClientId()+":"+cognitoConfig.getClientSecret()).getBytes()
+        );
+    }
+
 
     private String randomPlaceholderAvatar() {
         return "https://avatar.iran.liara.run/public/" + ThreadLocalRandom.current().nextInt(1, 101);
