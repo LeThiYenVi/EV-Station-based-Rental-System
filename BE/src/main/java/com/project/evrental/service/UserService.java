@@ -85,6 +85,12 @@ public class UserService {
         return userRepository.findByRole(role).stream().map(UserMapper::fromEntity).toList();
     }
 
+    @Cacheable(value = "users", key = "'staff-station-' + #stationId")
+    public List<UserResponse> getStaffByStation(UUID stationId) {
+        return userRepository.findByStationIdAndRole(stationId, UserRole.STAFF)
+                .stream().map(UserMapper::fromEntity).toList();
+    }
+
     @Transactional
     @CacheEvict(value = "users", allEntries = true)
     public void deleteUser(UUID id) {
