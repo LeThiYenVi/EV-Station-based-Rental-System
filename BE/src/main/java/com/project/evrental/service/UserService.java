@@ -1,11 +1,13 @@
 package com.project.evrental.service;
 
+import com.project.evrental.domain.common.BookingStatus;
 import com.project.evrental.domain.common.UserRole;
 import com.project.evrental.domain.dto.request.UpdateUserRequest;
 import com.project.evrental.domain.dto.response.UserResponse;
 import com.project.evrental.domain.entity.User;
 import com.project.evrental.exception.custom.ResourceNotFoundException;
 import com.project.evrental.mapper.UserMapper;
+import com.project.evrental.repository.BookingRepository;
 import com.project.evrental.repository.StationRepository;
 import com.project.evrental.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -33,6 +35,7 @@ public class UserService {
     UserRepository userRepository;
     StationRepository stationRepository;
     S3Service s3Service;
+    BookingRepository bookingRepository;
 
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream().map(UserMapper::fromEntity).toList();
@@ -65,6 +68,22 @@ public class UserService {
                 () -> new ResourceNotFoundException("User not found with id: " + id)
         );
         return UserMapper.fromEntity(loadedUser);
+    }
+
+    @Cacheable(value = "users", key = "'user-with-stats-' + #id")
+    public UserResponse getUserByIdWithStats(UUID id) {
+        log.info("Fetching user with booking statistics: {}", id);
+        var loadedUser = userRepository.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("User not found with id: " + id)
+        );
+
+        // Calculate booking statistics
+        Long totalBookings = bookingRepository.countByRenterId(id);
+        Long completedBookings = bookingRepository.countByRenterIdAndStatus(id, BookingStatus.COMPLETED);
+        Long activeBookings = bookingRepository.countByRenterIdAndStatus(id, BookingStatus.ONGOING);
+        Long cancelledBookings = bookingRepository.countByRenterIdAndStatus(id, BookingStatus.CANCELLED);
+
+        return UserMapper.fromEntityWithStats(loadedUser, totalBookings, completedBookings, activeBookings, cancelledBookings);
     }
 
     @Transactional
