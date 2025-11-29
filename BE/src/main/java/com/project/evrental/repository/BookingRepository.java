@@ -21,4 +21,9 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findByVehicleId(UUID vehicleId);
 
     List<Booking> findByStationId(UUID stationId);
+
+    // User statistics methods
+    long countByRenterId(UUID renterId);
+    
+    long countByRenterIdAndStatus(UUID renterId, BookingStatus status);
 }

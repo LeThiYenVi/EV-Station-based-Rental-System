@@ -43,6 +43,15 @@ public class UserResponse {
 
     UUID stationId;
 
+    // Booking statistics
+    Long totalBookings;
+
+    Long completedBookings;
+
+    Long activeBookings;
+
+    Long cancelledBookings;
+
     LocalDateTime createdAt;
 
     LocalDateTime updatedAt;

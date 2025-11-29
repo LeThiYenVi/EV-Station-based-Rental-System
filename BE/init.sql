@@ -1,6 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+DROP TABLE IF EXISTS blogs CASCADE;
 DROP TABLE IF EXISTS feedbacks CASCADE;
 DROP TABLE IF EXISTS payments CASCADE;
 DROP TABLE IF EXISTS bookings CASCADE;
@@ -174,6 +175,25 @@ CREATE INDEX idx_payments_transaction_id ON payments(transaction_id);
 
 CREATE INDEX idx_feedbacks_booking_id ON feedbacks(booking_id);
 CREATE INDEX idx_feedbacks_renter_id ON feedbacks(renter_id);
+
+CREATE TABLE blogs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    thumbnail_url TEXT,
+    author_id UUID NOT NULL,
+    published BOOLEAN DEFAULT FALSE,
+    view_count INTEGER DEFAULT 0,
+    published_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_blog_author FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_blogs_author_id ON blogs(author_id);
+CREATE INDEX idx_blogs_published ON blogs(published);
+CREATE INDEX idx_blogs_published_at ON blogs(published_at);
+CREATE INDEX idx_blogs_view_count ON blogs(view_count);
 
 INSERT INTO stations (name, address, latitude, longitude, hotline, status, photo, start_time, end_time, location) VALUES
 ('Station A', '123 Main Street, District 1, Ho Chi Minh City', 10.762622, 106.660172, '+84901234567', 'ACTIVE', 'https://example.com/station-a.jpg', '2024-01-01 06:00:00', '2024-01-01 22:00:00', ST_SetSRID(ST_MakePoint(106.660172, 10.762622), 4326)),
