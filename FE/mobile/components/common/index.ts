@@ -7,3 +7,5 @@ export { Avatar } from "./Avatar";
 export { ListItem } from "./ListItem";
 export { InfoRow } from "./InfoRow";
 export { Tabs } from "./Tabs";
+export { VehicleCard } from "./VehicleCard";
+export { VehicleDetailModal } from "./VehicleDetailModal";

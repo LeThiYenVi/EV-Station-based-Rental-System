@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { ChevronRight, LucideIcon } from "lucide-react-native";
 
 interface ListItemProps {
-  icon?: LucideIcon;
+  icon?: LucideIcon | React.ReactNode;
   iconSize?: number;
   iconColor?: string;
   iconBackgroundColor?: string;
@@ -36,13 +36,17 @@ export const ListItem: React.FC<ListItemProps> = ({
             { backgroundColor: iconBackgroundColor },
           ]}
         >
-          <Icon size={iconSize} color={iconColor} />
+          {typeof Icon === "function" ? (
+            <Icon size={iconSize} color={iconColor} />
+          ) : (
+            Icon
+          )}
         </View>
       )}
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>{title}</Text>
-          {badge && <View style={styles.badge}>{badge}</View>}
+          {badge}
         </View>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>

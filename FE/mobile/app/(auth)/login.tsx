@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
+import { authService } from "@/services";
 import { Button, Input } from "@/components/common";
 import { Mail, Lock, Chrome, ArrowLeft } from "lucide-react-native";
 import Toast from "react-native-toast-message";
@@ -19,8 +20,10 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleLogin = async () => {
+    // Validate inputs
     if (!email || !password) {
       Toast.show({
         type: "error",
@@ -32,28 +35,66 @@ export default function LoginScreen() {
 
     try {
       setIsLoading(true);
+      // Call real API
       await login(email, password);
-      Toast.show({
-        type: "success",
-        text1: "Thành công",
-        text2: "Đăng nhập thành công",
-      });
+      // Success toast is handled by useAuth
       router.replace("/(tabs)");
-    } catch (error) {
+    } catch (error: any) {
+      // Error toast is handled by useAuth
+      console.error("Login failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setIsGoogleLoading(true);
+
+      // Get Google OAuth URL from backend
+      const response = await authService.getAuthorizationUrl();
+
+      if (response && response.authorizationUrl) {
+        // Open Google OAuth URL in browser/WebView
+        Toast.show({
+          type: "info",
+          text1: "Chuyển hướng",
+          text2: "Đang mở Google OAuth...",
+        });
+
+        // On web, open in new window
+        if (typeof window !== "undefined") {
+          window.open(response.authorizationUrl, "_blank");
+        }
+
+        // TODO: Handle OAuth callback with code parameter
+        // Backend should redirect to app with code, then call /api/auth/callback
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Lỗi",
+          text2: "Không thể lấy URL đăng nhập Google",
+        });
+      }
+    } catch (error: any) {
+      console.error("Google login failed:", error);
       Toast.show({
         type: "error",
         text1: "Lỗi",
-        text2: "Thông tin đăng nhập không đúng",
+        text2: "Đăng nhập Google thất bại",
       });
     } finally {
-      setIsLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
-      <Pressable style={styles.backButton} onPress={() => router.back()}>
+      <Pressable
+        style={styles.backButton}
+        onPress={() => router.replace("/(tabs)/profile")}
+      >
         <ArrowLeft size={24} color="#111827" />
       </Pressable>
 
@@ -113,9 +154,19 @@ export default function LoginScreen() {
         </View>
 
         {/* Social Login */}
-        <Pressable style={styles.googleButton}>
-          <Chrome size={20} color="#4285f4" />
-          <Text style={styles.googleButtonText}>Đăng nhập với Google</Text>
+        <Pressable
+          style={styles.googleButton}
+          onPress={handleGoogleLogin}
+          disabled={isGoogleLoading}
+        >
+          {isGoogleLoading ? (
+            <Text style={styles.googleButtonText}>Đang tải...</Text>
+          ) : (
+            <>
+              <Chrome size={20} color="#4285f4" />
+              <Text style={styles.googleButtonText}>Đăng nhập với Google</Text>
+            </>
+          )}
         </Pressable>
 
         {/* Register Link */}

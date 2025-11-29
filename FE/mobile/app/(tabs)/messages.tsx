@@ -81,7 +81,7 @@ export default function MessagesScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <EmptyState
-          icon={<MessageCircle size={64} color="#d1d5db" />}
+          icon={MessageCircle}
           title="Chưa Có Tin Nhắn"
           description="Đăng nhập để xem tin nhắn và thông báo của bạn"
           action={

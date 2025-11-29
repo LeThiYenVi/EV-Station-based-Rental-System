@@ -5,14 +5,29 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { User } from "@/types";
-import { storage } from "@/utils/storage";
+import { UserResponse } from "@/types";
+import { authService } from "@/services";
+import {
+  setTokens,
+  clearTokens,
+  getAccessToken,
+  getUser,
+  setUser as saveUser,
+  removeUser,
+} from "@/utils/storage";
+import Toast from "react-native-toast-message";
 
 interface AuthContextType {
-  user: User | null;
+  user: UserResponse | null;
+  setUser: (user: UserResponse | null) => void;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    fullName: string,
+    phone: string
+  ) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -20,7 +35,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -30,17 +45,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loadUser = async () => {
     try {
       setIsLoading(true);
-      const token = await storage.getToken();
-      const savedUser = await storage.getUser();
+      const token = await getAccessToken();
+      const savedUser = await getUser();
 
       if (token && savedUser) {
         setUser(savedUser);
-        console.log("✅ User loaded from storage:", savedUser.name);
+        console.log("✅ User loaded from storage:", savedUser.fullName);
       } else {
         console.log("ℹ️ No saved user found");
       }
     } catch (error) {
       console.error("❌ Failed to load user:", error);
+      await clearTokens();
+      await removeUser();
     } finally {
       setIsLoading(false);
     }
@@ -50,77 +67,91 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
 
-      // Mock delay để giả lập network request
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call real API
+      const response = await authService.login({ email, password });
 
-      // Mock validation
-      if (!email || !password) {
-        throw new Error("Email và mật khẩu không được để trống");
-      }
+      // Save tokens
+      await setTokens(response.accessToken, response.refreshToken);
 
-      // Mock user data - Tạo tên từ email
-      const userName =
-        email.split("@")[0].charAt(0).toUpperCase() +
-        email.split("@")[0].slice(1);
+      // Save user data
+      await saveUser(response.user);
+      setUser(response.user);
 
-      const mockUser: User = {
-        id: "mock_" + Date.now(),
-        email,
-        name: userName,
-        phone: "+84 123 456 789",
-        avatar: undefined,
-      };
+      Toast.show({
+        type: "success",
+        text1: "Đăng nhập thành công",
+        text2: `Chào mừng ${response.user.fullName}!`,
+      });
 
-      const mockToken = "mock_token_" + Date.now();
+      console.log("✅ Login Success:", response.user.fullName);
+    } catch (error: any) {
+      console.error("❌ Login Error:", error);
 
-      await storage.setToken(mockToken);
-      await storage.setUser(mockUser);
-      setUser(mockUser);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Đăng nhập thất bại. Vui lòng thử lại.";
 
-      console.log("✅ Mock Login Success:", mockUser.name);
-    } catch (error) {
-      console.error("❌ Mock Login Error:", error);
-      throw error;
+      Toast.show({
+        type: "error",
+        text1: "Đăng nhập thất bại",
+        text2: errorMessage,
+      });
+
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (
+    email: string,
+    password: string,
+    fullName: string,
+    phone: string
+  ) => {
     try {
       setIsLoading(true);
 
-      // Mock delay để giả lập network request
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-
-      // Mock validation
-      if (!email || !password || !name) {
-        throw new Error("Vui lòng điền đầy đủ thông tin");
-      }
-
-      if (password.length < 6) {
-        throw new Error("Mật khẩu phải có ít nhất 6 ký tự");
-      }
-
-      // Mock user data
-      const mockUser: User = {
-        id: "mock_" + Date.now(),
+      // Call real API
+      const response = await authService.register({
         email,
-        name,
-        phone: undefined,
-        avatar: undefined,
-      };
+        password,
+        confirmPassword: password,
+        fullName,
+        phone,
+        role: "RENTER",
+      });
 
-      const mockToken = "mock_token_" + Date.now();
+      // Save tokens
+      await setTokens(response.accessToken, response.refreshToken);
 
-      await storage.setToken(mockToken);
-      await storage.setUser(mockUser);
-      setUser(mockUser);
+      // Save user data
+      await saveUser(response.user);
+      setUser(response.user);
 
-      console.log("✅ Mock Register Success:", mockUser.name);
-    } catch (error) {
-      console.error("❌ Mock Register Error:", error);
-      throw error;
+      Toast.show({
+        type: "success",
+        text1: "Đăng ký thành công",
+        text2: `Chào mừng ${response.user.fullName}!`,
+      });
+
+      console.log("✅ Register Success:", response.user.fullName);
+    } catch (error: any) {
+      console.error("❌ Register Error:", error);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Đăng ký thất bại. Vui lòng thử lại.";
+
+      Toast.show({
+        type: "error",
+        text1: "Đăng ký thất bại",
+        text2: errorMessage,
+      });
+
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -130,17 +161,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
 
-      // Mock delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const token = await getAccessToken();
+      if (token) {
+        try {
+          await authService.logout(token);
+        } catch (error) {
+          // Ignore logout API errors - still clear local data
+          console.log("⚠️ Logout API failed, clearing local data anyway");
+        }
+      }
 
-      await storage.removeToken();
-      await storage.removeUser();
+      await clearTokens();
+      await removeUser();
       setUser(null);
 
-      console.log("✅ Mock Logout Success");
+      Toast.show({
+        type: "success",
+        text1: "Đăng xuất thành công",
+      });
+
+      console.log("✅ Logout Success");
     } catch (error) {
       console.error("❌ Logout failed:", error);
-      throw error;
+      // Force clear anyway
+      await clearTokens();
+      await removeUser();
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -150,6 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         isLoading,
         login,
         register,

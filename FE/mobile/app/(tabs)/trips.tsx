@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "expo-router";
@@ -26,67 +27,74 @@ import {
   Badge,
   InfoRow,
 } from "@/components/common";
+import { bookingService } from "@/services";
+import { BookingResponse } from "@/types";
+import Toast from "react-native-toast-message";
 
 export default function TripsScreen() {
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"active" | "history">("active");
+  const [trips, setTrips] = useState<BookingResponse[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock active rental
-  const activeRental = {
-    id: "active_1",
-    vehicleType: "Xe Đạp Điện",
-    vehicleNumber: "EV-1234",
-    startTime: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
-    startStation: "Trạm Trung Tâm",
-    currentCost: 15000,
-    batteryLevel: 85,
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchTrips();
+    }
+  }, [isAuthenticated]);
+
+  const fetchTrips = async () => {
+    try {
+      setLoading(true);
+      const response = await bookingService.getMyBookings();
+      setTrips(response.data || []);
+    } catch (error: any) {
+      console.error("Failed to fetch trips:", error);
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: error.response?.data?.message || "Không thể tải chuyến đi",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Mock trip history
-  const tripHistory = [
-    {
-      id: "1",
-      date: "18 Th11, 2025",
-      time: "14:30",
-      from: "Trạm Trung Tâm",
-      to: "Trung Tâm Park Avenue",
-      distance: "3.2 km",
-      duration: "25 phút",
-      cost: 45000,
-      status: "Hoàn thành",
-      vehicleType: "Xe Đạp Điện",
-    },
-    {
-      id: "2",
-      date: "17 Th11, 2025",
-      time: "09:15",
-      from: "Khu Công Nghệ",
-      to: "Quảng Trường Trung Tâm",
-      distance: "2.1 km",
-      duration: "18 phút",
-      cost: 32000,
-      status: "Hoàn thành",
-      vehicleType: "Xe Scooter",
-    },
-    {
-      id: "3",
-      date: "16 Th11, 2025",
-      time: "16:45",
-      from: "Bến Xe Miền Đông",
-      to: "Trạm Ga Trung Tâm",
-      distance: "4.8 km",
-      duration: "32 phút",
-      cost: 58000,
-      status: "Hoàn thành",
-      vehicleType: "Xe Đạp Điện",
-    },
-  ];
+  const activeRental = trips.find(
+    (t) =>
+      t.status.toUpperCase() === "IN_PROGRESS" ||
+      t.status.toUpperCase() === "CONFIRMED"
+  );
+
+  const tripHistory = trips.filter(
+    (t) =>
+      t.status.toUpperCase() === "COMPLETED" ||
+      t.status.toUpperCase() === "CANCELLED"
+  );
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   // Calculate elapsed time for active rental
-  const getElapsedTime = () => {
+  const getElapsedTime = (startTime: string) => {
     const now = new Date();
-    const diff = now.getTime() - activeRental.startTime.getTime();
+    const start = new Date(startTime);
+    const diff = now.getTime() - start.getTime();
     const minutes = Math.floor(diff / 60000);
     return `${minutes} phút`;
   };
@@ -104,6 +112,20 @@ export default function TripsScreen() {
           actionText="Đăng nhập ngay"
           onActionPress={() => router.push("/(tabs)/profile")}
         />
+      </SafeAreaView>
+    );
+  }
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Chuyến Đi Của Tôi</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#10b981" />
+          <Text style={styles.loadingText}>Đang tải chuyến đi...</Text>
+        </View>
       </SafeAreaView>
     );
   }
@@ -148,10 +170,10 @@ export default function TripsScreen() {
               {/* Vehicle Info */}
               <View style={styles.vehicleInfo}>
                 <Text style={styles.vehicleType}>
-                  {activeRental.vehicleType}
+                  {activeRental.vehicleName}
                 </Text>
                 <Text style={styles.vehicleNumber}>
-                  {activeRental.vehicleNumber}
+                  Mã: {activeRental.bookingCode} • {activeRental.licensePlate}
                 </Text>
               </View>
 
@@ -160,14 +182,16 @@ export default function TripsScreen() {
                 <View style={styles.activeStat}>
                   <Clock size={20} color="#6b7280" />
                   <Text style={styles.activeStatLabel}>Thời Gian</Text>
-                  <Text style={styles.activeStatValue}>{getElapsedTime()}</Text>
+                  <Text style={styles.activeStatValue}>
+                    {getElapsedTime(activeRental.startTime)}
+                  </Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.activeStat}>
                   <DollarSign size={20} color="#6b7280" />
                   <Text style={styles.activeStatLabel}>Chi Phí Hiện Tại</Text>
                   <Text style={styles.activeStatValue}>
-                    {activeRental.currentCost.toLocaleString("vi-VN")}đ
+                    {activeRental.totalAmount.toLocaleString("vi-VN")}đ
                   </Text>
                 </View>
               </View>
@@ -176,22 +200,17 @@ export default function TripsScreen() {
               <InfoRow
                 icon={Navigation}
                 label="Điểm Xuất Phát:"
-                value={activeRental.startStation}
+                value={activeRental.stationName}
               />
 
               {/* Battery */}
               <View style={styles.batterySection}>
-                <Text style={styles.batteryLabel}>Pin Còn Lại</Text>
-                <View style={styles.batteryBar}>
-                  <View
-                    style={[
-                      styles.batteryFill,
-                      { width: `${activeRental.batteryLevel}%` },
-                    ]}
-                  />
-                </View>
+                <Text style={styles.batteryLabel}>Thời Gian Dự Kiến</Text>
                 <Text style={styles.batteryPercent}>
-                  {activeRental.batteryLevel}%
+                  Bắt đầu: {formatTime(activeRental.startTime)}
+                </Text>
+                <Text style={styles.batteryPercent}>
+                  Kết thúc: {formatTime(activeRental.expectedEndTime)}
                 </Text>
               </View>
 
@@ -209,23 +228,33 @@ export default function TripsScreen() {
               description="Bạn chưa có chuyến đi nào đang hoạt động"
             />
           )
+        ) : // Trip History Section
+        tripHistory.length === 0 ? (
+          <EmptyState
+            icon={Calendar}
+            title="Chưa Có Lịch Sử"
+            description="Bạn chưa hoàn thành chuyến đi nào"
+          />
         ) : (
-          // Trip History Section
           tripHistory.map((trip) => (
             <Card key={trip.id}>
               {/* Trip Header */}
               <View style={styles.tripHeader}>
                 <View style={styles.tripHeaderLeft}>
-                  <Text style={styles.tripVehicleType}>{trip.vehicleType}</Text>
+                  <Text style={styles.tripVehicleType}>{trip.vehicleName}</Text>
                   <View style={styles.tripDateTime}>
                     <Calendar size={14} color="#9ca3af" />
-                    <Text style={styles.tripDate}>{trip.date}</Text>
-                    <Text style={styles.tripTime}>{trip.time}</Text>
+                    <Text style={styles.tripDate}>
+                      {formatDate(trip.startTime)}
+                    </Text>
+                    <Text style={styles.tripTime}>
+                      {formatTime(trip.startTime)}
+                    </Text>
                   </View>
                 </View>
                 <View style={styles.tripCostContainer}>
                   <Text style={styles.tripCost}>
-                    {trip.cost.toLocaleString("vi-VN")}đ
+                    {trip.totalAmount.toLocaleString("vi-VN")}đ
                   </Text>
                 </View>
               </View>
@@ -234,28 +263,43 @@ export default function TripsScreen() {
               <View style={styles.routeContainer}>
                 <View style={styles.routePoint}>
                   <View style={styles.routeDotStart} />
-                  <Text style={styles.routeLocation}>{trip.from}</Text>
+                  <Text style={styles.routeLocation}>{trip.stationName}</Text>
                 </View>
                 <View style={styles.routeLine} />
                 <View style={styles.routePoint}>
                   <View style={styles.routeDotEnd} />
-                  <Text style={styles.routeLocation}>{trip.to}</Text>
+                  <Text style={styles.routeLocation}>{trip.stationName}</Text>
                 </View>
               </View>
 
               {/* Trip Stats */}
               <View style={styles.tripStats}>
                 <View style={styles.tripStatItem}>
-                  <MapPin size={14} color="#6b7280" />
-                  <Text style={styles.tripStatText}>{trip.distance}</Text>
-                </View>
-                <Text style={styles.statSeparator}>•</Text>
-                <View style={styles.tripStatItem}>
                   <Clock size={14} color="#6b7280" />
-                  <Text style={styles.tripStatText}>{trip.duration}</Text>
+                  <Text style={styles.tripStatText}>
+                    {Math.ceil(
+                      (new Date(
+                        trip.actualEndTime || trip.expectedEndTime
+                      ).getTime() -
+                        new Date(trip.startTime).getTime()) /
+                        (1000 * 60)
+                    )}{" "}
+                    phút
+                  </Text>
                 </View>
                 <Text style={styles.statSeparator}>•</Text>
-                <Badge variant="success" text={trip.status} />
+                <Badge
+                  variant={
+                    trip.status.toUpperCase() === "COMPLETED"
+                      ? "success"
+                      : "danger"
+                  }
+                  text={
+                    trip.status.toUpperCase() === "COMPLETED"
+                      ? "Hoàn thành"
+                      : "Đã hủy"
+                  }
+                />
               </View>
             </Card>
           ))
@@ -269,6 +313,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ffffff",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: "#6b7280",
   },
   header: {
     paddingHorizontal: 16,

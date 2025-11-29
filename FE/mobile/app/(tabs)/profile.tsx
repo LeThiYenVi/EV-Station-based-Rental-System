@@ -146,10 +146,10 @@ export default function ProfileScreen() {
         <View style={styles.userCard}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {user?.name?.charAt(0).toUpperCase() || "U"}
+              {user?.fullName?.charAt(0).toUpperCase() || "U"}
             </Text>
           </View>
-          <Text style={styles.userName}>{user?.name}</Text>
+          <Text style={styles.userName}>{user?.fullName}</Text>
           <View style={styles.userContact}>
             <Mail size={16} color="#6b7280" />
             <Text style={styles.contactText}>{user?.email}</Text>

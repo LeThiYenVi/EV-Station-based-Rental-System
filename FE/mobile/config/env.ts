@@ -1,17 +1,13 @@
-// Environment Configuration
-// Toggle between mock data and real API
-
 export const ENV_CONFIG = {
-  // Set to true to use mock data, false to use real API
-  USE_MOCK_DATA: true, // 👈 CHANGE THIS TO false TO USE REAL API
+  USE_MOCK_DATA: false,
 
-  // API Base URL
+  // API Base URL - Update this to your backend server URL
   API_BASE_URL: __DEV__
-    ? "http://localhost:3000/api" // Local development
-    : "https://api.evrental.vn/api", // Production
+    ? "http://localhost:8080" // Use localhost when testing on same machine
+    : "https://api.evrental.vn", // Production URL
 
   // Request timeout (ms)
-  REQUEST_TIMEOUT: 10000,
+  REQUEST_TIMEOUT: 30000, // Increased to 30s for slower networks
 
   // Environment
   ENV: __DEV__ ? "development" : "production",
@@ -22,7 +18,9 @@ export const useMockData = () => ENV_CONFIG.USE_MOCK_DATA;
 
 // Helper to get API URL
 export const getApiUrl = (endpoint: string) => {
-  return `${ENV_CONFIG.API_BASE_URL}${endpoint}`;
+  // Remove leading slash if exists to avoid double slashes
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  return `${ENV_CONFIG.API_BASE_URL}${cleanEndpoint}`;
 };
 
 console.log("🌍 Environment:", ENV_CONFIG.ENV);
