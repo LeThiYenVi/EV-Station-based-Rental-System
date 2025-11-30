@@ -16,7 +16,6 @@ import {
   Calendar,
   Clock,
   MapPin,
-  DollarSign,
   AlertCircle,
   ChevronLeft,
 } from "lucide-react-native";
@@ -42,7 +41,6 @@ export default function BookingFormScreen() {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [note, setNote] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"MOMO" | "CASH">("MOMO");
 
   useEffect(() => {
     fetchVehicleAndStation();
@@ -118,12 +116,22 @@ export default function BookingFormScreen() {
     try {
       setSubmitting(true);
 
+      if (!station?.id) {
+        Toast.show({
+          type: "error",
+          text1: "Lỗi",
+          text2: "Không tìm thấy thông tin trạm",
+        });
+        setSubmitting(false);
+        return;
+      }
+
       const response = await bookingService.createBooking({
         vehicleId: vehicleId,
+        stationId: station.id,
         startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
+        expectedEndTime: endTime.toISOString(),
         pickupNote: note || undefined,
-        paymentMethod: paymentMethod,
       });
 
       Toast.show({
@@ -341,73 +349,6 @@ export default function BookingFormScreen() {
           />
         </Card>
 
-        {/* Payment Method Selection */}
-        <Card>
-          <Text style={styles.cardTitle}>Phương Thức Thanh Toán</Text>
-
-          <View style={styles.paymentOptions}>
-            {/* MOMO Option */}
-            <Pressable
-              style={[
-                styles.paymentOption,
-                paymentMethod === "MOMO" && styles.paymentOptionSelected,
-              ]}
-              onPress={() => setPaymentMethod("MOMO")}
-            >
-              <View style={styles.paymentOptionLeft}>
-                <View
-                  style={[
-                    styles.radioCircle,
-                    paymentMethod === "MOMO" && styles.radioCircleSelected,
-                  ]}
-                >
-                  {paymentMethod === "MOMO" && (
-                    <View style={styles.radioInner} />
-                  )}
-                </View>
-                <View style={styles.paymentInfo}>
-                  <Text style={styles.paymentMethodName}>MoMo</Text>
-                  <Text style={styles.paymentMethodDesc}>
-                    Thanh toán qua ví điện tử MoMo
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.momoLogo}>
-                <Text style={styles.momoLogoText}>M</Text>
-              </View>
-            </Pressable>
-
-            {/* CASH Option */}
-            <Pressable
-              style={[
-                styles.paymentOption,
-                paymentMethod === "CASH" && styles.paymentOptionSelected,
-              ]}
-              onPress={() => setPaymentMethod("CASH")}
-            >
-              <View style={styles.paymentOptionLeft}>
-                <View
-                  style={[
-                    styles.radioCircle,
-                    paymentMethod === "CASH" && styles.radioCircleSelected,
-                  ]}
-                >
-                  {paymentMethod === "CASH" && (
-                    <View style={styles.radioInner} />
-                  )}
-                </View>
-                <View style={styles.paymentInfo}>
-                  <Text style={styles.paymentMethodName}>Tiền Mặt</Text>
-                  <Text style={styles.paymentMethodDesc}>
-                    Thanh toán trực tiếp khi nhận xe
-                  </Text>
-                </View>
-              </View>
-              <DollarSign size={24} color="#6b7280" />
-            </Pressable>
-          </View>
-        </Card>
-
         {/* Price Breakdown */}
         <Card>
           <Text style={styles.cardTitle}>Chi Tiết Giá</Text>
@@ -435,9 +376,8 @@ export default function BookingFormScreen() {
         <View style={styles.warningBox}>
           <AlertCircle size={20} color="#f59e0b" />
           <Text style={styles.warningText}>
-            {paymentMethod === "MOMO"
-              ? "Bạn sẽ được chuyển đến trang thanh toán MoMo để hoàn tất đặt xe"
-              : "Vui lòng thanh toán bằng tiền mặt khi nhận xe tại trạm"}
+            Nếu thanh toán MoMo, bạn sẽ được chuyển đến trang thanh toán để hoàn
+            tất
           </Text>
         </View>
       </ScrollView>
@@ -693,70 +633,5 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     color: "#10b981",
-  },
-  paymentOptions: {
-    gap: 12,
-  },
-  paymentOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    backgroundColor: "#f9fafb",
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#e5e7eb",
-  },
-  paymentOptionSelected: {
-    backgroundColor: "#ecfdf5",
-    borderColor: "#10b981",
-  },
-  paymentOptionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  radioCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#d1d5db",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  radioCircleSelected: {
-    borderColor: "#10b981",
-  },
-  radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#10b981",
-  },
-  paymentInfo: {
-    gap: 2,
-  },
-  paymentMethodName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  paymentMethodDesc: {
-    fontSize: 13,
-    color: "#6b7280",
-  },
-  momoLogo: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: "#b0006d",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  momoLogoText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#ffffff",
   },
 });

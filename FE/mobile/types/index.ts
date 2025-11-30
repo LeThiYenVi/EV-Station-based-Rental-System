@@ -347,11 +347,10 @@ export interface BookingWithPaymentResponse {
 
 export interface CreateBookingRequest {
   vehicleId: string;
+  stationId: string;
   startTime: string;
-  endTime: string;
-  bookingType?: string;
+  expectedEndTime: string;
   pickupNote?: string;
-  paymentMethod?: "MOMO" | "CASH";
 }
 
 export interface UpdateBookingRequest {

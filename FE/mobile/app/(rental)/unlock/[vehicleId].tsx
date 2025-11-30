@@ -68,14 +68,25 @@ export default function UnlockVehicleScreen() {
     try {
       setUnlocking(true);
 
+      if (!vehicle?.stationId) {
+        Toast.show({
+          type: "error",
+          text1: "Lỗi",
+          text2: "Không tìm thấy thông tin trạm",
+        });
+        setUnlocking(false);
+        return;
+      }
+
       // Create booking with 1 hour duration
       const startTime = new Date();
       const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 hour
 
       const response = await bookingService.createBooking({
         vehicleId: vehicleId,
+        stationId: vehicle.stationId,
         startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
+        expectedEndTime: endTime.toISOString(),
         pickupNote: "Quick rent from QR scan",
       });
 

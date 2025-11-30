@@ -2,6 +2,7 @@ import { Slot, SplashScreen } from "expo-router";
 import { AuthProvider } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import Toast from "react-native-toast-message";
+import { toastConfig } from "@/config/toastConfig";
 import "../global.css";
 
 SplashScreen.preventAutoHideAsync();
@@ -14,7 +15,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <Slot />
-      <Toast />
+      <Toast config={toastConfig} />
     </AuthProvider>
   );
 }
