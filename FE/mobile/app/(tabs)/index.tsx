@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Animated,
 } from "react-native";
+import { useRouter } from "expo-router";
 import {
   Search,
   MapPin,
@@ -22,6 +23,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 
 export default function ExploreScreen() {
+  const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -245,6 +247,7 @@ export default function ExploreScreen() {
                 styles.stationCard,
                 pressed && styles.stationCardPressed,
               ]}
+              onPress={() => router.push(`/station/${station.id}`)}
             >
               <View style={styles.stationCardHeader}>
                 <View style={styles.stationInfo}>

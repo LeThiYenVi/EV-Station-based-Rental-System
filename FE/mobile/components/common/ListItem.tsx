@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { ChevronRight, LucideIcon } from "lucide-react-native";
 
 interface ListItemProps {
-  icon?: LucideIcon;
+  icon?: LucideIcon | React.ReactElement;
   iconSize?: number;
   iconColor?: string;
   iconBackgroundColor?: string;
@@ -16,7 +16,7 @@ interface ListItemProps {
 }
 
 export const ListItem: React.FC<ListItemProps> = ({
-  icon: Icon,
+  icon,
   iconSize = 24,
   iconColor = "#10b981",
   iconBackgroundColor = "#f3f4f6",
@@ -27,17 +27,27 @@ export const ListItem: React.FC<ListItemProps> = ({
   showChevron = true,
   onPress,
 }) => {
+  // Check if icon is a React element or a Lucide icon component
+  const isReactElement = React.isValidElement(icon);
+  const Icon = !isReactElement ? (icon as LucideIcon) : null;
+
   const content = (
     <>
-      {Icon && (
-        <View
-          style={[
-            styles.iconContainer,
-            { backgroundColor: iconBackgroundColor },
-          ]}
-        >
-          <Icon size={iconSize} color={iconColor} />
-        </View>
+      {icon && (
+        <>
+          {isReactElement
+            ? icon
+            : Icon && (
+                <View
+                  style={[
+                    styles.iconContainer,
+                    { backgroundColor: iconBackgroundColor },
+                  ]}
+                >
+                  <Icon size={iconSize} color={iconColor} />
+                </View>
+              )}
+        </>
       )}
       <View style={styles.content}>
         <View style={styles.titleRow}>

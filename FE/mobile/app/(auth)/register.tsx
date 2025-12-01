@@ -44,18 +44,22 @@ export default function RegisterScreen() {
 
     try {
       setIsLoading(true);
-      await register(email, password, name);
+      await register(email, password, name, phone);
       Toast.show({
         type: "success",
         text1: "Thành Công",
-        text2: "Tạo tài khoản thành công",
+        text2: "Mã OTP đã được gửi đến email của bạn",
       });
-      router.replace("/(tabs)");
-    } catch (error) {
+      // Navigate to OTP verification screen with email and credentials
+      router.push({
+        pathname: "/(auth)/otp-verify",
+        params: { email, name, password },
+      });
+    } catch (error: any) {
       Toast.show({
         type: "error",
         text1: "Lỗi",
-        text2: "Đăng ký thất bại",
+        text2: error.message || "Đăng ký thất bại",
       });
     } finally {
       setIsLoading(false);

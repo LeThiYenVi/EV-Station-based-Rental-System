@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-export default function AuthLayout() {
+export default function BookingLayout() {
   return (
     <Stack
       screenOptions={{
@@ -8,9 +8,7 @@ export default function AuthLayout() {
         animation: "slide_from_right",
       }}
     >
-      <Stack.Screen name="login" />
-      <Stack.Screen name="register" />
-      <Stack.Screen name="otp-verify" />
+      <Stack.Screen name="create" />
     </Stack>
   );
 }

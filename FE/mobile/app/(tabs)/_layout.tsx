@@ -48,7 +48,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="messages"
         options={{
-          title: "Tin Nhắn",
+          title: "Blog",
           tabBarIcon: ({ color }) => <MessageSquare size={20} color={color} />,
         }}
       />

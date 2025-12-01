@@ -7,12 +7,25 @@ import React, {
 } from "react";
 import { User } from "@/types";
 import { storage } from "@/utils/storage";
+import { api } from "@/services/api";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    name: string,
+    phone?: string
+  ) => Promise<void>;
+  verifyOTP: (
+    email: string,
+    otp: string,
+    name: string,
+    password: string
+  ) => Promise<void>;
+  resendOTP: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -50,77 +63,128 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
 
-      // Mock delay để giả lập network request
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Mock validation
+      // Validation
       if (!email || !password) {
         throw new Error("Email và mật khẩu không được để trống");
       }
 
-      // Mock user data - Tạo tên từ email
-      const userName =
-        email.split("@")[0].charAt(0).toUpperCase() +
-        email.split("@")[0].slice(1);
+      // Call real API
+      const response = await api.login(email, password);
 
-      const mockUser: User = {
-        id: "mock_" + Date.now(),
-        email,
-        name: userName,
-        phone: "+84 123 456 789",
-        avatar: undefined,
+      // Map backend UserResponse to our User type
+      const userData: User = {
+        id: response.data.user.id,
+        email: response.data.user.email,
+        name: response.data.user.fullName,
+        phone: response.data.user.phone,
+        avatar: response.data.user.avatarUrl,
+        role: response.data.user.role,
+        isLicenseVerified: response.data.user.isLicenseVerified,
       };
 
-      const mockToken = "mock_token_" + Date.now();
+      // Save token and user
+      await storage.setToken(response.data.accessToken);
+      await storage.setUser(userData);
+      setUser(userData);
 
-      await storage.setToken(mockToken);
-      await storage.setUser(mockUser);
-      setUser(mockUser);
-
-      console.log("✅ Mock Login Success:", mockUser.name);
-    } catch (error) {
-      console.error("❌ Mock Login Error:", error);
-      throw error;
+      console.log("✅ Login Success:", userData.name);
+    } catch (error: any) {
+      console.error("❌ Login Error:", error);
+      throw new Error(error.message || "Thông tin đăng nhập không đúng");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (
+    email: string,
+    password: string,
+    name: string,
+    phone?: string
+  ) => {
     try {
       setIsLoading(true);
 
-      // Mock delay để giả lập network request
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-
-      // Mock validation
+      // Validation
       if (!email || !password || !name) {
         throw new Error("Vui lòng điền đầy đủ thông tin");
       }
 
-      if (password.length < 6) {
-        throw new Error("Mật khẩu phải có ít nhất 6 ký tự");
+      if (password.length < 8) {
+        throw new Error("Mật khẩu phải có ít nhất 8 ký tự");
       }
 
-      // Mock user data
-      const mockUser: User = {
-        id: "mock_" + Date.now(),
-        email,
-        name,
-        phone: undefined,
-        avatar: undefined,
+      // Call real API - Register will send OTP to email
+      const response = await api.register(email, password, name, phone || "");
+      console.log("📧 Registration initiated. OTP sent to:", email);
+      console.log("📬 Check your email for the confirmation code");
+    } catch (error: any) {
+      console.error("❌ Register Error:", error);
+      throw new Error(error.message || "Đăng ký thất bại");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyOTP = async (
+    email: string,
+    otp: string,
+    name: string,
+    password: string
+  ) => {
+    try {
+      setIsLoading(true);
+
+      // Validate OTP format
+      if (otp.length !== 6) {
+        throw new Error("Mã OTP phải có 6 chữ số");
+      }
+
+      // Step 1: Confirm account with OTP
+      await api.confirmAccount(email, otp);
+      console.log("✅ Account confirmed successfully");
+
+      // Step 2: Auto login after confirmation
+      const loginResponse = await api.login(email, password);
+
+      // Map backend UserResponse to our User type
+      const userData: User = {
+        id: loginResponse.data.user.id,
+        email: loginResponse.data.user.email,
+        name: loginResponse.data.user.fullName,
+        phone: loginResponse.data.user.phone,
+        avatar: loginResponse.data.user.avatarUrl,
+        role: loginResponse.data.user.role,
+        isLicenseVerified: loginResponse.data.user.isLicenseVerified,
       };
 
-      const mockToken = "mock_token_" + Date.now();
+      // Save token and user
+      await storage.setToken(loginResponse.data.accessToken);
+      await storage.setUser(userData);
+      setUser(userData);
 
-      await storage.setToken(mockToken);
-      await storage.setUser(mockUser);
-      setUser(mockUser);
+      console.log("✅ Login Success after OTP verification:", userData.name);
+    } catch (error: any) {
+      console.error("❌ OTP Verify Error:", error);
+      throw new Error(error.message || "Mã OTP không đúng hoặc đã hết hạn");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      console.log("✅ Mock Register Success:", mockUser.name);
-    } catch (error) {
-      console.error("❌ Mock Register Error:", error);
-      throw error;
+  const resendOTP = async (email: string) => {
+    try {
+      setIsLoading(true);
+
+      // Note: Backend doesn't have dedicated resend endpoint
+      // We need to call forgot-password or register again
+      // For now, throwing error to tell user to wait
+      throw new Error(
+        "Chức năng gửi lại OTP đang được phát triển. Vui lòng kiểm tra email của bạn."
+      );
+    } catch (error: any) {
+      console.error("❌ Resend OTP Error:", error);
+      throw new Error(error.message || "Không thể gửi lại OTP");
     } finally {
       setIsLoading(false);
     }
@@ -130,14 +194,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
 
-      // Mock delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
+      // Clear local storage
       await storage.removeToken();
       await storage.removeUser();
       setUser(null);
 
-      console.log("✅ Mock Logout Success");
+      console.log("✅ Logout Success");
     } catch (error) {
       console.error("❌ Logout failed:", error);
       throw error;
@@ -153,6 +215,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading,
         login,
         register,
+        verifyOTP,
+        resendOTP,
         logout,
         isAuthenticated: !!user,
       }}

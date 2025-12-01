@@ -1,9 +1,11 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
+  name: string; // Mapped from fullName
   phone?: string;
-  avatar?: string;
+  avatar?: string; // Mapped from avatarUrl
+  role?: string;
+  isLicenseVerified?: boolean;
 }
 
 export interface Station {

@@ -3,11 +3,11 @@
 
 export const ENV_CONFIG = {
   // Set to true to use mock data, false to use real API
-  USE_MOCK_DATA: true, // 👈 CHANGE THIS TO false TO USE REAL API
+  USE_MOCK_DATA: false, // 👈 Using REAL API now
 
   // API Base URL
   API_BASE_URL: __DEV__
-    ? "http://localhost:3000/api" // Local development
+    ? "http://localhost:8080/api" // Local Spring Boot backend
     : "https://api.evrental.vn/api", // Production
 
   // Request timeout (ms)

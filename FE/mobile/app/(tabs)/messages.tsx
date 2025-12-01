@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,105 +6,133 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useAuth } from "@/hooks/useAuth";
-import { MessageCircle } from "lucide-react-native";
 import {
-  EmptyState,
-  Button,
-  Avatar,
-  ListItem,
-  Badge,
-} from "@/components/common";
+  BookOpen,
+  Clock,
+  TrendingUp,
+  Zap,
+  Heart,
+  Share2,
+  Bookmark,
+} from "lucide-react-native";
+import { Badge } from "@/components/common";
 
-export default function MessagesScreen() {
+export default function BlogScreen() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuth();
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
-  // Mock conversations with users
-  const conversations = [
+  // Blog posts data
+  const blogPosts = [
     {
       id: "1",
-      type: "support",
-      sender: "Hỗ Trợ Khách Hàng",
-      avatar: "HT",
-      lastMessage:
-        "Chúng tôi đã nhận được yêu cầu của bạn. Xin vui lòng chờ...",
-      timestamp: "5 phút trước",
-      unread: 2,
-      online: true,
+      title: "5 Lý Do Nên Chọn Xe Điện Cho Chuyến Đi Hàng Ngày",
+      excerpt:
+        "Xe điện không chỉ thân thiện với môi trường mà còn giúp bạn tiết kiệm chi phí đáng kể. Cùng khám phá ngay!",
+      category: "tips",
+      author: "Mai Anh",
+      readTime: "5 phút",
+      publishedAt: "2 ngày trước",
+      likes: 234,
+      image: null,
+      featured: true,
     },
     {
       id: "2",
-      type: "notification",
-      sender: "Hệ Thống",
-      avatar: "HT",
-      lastMessage: "Chuyến đi của bạn đã hoàn thành. Tổng: 45,000đ",
-      timestamp: "1 giờ trước",
-      unread: 0,
-      online: false,
+      title: "Cách Sạc Pin Xe Điện Đúng Cách Để Tăng Tuổi Thọ",
+      excerpt:
+        "Những mẹo nhỏ giúp bạn duy trì pin xe điện luôn trong tình trạng tốt nhất, kéo dài tuổi thọ và tối ưu hiệu suất.",
+      category: "guide",
+      author: "Minh Tuấn",
+      readTime: "7 phút",
+      publishedAt: "3 ngày trước",
+      likes: 189,
+      image: null,
+      featured: false,
     },
     {
       id: "3",
-      type: "promotion",
-      sender: "Khuyến Mãi",
-      avatar: "KM",
-      lastMessage: "🎉 Giảm 20% cho chuyến đi tiếp theo! Mã: EVRENTAL20",
-      timestamp: "2 giờ trước",
-      unread: 1,
-      online: false,
+      title: "🎉 Khuyến Mãi Tháng 12: Giảm 30% Cho Thuê Dài Hạn",
+      excerpt:
+        "Nhân dịp cuối năm, EV Rental tri ân khách hàng với ưu đãi thuê xe dài hạn siêu hời. Đặt ngay!",
+      category: "promotion",
+      author: "EV Team",
+      readTime: "2 phút",
+      publishedAt: "1 ngày trước",
+      likes: 567,
+      image: null,
+      featured: true,
     },
     {
       id: "4",
-      type: "notification",
-      sender: "Thông Báo",
-      avatar: "TB",
-      lastMessage: "Xe của bạn đã được mở khóa thành công tại Trạm Trung Tâm",
-      timestamp: "3 giờ trước",
-      unread: 0,
-      online: false,
+      title: "Xe Điện VinFast Klara S: Đánh Giá Chi Tiết",
+      excerpt:
+        "Klara S là một trong những dòng xe điện phổ biến nhất tại Việt Nam. Hãy cùng tìm hiểu ưu nhược điểm của dòng xe này.",
+      category: "review",
+      author: "Hoàng Long",
+      readTime: "10 phút",
+      publishedAt: "5 ngày trước",
+      likes: 423,
+      image: null,
+      featured: false,
     },
     {
       id: "5",
-      type: "system",
-      sender: "EV Rental",
-      avatar: "EV",
-      lastMessage: "Chào mừng bạn đến với EV Rental! Bắt đầu khám phá ngay.",
-      timestamp: "1 ngày trước",
-      unread: 0,
-      online: false,
+      title: "So Sánh Chi Phí: Xe Máy Xăng vs Xe Máy Điện",
+      excerpt:
+        "Phân tích chi tiết về chi phí sử dụng hàng tháng giữa xe xăng truyền thống và xe điện hiện đại.",
+      category: "tips",
+      author: "Thu Hà",
+      readTime: "8 phút",
+      publishedAt: "1 tuần trước",
+      likes: 312,
+      image: null,
+      featured: false,
     },
   ];
 
-  if (!isAuthenticated) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <EmptyState
-          icon={<MessageCircle size={64} color="#d1d5db" />}
-          title="Chưa Có Tin Nhắn"
-          description="Đăng nhập để xem tin nhắn và thông báo của bạn"
-          action={
-            <Button
-              title="Đăng Nhập"
-              onPress={() => router.push("/(auth)/login")}
-            />
-          }
-        />
-      </SafeAreaView>
-    );
-  }
+  const categories = [
+    { id: "all", label: "Tất Cả", icon: BookOpen },
+    { id: "tips", label: "Mẹo Hay", icon: TrendingUp },
+    { id: "guide", label: "Hướng Dẫn", icon: Zap },
+    { id: "review", label: "Đánh Giá", icon: Heart },
+    { id: "promotion", label: "Khuyến Mãi", icon: Share2 },
+  ];
 
-  const getAvatarColor = (type: string) => {
-    switch (type) {
-      case "support":
+  const filteredPosts =
+    selectedCategory === "all"
+      ? blogPosts
+      : blogPosts.filter((post) => post.category === selectedCategory);
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case "tips":
         return "#3b82f6";
-      case "notification":
+      case "guide":
+        return "#10b981";
+      case "review":
         return "#8b5cf6";
       case "promotion":
-        return "#f97316";
+        return "#f59e0b";
       default:
-        return "#10b981";
+        return "#6b7280";
+    }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case "tips":
+        return "Mẹo Hay";
+      case "guide":
+        return "Hướng Dẫn";
+      case "review":
+        return "Đánh Giá";
+      case "promotion":
+        return "Khuyến Mãi";
+      default:
+        return "Blog";
     }
   };
 
@@ -112,38 +140,141 @@ export default function MessagesScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Tin Nhắn</Text>
+        <Text style={styles.headerTitle}>Blog & Tin Tức</Text>
+        <Text style={styles.headerSubtitle}>Khám phá thế giới xe điện</Text>
       </View>
 
-      {/* Messages List */}
-      <ScrollView style={styles.scrollView}>
-        {conversations.map((conversation) => (
-          <ListItem
-            key={conversation.id}
-            icon={
-              <Avatar
-                text={conversation.avatar}
-                backgroundColor={getAvatarColor(conversation.type)}
-                online={conversation.online}
+      {/* Categories Filter */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoriesContainer}
+        contentContainerStyle={styles.categoriesContent}
+      >
+        {categories.map((category) => {
+          const CategoryIcon = category.icon;
+          const isActive = selectedCategory === category.id;
+          return (
+            <Pressable
+              key={category.id}
+              style={[
+                styles.categoryChip,
+                isActive && styles.categoryChipActive,
+              ]}
+              onPress={() => setSelectedCategory(category.id)}
+            >
+              <CategoryIcon
+                size={14}
+                color={isActive ? "#ffffff" : "#6b7280"}
               />
-            }
-            title={conversation.sender}
-            subtitle={conversation.lastMessage}
-            rightContent={
-              <View style={styles.rightContent}>
-                <Text style={styles.timestamp}>{conversation.timestamp}</Text>
-                {conversation.unread > 0 && (
-                  <Badge
-                    text={conversation.unread.toString()}
-                    variant="success"
-                  />
-                )}
-              </View>
-            }
-            showChevron={false}
+              <Text
+                style={[
+                  styles.categoryText,
+                  isActive && styles.categoryTextActive,
+                ]}
+              >
+                {category.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {/* Blog Posts */}
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {filteredPosts.map((post, index) => (
+          <Pressable
+            key={post.id}
+            style={[
+              styles.postCard,
+              post.featured && styles.postCardFeatured,
+              index === 0 && styles.postCardFirst,
+            ]}
             onPress={() => {}}
-          />
+          >
+            {/* Featured Badge */}
+            {post.featured && (
+              <View style={styles.featuredBadge}>
+                <TrendingUp size={12} color="#ffffff" />
+                <Text style={styles.featuredText}>Nổi Bật</Text>
+              </View>
+            )}
+
+            {/* Post Image Placeholder */}
+            <View
+              style={[
+                styles.postImage,
+                { backgroundColor: getCategoryColor(post.category) + "20" },
+              ]}
+            >
+              <Zap
+                size={48}
+                color={getCategoryColor(post.category)}
+                opacity={0.5}
+              />
+            </View>
+
+            {/* Post Content */}
+            <View style={styles.postContent}>
+              {/* Category Badge */}
+              <View
+                style={[
+                  styles.categoryBadge,
+                  { backgroundColor: getCategoryColor(post.category) + "15" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.categoryBadgeText,
+                    { color: getCategoryColor(post.category) },
+                  ]}
+                >
+                  {getCategoryLabel(post.category)}
+                </Text>
+              </View>
+
+              {/* Title */}
+              <Text style={styles.postTitle} numberOfLines={2}>
+                {post.title}
+              </Text>
+
+              {/* Excerpt */}
+              <Text style={styles.postExcerpt} numberOfLines={2}>
+                {post.excerpt}
+              </Text>
+
+              {/* Meta Info */}
+              <View style={styles.postMeta}>
+                <View style={styles.metaLeft}>
+                  <Text style={styles.authorName}>{post.author}</Text>
+                  <View style={styles.metaDot} />
+                  <Clock size={12} color="#9ca3af" />
+                  <Text style={styles.readTime}>{post.readTime}</Text>
+                </View>
+                <View style={styles.metaRight}>
+                  <Heart size={16} color="#ef4444" fill="#ef4444" />
+                  <Text style={styles.likesCount}>{post.likes}</Text>
+                </View>
+              </View>
+            </View>
+          </Pressable>
         ))}
+
+        {/* Empty State */}
+        {filteredPosts.length === 0 && (
+          <View style={styles.emptyState}>
+            <BookOpen size={64} color="#d1d5db" />
+            <Text style={styles.emptyTitle}>Chưa Có Bài Viết</Text>
+            <Text style={styles.emptyDescription}>
+              Không có bài viết nào trong danh mục này
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -152,158 +283,186 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  emptyContainer: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  emptyDescription: {
-    fontSize: 16,
-    color: "#6b7280",
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  loginButton: {
-    backgroundColor: "#10b981",
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  loginButtonPressed: {
-    opacity: 0.8,
-  },
-  loginButtonText: {
-    color: "#ffffff",
-    fontWeight: "600",
-    fontSize: 16,
+    backgroundColor: "#f9fafb",
   },
   header: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 12,
+    paddingBottom: 16,
+    backgroundColor: "#ffffff",
     borderBottomWidth: 1,
     borderBottomColor: "#e5e7eb",
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
     color: "#111827",
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: "#6b7280",
+  },
+  categoriesContainer: {
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  categoriesContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 6,
+  },
+  categoryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: "#f3f4f6",
+    gap: 4,
+  },
+  categoryChipActive: {
+    backgroundColor: "#10b981",
+  },
+  categoryText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#6b7280",
+  },
+  categoryTextActive: {
+    color: "#ffffff",
   },
   scrollView: {
     flex: 1,
   },
-  rightContent: {
-    alignItems: "flex-end",
-    gap: 4,
+  postCard: {
+    backgroundColor: "#ffffff",
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  timestamp: {
+  postCardFirst: {
+    marginTop: 16,
+  },
+  postCardFeatured: {
+    borderWidth: 2,
+    borderColor: "#fbbf24",
+  },
+  featuredBadge: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fbbf24",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 4,
+    zIndex: 10,
+  },
+  featuredText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  postImage: {
+    width: "100%",
+    height: 180,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  postContent: {
+    padding: 16,
+  },
+  categoryBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginBottom: 10,
+  },
+  categoryBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  postTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  postExcerpt: {
+    fontSize: 14,
+    color: "#6b7280",
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  postMeta: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#f3f4f6",
+  },
+  metaLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  authorName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  metaDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: "#d1d5db",
+  },
+  readTime: {
     fontSize: 12,
     color: "#9ca3af",
   },
-  // New conversation item styles
-  conversationItem: {
+  metaRight: {
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
-    backgroundColor: "#ffffff",
-  },
-  conversationPressed: {
-    backgroundColor: "#f9fafb",
-  },
-  avatarContainer: {
-    position: "relative",
-    marginRight: 12,
-  },
-  conversationAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#10b981",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 4,
   },
-  avatarSupport: {
-    backgroundColor: "#3b82f6",
-  },
-  avatarNotification: {
-    backgroundColor: "#8b5cf6",
-  },
-  avatarPromotion: {
-    backgroundColor: "#f59e0b",
-  },
-  avatarText: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  onlineIndicator: {
-    position: "absolute",
-    bottom: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#10b981",
-    borderWidth: 2,
-    borderColor: "#ffffff",
-  },
-  conversationContent: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  conversationHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  senderName: {
-    fontSize: 16,
+  likesCount: {
+    fontSize: 13,
     fontWeight: "600",
-    color: "#111827",
-    flex: 1,
+    color: "#ef4444",
   },
-  messageRow: {
-    flexDirection: "row",
+  emptyState: {
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    paddingVertical: 80,
   },
-  lastMessage: {
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyDescription: {
     fontSize: 14,
     color: "#6b7280",
-    flex: 1,
-    lineHeight: 20,
+    textAlign: "center",
   },
-  lastMessageUnread: {
-    color: "#111827",
-    fontWeight: "500",
-  },
-  unreadBadge: {
-    backgroundColor: "#10b981",
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 6,
-    marginLeft: 8,
-  },
-  unreadCount: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "bold",
+  bottomSpacer: {
+    height: 24,
   },
 });
