@@ -496,7 +496,7 @@ export default function Index() {
                       <img
                         src={
                           vehicle.photos?.[0] ||
-                          vehicle.photo ||
+                          vehicle.photoUrls?.[0] ||
                           "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop"
                         }
                         alt={vehicle.name || vehicle.model}
@@ -525,8 +525,9 @@ export default function Index() {
                         <div className="flex items-baseline gap-1">
                           <span className="text-sm text-gray-600">Chỉ từ</span>
                           <span className="text-2xl font-bold text-green-600">
-                            {vehicle.pricePerDay?.toLocaleString("vi-VN") ||
-                              "0"}
+                            {(
+                              vehicle.dailyRate || vehicle.pricePerDay
+                            )?.toLocaleString("vi-VN") || "Liên hệ"}
                           </span>
                           <span className="text-sm text-gray-600">
                             VNĐ/Ngày
@@ -543,7 +544,7 @@ export default function Index() {
                       <div className="flex items-center gap-2 mb-4">
                         <Car className="w-4 h-4 text-gray-500" />
                         <span className="text-sm text-gray-600">
-                          {vehicle.category || vehicle.type || "SUV"}
+                          {vehicle.fuelType || "Điện"}
                         </span>
                       </div>
 
@@ -552,13 +553,14 @@ export default function Index() {
                         <div className="flex items-center gap-1">
                           <Zap className="w-4 h-4 text-gray-500" />
                           <span>
-                            {vehicle.batteryCapacity || vehicle.range || "N/A"}{" "}
-                            km
+                            {vehicle.mileage?.toLocaleString() || "N/A"} km
                           </span>
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="w-4 h-4 text-gray-500" />
-                          <span>{vehicle.seatingCapacity || 5} chỗ</span>
+                          <span>
+                            {vehicle.capacity || vehicle.seats || 5} chỗ
+                          </span>
                         </div>
                       </div>
 
@@ -644,14 +646,12 @@ export default function Index() {
                   >
                     <div
                       className="relative group cursor-pointer overflow-hidden rounded-3xl h-[400px]"
-                      onClick={() =>
-                        navigate(`/place/${getStationSlug(station.name)}`)
-                      }
+                      onClick={() => navigate(`/place/${station.id}`)}
                     >
                       <div
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
                         style={{
-                          backgroundImage: `url('${station.photo}')`,
+                          backgroundImage: `url('${station.photo || "/mocks/city/hanoi.webp"}')`,
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />

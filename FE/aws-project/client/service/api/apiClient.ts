@@ -20,9 +20,10 @@ class ApiClient {
   private publicInstance: AxiosInstance; // For public endpoints without credentials
 
   constructor() {
-    // For development, call backend directly to avoid Vite proxy issues
+    // Use Vite proxy in development (relative URL), direct URL in production
     const isDev = import.meta.env.DEV;
-    const backendUrl = isDev ? 'http://localhost:8080' : '';
+    // Empty string to use relative URL which goes through Vite proxy
+    const backendUrl = '';
     
     // Main instance with credentials for authenticated requests
     this.instance = axios.create({
