@@ -32,6 +32,7 @@ public class PaymentService {
 
     @Transactional
     public void processMoMoCallback(MoMoCallbackRequest callback) {
+        System.out.println("Received MoMo callback: ");
         log.info("Processing MoMo callback - orderId: {}, resultCode: {}", 
                 callback.getOrderId(), callback.getResultCode());
 

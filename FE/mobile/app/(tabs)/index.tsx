@@ -20,15 +20,23 @@ import {
   Clock,
   Zap,
   User,
+  QrCode,
 } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
+<<<<<<< HEAD
 import { api } from "@/services/api";
 import type { StationResponse } from "@/types";
 import Toast from "react-native-toast-message";
+=======
+import { useStations } from "@/hooks/useStations";
+import { useRouter } from "expo-router";
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
 
 export default function ExploreScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { stations, isLoading, refetch } = useStations();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [stations, setStations] = useState<StationResponse[]>([]);
@@ -82,6 +90,13 @@ export default function ExploreScreen() {
     ]).start();
   }, []);
 
+  // Refresh stations list
+  const handleUseCurrentLocation = async () => {
+    // For now, just refresh the active stations list
+    // TODO: Implement geolocation to fetch nearby stations
+    await refetch();
+  };
+
   // Categories
   const categories = [
     { id: "all", label: "Tất Cả", icon: <MapPin size={16} color="#ffffff" /> },
@@ -102,13 +117,21 @@ export default function ExploreScreen() {
     },
   ];
 
+<<<<<<< HEAD
   // Filter stations based on search query
   const filteredStations = stations.filter((station) =>
     station.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+=======
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
   // Recent searches
   const recentSearches = ["Trạm Trung Tâm", "Sân Bay", "Quận 1"];
+
+  // Filter stations based on search query
+  const filteredStations = stations.filter((station) =>
+    station.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -127,7 +150,7 @@ export default function ExploreScreen() {
               ]}
             >
               <Text style={styles.greetingText}>
-                Xin chào, {isAuthenticated && user ? user.name : "User"}! 👋
+                Xin chào, {isAuthenticated && user ? user.fullName : "User"}! 👋
               </Text>
             </Animated.View>
           </View>
@@ -135,7 +158,7 @@ export default function ExploreScreen() {
             <View style={styles.avatar}>
               {isAuthenticated && user ? (
                 <Text style={styles.avatarText}>
-                  {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                  {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
                 </Text>
               ) : (
                 <User size={22} color="#ffffff" />
@@ -163,6 +186,12 @@ export default function ExploreScreen() {
               onChangeText={setSearchQuery}
             />
           </View>
+          <Pressable
+            style={styles.qrButton}
+            onPress={() => router.push("/(rental)/scan")}
+          >
+            <QrCode size={22} color="#ffffff" />
+          </Pressable>
           <Pressable style={styles.filterIconButton}>
             <Filter size={22} color="#10b981" />
           </Pressable>
@@ -170,7 +199,10 @@ export default function ExploreScreen() {
 
         {/* Location Button - Prominent */}
         <View style={styles.locationSection}>
-          <Pressable style={styles.locationButton}>
+          <Pressable
+            style={styles.locationButton}
+            onPress={handleUseCurrentLocation}
+          >
             <Navigation size={20} color="#ffffff" />
             <Text style={styles.locationButtonText}>Dùng Vị Trí Hiện Tại</Text>
           </Pressable>
@@ -242,7 +274,11 @@ export default function ExploreScreen() {
             </View>
           ) : filteredStations.length === 0 ? (
             <View style={styles.emptyContainer}>
+<<<<<<< HEAD
               <MapPin size={48} color="#d1d5db" />
+=======
+              <MapPin size={48} color="#9ca3af" />
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
               <Text style={styles.emptyText}>Không tìm thấy trạm nào</Text>
             </View>
           ) : (
@@ -253,6 +289,7 @@ export default function ExploreScreen() {
                   styles.stationCard,
                   pressed && styles.stationCardPressed,
                 ]}
+<<<<<<< HEAD
                 onPress={() => router.push(`/station/${station.id}`)}
               >
                 <View style={styles.stationCardHeader}>
@@ -273,10 +310,28 @@ export default function ExploreScreen() {
                       styles.availabilityBadge,
                       station.status !== "ACTIVE" &&
                         styles.availabilityBadgeEmpty,
+=======
+                onPress={() => router.push(`/(station)/${station.id}`)}
+              >
+                <View style={styles.stationCardContent}>
+                  <View style={styles.stationInfo}>
+                    <Text style={styles.stationName}>{station.name}</Text>
+                    <Text style={styles.stationAddress}>
+                      {station.address || "Chưa cập nhật"}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      station.status === "ACTIVE"
+                        ? styles.statusBadgeActive
+                        : styles.statusBadgeInactive,
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
                     ]}
                   >
                     <Text
                       style={[
+<<<<<<< HEAD
                         styles.availabilityText,
                         station.status !== "ACTIVE" &&
                           styles.availabilityTextEmpty,
@@ -289,6 +344,18 @@ export default function ExploreScreen() {
                 <Text style={styles.vehiclesText}>
                   {station.hotline || "Không có số điện thoại"}
                 </Text>
+=======
+                        styles.statusBadgeText,
+                        station.status === "ACTIVE"
+                          ? styles.statusTextActive
+                          : styles.statusTextInactive,
+                      ]}
+                    >
+                      {station.status === "ACTIVE" ? "Hoạt Động" : "Đóng"}
+                    </Text>
+                  </View>
+                </View>
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
               </Pressable>
             ))
           )}
@@ -393,6 +460,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#111827",
   },
+  qrButton: {
+    width: 48,
+    height: 48,
+    backgroundColor: "#10b981",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
   filterIconButton: {
     width: 48,
     height: 48,
@@ -402,6 +478,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "#e5e7eb",
+    marginLeft: 8,
   },
   locationSection: {
     paddingHorizontal: 16,
@@ -529,21 +606,73 @@ const styles = StyleSheet.create({
   stationCardPressed: {
     backgroundColor: "#f9fafb",
   },
-  stationCardHeader: {
+  stationCardContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 8,
   },
   stationInfo: {
     flex: 1,
+    marginRight: 12,
   },
   stationName: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
     color: "#111827",
+    marginBottom: 4,
+  },
+  stationAddress: {
+    fontSize: 14,
+    color: "#6b7280",
+    lineHeight: 20,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusBadgeActive: {
+    backgroundColor: "#d1fae5",
+  },
+  statusBadgeInactive: {
+    backgroundColor: "#fee2e2",
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  statusTextActive: {
+    color: "#065f46",
+  },
+  statusTextInactive: {
+    color: "#991b1b",
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  loadingText: {
+    color: "#6b7280",
+    fontSize: 14,
+    marginTop: 12,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  emptyText: {
+    color: "#9ca3af",
+    fontSize: 16,
+    marginTop: 12,
+  },
+  stationAddress: {
+    color: "#6b7280",
+    fontSize: 14,
     marginBottom: 6,
   },
+<<<<<<< HEAD
   stationMeta: {
     flexDirection: "row",
     alignItems: "center",
@@ -607,4 +736,6 @@ const styles = StyleSheet.create({
     color: "#9ca3af",
     fontWeight: "500",
   },
+=======
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
 });

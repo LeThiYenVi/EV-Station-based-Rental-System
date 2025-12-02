@@ -93,6 +93,7 @@ export default function BlogScreen() {
     },
   ];
 
+<<<<<<< HEAD
   const categories = [
     { id: "all", label: "Tất Cả", icon: BookOpen },
     { id: "tips", label: "Mẹo Hay", icon: TrendingUp },
@@ -100,6 +101,25 @@ export default function BlogScreen() {
     { id: "review", label: "Đánh Giá", icon: Heart },
     { id: "promotion", label: "Khuyến Mãi", icon: Share2 },
   ];
+=======
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <EmptyState
+          icon={MessageCircle}
+          title="Chưa Có Tin Nhắn"
+          description="Đăng nhập để xem tin nhắn và thông báo của bạn"
+          action={
+            <Button
+              title="Đăng Nhập"
+              onPress={() => router.push("/(auth)/login")}
+            />
+          }
+        />
+      </SafeAreaView>
+    );
+  }
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
 
   const filteredPosts =
     selectedCategory === "all"

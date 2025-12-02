@@ -1,9 +1,17 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
-import { CreditCard, Plus, MoreVertical, Wallet } from "lucide-react-native";
+import {
+  CreditCard,
+  Plus,
+  MoreVertical,
+  Wallet,
+  History,
+} from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { Button } from "@/components/common";
 
 export default function PaymentMethodsScreen() {
+  const router = useRouter();
   const [cards, setCards] = useState([
     {
       id: "1",
@@ -32,6 +40,17 @@ export default function PaymentMethodsScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
+        {/* Payment History Link */}
+        <Pressable
+          style={styles.historyButton}
+          onPress={() => router.push("/(profile)/payment-history")}
+        >
+          <View style={styles.historyIconContainer}>
+            <History size={20} color="#10b981" />
+          </View>
+          <Text style={styles.historyText}>Xem Lịch Sử Thanh Toán</Text>
+        </Pressable>
+
         {/* Cards Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -120,6 +139,32 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  historyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#10b981",
+  },
+  historyIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#d1fae5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  historyText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#10b981",
   },
   section: {
     backgroundColor: "#ffffff",

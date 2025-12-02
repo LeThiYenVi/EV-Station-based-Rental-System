@@ -28,7 +28,11 @@ import {
   InfoRow,
   TripCard,
 } from "@/components/common";
+<<<<<<< HEAD
 import { api } from "@/services/api";
+=======
+import { bookingService } from "@/services";
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
 import { BookingResponse } from "@/types";
 import Toast from "react-native-toast-message";
 
@@ -36,6 +40,7 @@ export default function TripsScreen() {
   const { user, token } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"active" | "history">("active");
+<<<<<<< HEAD
   const [bookings, setBookings] = useState<BookingResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -136,6 +141,69 @@ export default function TripsScreen() {
     if (hours > 0) {
       return `${hours}h ${minutes}m`;
     }
+=======
+  const [trips, setTrips] = useState<BookingResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchTrips();
+    }
+  }, [isAuthenticated]);
+
+  const fetchTrips = async () => {
+    try {
+      setLoading(true);
+      const response = await bookingService.getMyBookings();
+      setTrips(response.data || []);
+    } catch (error: any) {
+      console.error("Failed to fetch trips:", error);
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: error.response?.data?.message || "Không thể tải chuyến đi",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const activeRental = trips.find(
+    (t) =>
+      t.status.toUpperCase() === "IN_PROGRESS" ||
+      t.status.toUpperCase() === "CONFIRMED"
+  );
+
+  const tripHistory = trips.filter(
+    (t) =>
+      t.status.toUpperCase() === "COMPLETED" ||
+      t.status.toUpperCase() === "CANCELLED"
+  );
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // Calculate elapsed time for active rental
+  const getElapsedTime = (startTime: string) => {
+    const now = new Date();
+    const start = new Date(startTime);
+    const diff = now.getTime() - start.getTime();
+    const minutes = Math.floor(diff / 60000);
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
     return `${minutes} phút`;
   };
 
@@ -177,6 +245,20 @@ export default function TripsScreen() {
     );
   }
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Chuyến Đi Của Tôi</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#10b981" />
+          <Text style={styles.loadingText}>Đang tải chuyến đi...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -195,6 +277,7 @@ export default function TripsScreen() {
       />
 
       {/* Content */}
+<<<<<<< HEAD
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#10b981" />
@@ -255,6 +338,79 @@ export default function TripsScreen() {
                   router.push(`/trip-detail/${booking.id}`);
                 }}
                 showCancelButton={false}
+=======
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {activeTab === "active" ? (
+          // Active Rental Section
+          activeRental ? (
+            <Card padding={20}>
+              {/* Active Rental Header */}
+              <View style={styles.activeHeader}>
+                <View style={styles.activeHeaderLeft}>
+                  <Zap size={24} color="#10b981" />
+                  <Text style={styles.activeTitle}>
+                    Chuyến Đi Đang Hoạt Động
+                  </Text>
+                </View>
+                <Badge variant="success" text="ĐANG CHẠY" />
+              </View>
+
+              {/* Vehicle Info */}
+              <View style={styles.vehicleInfo}>
+                <Text style={styles.vehicleType}>
+                  {activeRental.vehicleName}
+                </Text>
+                <Text style={styles.vehicleNumber}>
+                  Mã: {activeRental.bookingCode} • {activeRental.licensePlate}
+                </Text>
+              </View>
+
+              {/* Time & Cost */}
+              <View style={styles.activeStats}>
+                <View style={styles.activeStat}>
+                  <Clock size={20} color="#6b7280" />
+                  <Text style={styles.activeStatLabel}>Thời Gian</Text>
+                  <Text style={styles.activeStatValue}>
+                    {getElapsedTime(activeRental.startTime)}
+                  </Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.activeStat}>
+                  <DollarSign size={20} color="#6b7280" />
+                  <Text style={styles.activeStatLabel}>Chi Phí Hiện Tại</Text>
+                  <Text style={styles.activeStatValue}>
+                    {activeRental.totalAmount.toLocaleString("vi-VN")}đ
+                  </Text>
+                </View>
+              </View>
+
+              {/* Location */}
+              <InfoRow
+                icon={Navigation}
+                label="Điểm Xuất Phát:"
+                value={activeRental.stationName}
+              />
+
+              {/* Battery */}
+              <View style={styles.batterySection}>
+                <Text style={styles.batteryLabel}>Thời Gian Dự Kiến</Text>
+                <Text style={styles.batteryPercent}>
+                  Bắt đầu: {formatTime(activeRental.startTime)}
+                </Text>
+                <Text style={styles.batteryPercent}>
+                  Kết thúc: {formatTime(activeRental.expectedEndTime)}
+                </Text>
+              </View>
+
+              {/* End Trip Button */}
+              <Button
+                title="Kết Thúc Chuyến Đi"
+                onPress={() => {}}
+                variant="danger"
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
               />
             ))
           ) : (
@@ -263,9 +419,90 @@ export default function TripsScreen() {
               title="Chưa có lịch sử"
               description="Bạn chưa có chuyến đi nào đã hoàn thành"
             />
+<<<<<<< HEAD
           )}
         </ScrollView>
       )}
+=======
+          )
+        ) : // Trip History Section
+        tripHistory.length === 0 ? (
+          <EmptyState
+            icon={Calendar}
+            title="Chưa Có Lịch Sử"
+            description="Bạn chưa hoàn thành chuyến đi nào"
+          />
+        ) : (
+          tripHistory.map((trip) => (
+            <Card key={trip.id}>
+              {/* Trip Header */}
+              <View style={styles.tripHeader}>
+                <View style={styles.tripHeaderLeft}>
+                  <Text style={styles.tripVehicleType}>{trip.vehicleName}</Text>
+                  <View style={styles.tripDateTime}>
+                    <Calendar size={14} color="#9ca3af" />
+                    <Text style={styles.tripDate}>
+                      {formatDate(trip.startTime)}
+                    </Text>
+                    <Text style={styles.tripTime}>
+                      {formatTime(trip.startTime)}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.tripCostContainer}>
+                  <Text style={styles.tripCost}>
+                    {trip.totalAmount.toLocaleString("vi-VN")}đ
+                  </Text>
+                </View>
+              </View>
+
+              {/* Route */}
+              <View style={styles.routeContainer}>
+                <View style={styles.routePoint}>
+                  <View style={styles.routeDotStart} />
+                  <Text style={styles.routeLocation}>{trip.stationName}</Text>
+                </View>
+                <View style={styles.routeLine} />
+                <View style={styles.routePoint}>
+                  <View style={styles.routeDotEnd} />
+                  <Text style={styles.routeLocation}>{trip.stationName}</Text>
+                </View>
+              </View>
+
+              {/* Trip Stats */}
+              <View style={styles.tripStats}>
+                <View style={styles.tripStatItem}>
+                  <Clock size={14} color="#6b7280" />
+                  <Text style={styles.tripStatText}>
+                    {Math.ceil(
+                      (new Date(
+                        trip.actualEndTime || trip.expectedEndTime
+                      ).getTime() -
+                        new Date(trip.startTime).getTime()) /
+                        (1000 * 60)
+                    )}{" "}
+                    phút
+                  </Text>
+                </View>
+                <Text style={styles.statSeparator}>•</Text>
+                <Badge
+                  variant={
+                    trip.status.toUpperCase() === "COMPLETED"
+                      ? "success"
+                      : "danger"
+                  }
+                  text={
+                    trip.status.toUpperCase() === "COMPLETED"
+                      ? "Hoàn thành"
+                      : "Đã hủy"
+                  }
+                />
+              </View>
+            </Card>
+          ))
+        )}
+      </ScrollView>
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
     </SafeAreaView>
   );
 }
@@ -279,7 +516,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+<<<<<<< HEAD
     padding: 20,
+=======
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
   },
   loadingText: {
     marginTop: 12,

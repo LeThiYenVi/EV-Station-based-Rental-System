@@ -153,18 +153,33 @@ public class UserController {
                         .build());
     }
 
-    @PostMapping(value = "/{userId}/license-card", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/{userId}/license-card/front", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF') or hasRole('RENTER')")
-    public ResponseEntity<ApiResponse<UserResponse>> uploadLicenseCard(
+    public ResponseEntity<ApiResponse<UserResponse>> uploadLicenseCardFront(
             @PathVariable UUID userId,
             @RequestParam("file") MultipartFile file
     ) {
-        log.info("Request to upload license card for user: {}", userId);
+        log.info("Request to upload license card front for user: {}", userId);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.<UserResponse>builder()
                         .statusCode(200)
-                        .message("License card uploaded successfully")
-                        .data(userService.uploadLicenseCard(userId, file))
+                        .message("License card front uploaded successfully")
+                        .data(userService.uploadLicenseCardFront(userId, file))
+                        .build());
+    }
+
+    @PostMapping(value = "/{userId}/license-card/back", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF') or hasRole('RENTER')")
+    public ResponseEntity<ApiResponse<UserResponse>> uploadLicenseCardBack(
+            @PathVariable UUID userId,
+            @RequestParam("file") MultipartFile file
+    ) {
+        log.info("Request to upload license card back for user: {}", userId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<UserResponse>builder()
+                        .statusCode(200)
+                        .message("License card back uploaded successfully")
+                        .data(userService.uploadLicenseCardBack(userId, file))
                         .build());
     }
 

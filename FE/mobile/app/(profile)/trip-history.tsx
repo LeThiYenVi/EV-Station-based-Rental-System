@@ -1,67 +1,94 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 import { Calendar, MapPin, Clock, DollarSign } from "lucide-react-native";
+import { bookingService } from "@/services";
+import { BookingResponse } from "@/types";
+import Toast from "react-native-toast-message";
+import { EmptyState } from "@/components/common";
 
 export default function TripHistoryScreen() {
   const [filter, setFilter] = useState<"all" | "completed" | "cancelled">(
     "all"
   );
+  const [trips, setTrips] = useState<BookingResponse[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const trips = [
-    {
-      id: "1",
-      date: "18 Th11, 2025",
-      time: "14:30",
-      from: "Trạm Trung Tâm",
-      to: "Trung Tâm Park Avenue",
-      distance: "3.2 km",
-      duration: "25 phút",
-      cost: 45000,
-      status: "completed",
-      vehicleType: "Xe Đạp Điện",
-    },
-    {
-      id: "2",
-      date: "17 Th11, 2025",
-      time: "09:15",
-      from: "Khu Công Nghệ",
-      to: "Quảng Trường Trung Tâm",
-      distance: "2.1 km",
-      duration: "18 phút",
-      cost: 32000,
-      status: "completed",
-      vehicleType: "Xe Scooter",
-    },
-    {
-      id: "3",
-      date: "16 Th11, 2025",
-      time: "16:45",
-      from: "Bến Xe Miền Đông",
-      to: "Trạm Ga Trung Tâm",
-      distance: "4.8 km",
-      duration: "32 phút",
-      cost: 58000,
-      status: "completed",
-      vehicleType: "Xe Đạp Điện",
-    },
-    {
-      id: "4",
-      date: "15 Th11, 2025",
-      time: "11:20",
-      from: "Công Viên Thành Phố",
-      to: "Trung Tâm Thương Mại",
-      distance: "1.5 km",
-      duration: "12 phút",
-      cost: 20000,
-      status: "cancelled",
-      vehicleType: "Xe Đạp",
-    },
-  ];
+  useEffect(() => {
+    fetchTrips();
+  }, []);
+
+  const fetchTrips = async () => {
+    try {
+      setLoading(true);
+      const response = await bookingService.getMyBookings();
+      setTrips(response.data || []);
+    } catch (error: any) {
+      console.error("Failed to fetch trips:", error);
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2:
+          error.response?.data?.message || "Không thể tải lịch sử chuyến đi",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredTrips = trips.filter((trip) => {
     if (filter === "all") return true;
-    return trip.status === filter;
+    return trip.status.toLowerCase() === filter;
   });
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "COMPLETED":
+        return "Hoàn Thành";
+      case "CANCELLED":
+        return "Đã Hủy";
+      case "PENDING":
+        return "Chờ Xác Nhận";
+      case "CONFIRMED":
+        return "Đã Xác Nhận";
+      case "IN_PROGRESS":
+        return "Đang Diễn Ra";
+      default:
+        return status;
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#10b981" />
+        <Text style={styles.loadingText}>Đang tải lịch sử...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -93,7 +120,9 @@ export default function TripHistoryScreen() {
               filter === "completed" && styles.filterTextActive,
             ]}
           >
-            Hoàn Thành ({trips.filter((t) => t.status === "completed").length})
+            Hoàn Thành (
+            {trips.filter((t) => t.status.toUpperCase() === "COMPLETED").length}
+            )
           </Text>
         </Pressable>
         <Pressable
@@ -109,76 +138,99 @@ export default function TripHistoryScreen() {
               filter === "cancelled" && styles.filterTextActive,
             ]}
           >
-            Đã Hủy ({trips.filter((t) => t.status === "cancelled").length})
+            Đã Hủy (
+            {trips.filter((t) => t.status.toUpperCase() === "CANCELLED").length}
+            )
           </Text>
         </Pressable>
       </View>
 
-      <ScrollView style={styles.scrollView}>
-        {filteredTrips.map((trip) => (
-          <Pressable
-            key={trip.id}
-            style={({ pressed }) => [
-              styles.tripCard,
-              pressed && styles.tripCardPressed,
-            ]}
-          >
-            {/* Header */}
-            <View style={styles.tripHeader}>
-              <View style={styles.tripHeaderLeft}>
-                <Text style={styles.vehicleType}>{trip.vehicleType}</Text>
-                <View style={styles.dateTimeRow}>
-                  <Calendar size={14} color="#9ca3af" />
-                  <Text style={styles.dateTime}>
-                    {trip.date} • {trip.time}
+      {filteredTrips.length === 0 ? (
+        <EmptyState
+          icon={Calendar}
+          title="Chưa Có Chuyến Đi"
+          description={
+            filter === "all"
+              ? "Bạn chưa có chuyến đi nào. Hãy đặt xe để bắt đầu!"
+              : `Không có chuyến đi ${
+                  filter === "completed" ? "hoàn thành" : "đã hủy"
+                }`
+          }
+        />
+      ) : (
+        <ScrollView style={styles.scrollView}>
+          {filteredTrips.map((trip) => (
+            <Pressable
+              key={trip.id}
+              style={({ pressed }) => [
+                styles.tripCard,
+                pressed && styles.tripCardPressed,
+              ]}
+            >
+              {/* Header */}
+              <View style={styles.tripHeader}>
+                <View style={styles.tripHeaderLeft}>
+                  <Text style={styles.vehicleType}>{trip.vehicleName}</Text>
+                  <View style={styles.dateTimeRow}>
+                    <Calendar size={14} color="#9ca3af" />
+                    <Text style={styles.dateTime}>
+                      {formatDate(trip.startTime)} •{" "}
+                      {formatTime(trip.startTime)}
+                    </Text>
+                  </View>
+                </View>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    trip.status.toUpperCase() === "CANCELLED" &&
+                      styles.statusCancelled,
+                  ]}
+                >
+                  <Text style={styles.statusText}>
+                    {getStatusLabel(trip.status)}
                   </Text>
                 </View>
               </View>
-              <View
-                style={[
-                  styles.statusBadge,
-                  trip.status === "cancelled" && styles.statusCancelled,
-                ]}
-              >
-                <Text style={styles.statusText}>
-                  {trip.status === "completed" ? "Hoàn Thành" : "Đã Hủy"}
-                </Text>
-              </View>
-            </View>
 
-            {/* Route */}
-            <View style={styles.routeContainer}>
-              <View style={styles.routePoint}>
-                <View style={styles.dotStart} />
-                <Text style={styles.routeText}>{trip.from}</Text>
+              {/* Route */}
+              <View style={styles.routeContainer}>
+                <View style={styles.routePoint}>
+                  <View style={styles.dotStart} />
+                  <Text style={styles.routeText}>{trip.stationName}</Text>
+                </View>
+                <View style={styles.routeLine} />
+                <View style={styles.routePoint}>
+                  <View style={styles.dotEnd} />
+                  <Text style={styles.routeText}>{trip.stationName}</Text>
+                </View>
               </View>
-              <View style={styles.routeLine} />
-              <View style={styles.routePoint}>
-                <View style={styles.dotEnd} />
-                <Text style={styles.routeText}>{trip.to}</Text>
-              </View>
-            </View>
 
-            {/* Stats */}
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <MapPin size={16} color="#6b7280" />
-                <Text style={styles.statText}>{trip.distance}</Text>
+              {/* Stats */}
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Clock size={16} color="#6b7280" />
+                  <Text style={styles.statText}>
+                    {Math.ceil(
+                      (new Date(
+                        trip.actualEndTime || trip.expectedEndTime
+                      ).getTime() -
+                        new Date(trip.startTime).getTime()) /
+                        (1000 * 60)
+                    )}{" "}
+                    phút
+                  </Text>
+                </View>
+                <View style={styles.statItem}>
+                  <DollarSign size={16} color="#10b981" />
+                  <Text style={styles.costText}>
+                    {trip.totalAmount.toLocaleString("vi-VN")}đ
+                  </Text>
+                </View>
               </View>
-              <View style={styles.statItem}>
-                <Clock size={16} color="#6b7280" />
-                <Text style={styles.statText}>{trip.duration}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <DollarSign size={16} color="#10b981" />
-                <Text style={styles.costText}>
-                  {trip.cost.toLocaleString("vi-VN")}đ
-                </Text>
-              </View>
-            </View>
-          </Pressable>
-        ))}
-      </ScrollView>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -187,6 +239,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f9fafb",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f9fafb",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: "#6b7280",
   },
   filterContainer: {
     flexDirection: "row",

@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
+<<<<<<< HEAD
 import { api } from "@/services/api";
 import type { ApiResponse, UserResponse } from "@/services/api";
 import Toast from "react-native-toast-message";
@@ -89,6 +90,103 @@ export default function PersonalInfoScreen() {
     } finally {
       setIsLoading(false);
       console.log("✅ Loading complete");
+=======
+import { userService } from "@/services";
+import { Input, Button } from "@/components/common";
+import { Camera, User } from "lucide-react-native";
+import Toast from "react-native-toast-message";
+import * as ImagePicker from "expo-image-picker";
+
+export default function PersonalInfoScreen() {
+  const { user, setUser } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: user?.fullName || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    address: user?.address || "",
+  });
+
+  const handleSave = async () => {
+    if (!user?.id) {
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Không tìm thấy thông tin người dùng",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const updatedUser = await userService.updateUser(user.id, formData);
+      setUser(updatedUser);
+      Toast.show({
+        type: "success",
+        text1: "Thành Công",
+        text2: "Thông tin đã được cập nhật",
+      });
+      setIsEditing(false);
+    } catch (error: any) {
+      console.error("Update user error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: error.response?.data?.message || "Không thể cập nhật thông tin",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUploadAvatar = async () => {
+    if (!user?.id) return;
+
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Cần cấp quyền truy cập thư viện ảnh",
+      });
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setIsLoading(true);
+      try {
+        // Convert URI to Blob
+        const response = await fetch(result.assets[0].uri);
+        const blob = await response.blob();
+
+        const updatedUser = await userService.uploadAvatar(user.id, blob);
+        setUser(updatedUser);
+        Toast.show({
+          type: "success",
+          text1: "Thành Công",
+          text2: "Ảnh đại diện đã được cập nhật",
+        });
+      } catch (error: any) {
+        console.error("Upload avatar error:", error);
+        Toast.show({
+          type: "error",
+          text1: "Lỗi",
+          text2: error.response?.data?.message || "Không thể tải ảnh lên",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
     }
   };
 
@@ -215,6 +313,7 @@ export default function PersonalInfoScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Ảnh Đại Diện</Text>
           <View style={styles.avatarContainer}>
+<<<<<<< HEAD
             {userInfo.avatarUrl ? (
               <Image
                 source={{ uri: userInfo.avatarUrl }}
@@ -231,10 +330,24 @@ export default function PersonalInfoScreen() {
               disabled={isUploading}
             >
               <Camera size={18} color="#fff" />
+=======
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {user?.fullName?.charAt(0).toUpperCase() || "U"}
+              </Text>
+            </View>
+            <Pressable
+              style={styles.cameraButton}
+              onPress={handleUploadAvatar}
+              disabled={isLoading}
+            >
+              <Camera size={20} color="#ffffff" />
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
             </Pressable>
           </View>
         </View>
 
+<<<<<<< HEAD
         {/* Basic Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Thông Tin Cơ Bản</Text>
@@ -246,6 +359,78 @@ export default function PersonalInfoScreen() {
               icon={<MapPin />}
               label="Địa chỉ"
               value={userInfo.address || "Chưa cập nhật"}
+=======
+        {/* Form Section */}
+        <View style={styles.formSection}>
+          <Input
+            label="Họ và Tên"
+            value={formData.fullName}
+            onChangeText={(text) =>
+              setFormData({ ...formData, fullName: text })
+            }
+            placeholder="Nhập họ và tên"
+            leftIcon={<User size={20} color="#9ca3af" />}
+            editable={isEditing}
+          />
+
+          <Input
+            label="Email"
+            value={formData.email}
+            onChangeText={(text) => setFormData({ ...formData, email: text })}
+            placeholder="Nhập email"
+            keyboardType="email-address"
+            editable={false} // Email không thể chỉnh sửa
+          />
+
+          <Input
+            label="Số Điện Thoại"
+            value={formData.phone}
+            onChangeText={(text) => setFormData({ ...formData, phone: text })}
+            placeholder="Nhập số điện thoại"
+            keyboardType="phone-pad"
+            editable={isEditing}
+          />
+
+          <Input
+            label="Địa Chỉ"
+            value={formData.address}
+            onChangeText={(text) => setFormData({ ...formData, address: text })}
+            placeholder="Nhập địa chỉ"
+            editable={isEditing}
+          />
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.buttonSection}>
+          {isEditing ? (
+            <>
+              <Button
+                title={isLoading ? "Đang lưu..." : "Lưu Thay Đổi"}
+                onPress={handleSave}
+                variant="primary"
+                disabled={isLoading}
+              />
+              <Button
+                title="Hủy"
+                onPress={() => {
+                  setIsEditing(false);
+                  setFormData({
+                    fullName: user?.fullName || "",
+                    email: user?.email || "",
+                    phone: user?.phone || "",
+                    address: user?.address || "",
+                  });
+                }}
+                variant="outline"
+                disabled={isLoading}
+              />
+            </>
+          ) : (
+            <Button
+              title="Chỉnh Sửa Thông Tin"
+              onPress={() => setIsEditing(true)}
+              variant="primary"
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
             />
             <InfoRow
               icon={<CreditCard />}

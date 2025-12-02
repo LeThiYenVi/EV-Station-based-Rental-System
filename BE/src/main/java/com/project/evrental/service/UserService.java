@@ -103,8 +103,11 @@ public class UserService {
         if (loadedUser.getAvatarUrl() != null) {
             s3Service.deleteFile(loadedUser.getAvatarUrl());
         }
-        if (loadedUser.getLicenseCardImageUrl() != null) {
-            s3Service.deleteFile(loadedUser.getLicenseCardImageUrl());
+        if (loadedUser.getLicenseCardFrontImageUrl() != null) {
+            s3Service.deleteFile(loadedUser.getLicenseCardFrontImageUrl());
+        }
+        if (loadedUser.getLicenseCardBackImageUrl() != null) {
+            s3Service.deleteFile(loadedUser.getLicenseCardBackImageUrl());
         }
 
         userRepository.delete(loadedUser);
@@ -128,6 +131,9 @@ public class UserService {
         }
         if (request.getPhone() != null) {
             user.setPhone(request.getPhone());
+        }
+        if (request.getAddress() != null) {
+            user.setAddress(request.getAddress());
         }
         if (request.getLicenseNumber() != null) {
             user.setLicenseNumber(request.getLicenseNumber());
@@ -177,17 +183,34 @@ public class UserService {
 
     @Transactional
     @CacheEvict(value = "users", allEntries = true)
-    public UserResponse uploadLicenseCard(@NonNull UUID id, MultipartFile file) {
+    public UserResponse uploadLicenseCardFront(@NonNull UUID id, MultipartFile file) {
         log.info("Uploading license card for user: {}", id);
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        if (user.getLicenseCardImageUrl() != null) {
-            s3Service.deleteFile(user.getLicenseCardImageUrl());
+        if (user.getLicenseCardFrontImageUrl() != null) {
+            s3Service.deleteFile(user.getLicenseCardFrontImageUrl());
         }
 
-        String licenseCardUrl = s3Service.uploadFile(file, "assets/license-cards");
-        user.setLicenseCardImageUrl(licenseCardUrl);
+        String licenseCardFrontUrl = s3Service.uploadFile(file, "assets/license-cards");
+        user.setLicenseCardFrontImageUrl(licenseCardFrontUrl);
+
+        return UserMapper.fromEntity(userRepository.save(user));
+    }
+
+    @Transactional
+    @CacheEvict(value = "users", allEntries = true)
+    public UserResponse uploadLicenseCardBack(UUID id, MultipartFile file) {
+        log.info("Uploading license card back for user: {}", id);
+        var user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        if (user.getLicenseCardBackImageUrl() != null) {
+            s3Service.deleteFile(user.getLicenseCardBackImageUrl());
+        }
+
+        String licenseCardBackUrl = s3Service.uploadFile(file, "assets/license-cards");
+        user.setLicenseCardBackImageUrl(licenseCardBackUrl);
 
         var saved = Objects.requireNonNull(userRepository.save(user));
         return UserMapper.fromEntity(saved);

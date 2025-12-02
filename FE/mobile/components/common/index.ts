@@ -7,4 +7,9 @@ export { Avatar } from "./Avatar";
 export { ListItem } from "./ListItem";
 export { InfoRow } from "./InfoRow";
 export { Tabs } from "./Tabs";
+<<<<<<< HEAD
 export { default as TripCard } from "./TripCard";
+=======
+export { VehicleCard } from "./VehicleCard";
+export { VehicleDetailModal } from "./VehicleDetailModal";
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5

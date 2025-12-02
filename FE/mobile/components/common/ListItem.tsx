@@ -3,7 +3,11 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { ChevronRight, LucideIcon } from "lucide-react-native";
 
 interface ListItemProps {
+<<<<<<< HEAD
   icon?: LucideIcon | React.ReactElement;
+=======
+  icon?: LucideIcon | React.ReactNode;
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
   iconSize?: number;
   iconColor?: string;
   iconBackgroundColor?: string;
@@ -33,6 +37,7 @@ export const ListItem: React.FC<ListItemProps> = ({
 
   const content = (
     <>
+<<<<<<< HEAD
       {icon && (
         <>
           {isReactElement
@@ -48,11 +53,26 @@ export const ListItem: React.FC<ListItemProps> = ({
                 </View>
               )}
         </>
+=======
+      {Icon && (
+        <View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: iconBackgroundColor },
+          ]}
+        >
+          {typeof Icon === "function" ? (
+            <Icon size={iconSize} color={iconColor} />
+          ) : (
+            Icon
+          )}
+        </View>
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
       )}
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>{title}</Text>
-          {badge && <View style={styles.badge}>{badge}</View>}
+          {badge}
         </View>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>

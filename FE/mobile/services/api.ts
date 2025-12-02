@@ -1,6 +1,18 @@
-// API Service với switch giữa Mock và Real API
-import { ENV_CONFIG, getApiUrl } from "@/config/env";
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  InternalAxiosRequestConfig,
+} from "axios";
+import { ENV_CONFIG } from "@/config/env";
+import {
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
+  clearTokens,
+} from "@/utils/storage";
+import { ApiResponse, AuthResponse } from "@/types";
 
+<<<<<<< HEAD
 // Backend API Response Types
 export interface ApiResponse<T> {
   statusCode: number;
@@ -90,9 +102,35 @@ async function apiRequest<T>(
   } catch (error) {
     console.error("API Request failed:", error);
     throw error;
-  }
-}
+=======
+// Create axios instance
+const api: AxiosInstance = axios.create({
+  baseURL: ENV_CONFIG.API_BASE_URL,
+  timeout: ENV_CONFIG.REQUEST_TIMEOUT,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
+// Request interceptor - Add auth token to requests
+api.interceptors.request.use(
+  async (config: InternalAxiosRequestConfig) => {
+    const token = await getAccessToken();
+
+    // Only add Authorization header if token exists and is valid
+    if (token && token.trim() !== "" && token !== "null" && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
+  }
+);
+
+<<<<<<< HEAD
 // API Methods
 export const api = {
   // Auth
@@ -101,8 +139,27 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
+=======
+// Response interceptor - Handle responses and errors
+api.interceptors.response.use(
+  (response) => {
+    // Unwrap ApiResponse<T> and return just the data
+    if (
+      response.data &&
+      typeof response.data === "object" &&
+      "data" in response.data
+    ) {
+      return response.data.data;
+    }
+    return response.data;
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
   },
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
+<<<<<<< HEAD
   register: async (
     email: string,
     password: string,
@@ -128,21 +185,33 @@ export const api = {
       body: JSON.stringify({ email, otpCode }),
     });
   },
+=======
+    // Handle 401 Unauthorized - Try to refresh token
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5
 
-  // Stations
-  getStations: async () => {
-    return apiRequest("/stations");
-  },
+      try {
+        const refreshToken = await getRefreshToken();
 
-  getStationById: async (id: string) => {
-    return apiRequest(`/stations/${id}`);
-  },
+        if (!refreshToken) {
+          // No refresh token, logout user
+          await clearTokens();
+          throw error;
+        }
 
-  // Trips
-  getTrips: async () => {
-    return apiRequest("/trips");
-  },
+        // Call refresh token endpoint
+        const response = await axios.post<ApiResponse<AuthResponse>>(
+          `${ENV_CONFIG.API_BASE_URL}/api/auth/refresh`,
+          {},
+          {
+            headers: {
+              Cookie: `refresh_token=${refreshToken}`,
+            },
+          }
+        );
 
+<<<<<<< HEAD
   // Messages
   getMessages: async () => {
     return apiRequest("/messages");
@@ -284,3 +353,34 @@ export const api = {
     });
   },
 };
+=======
+        const authData = response.data.data;
+
+        // Save new tokens
+        await setTokens(authData.accessToken, authData.refreshToken);
+
+        // Retry original request with new token
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${authData.accessToken}`;
+        }
+
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh failed, logout user
+        await clearTokens();
+        return Promise.reject(refreshError);
+      }
+    }
+
+    // Handle other errors
+    const errorMessage = error.response?.data
+      ? (error.response.data as any).message || "Request failed"
+      : error.message || "Network error";
+
+    console.error("API Error:", errorMessage);
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+>>>>>>> 7aaef75e6773ca6ab805ee29e3357b0ca31747c5

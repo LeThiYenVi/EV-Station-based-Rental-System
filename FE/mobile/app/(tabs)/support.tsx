@@ -6,6 +6,7 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
+  Linking,
 } from "react-native";
 import {
   Phone,
@@ -20,65 +21,76 @@ import {
   Clock,
   DollarSign,
 } from "lucide-react-native";
-import { ListItem, Badge, InfoRow, Card } from "@/components/common";
+import { Card } from "@/components/common";
+import Toast from "react-native-toast-message";
 
 export default function SupportScreen() {
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
-  const supportOptions = [
-    {
-      id: "1",
-      icon: MessageCircle,
-      title: "Trò Chuyện Trực Tiếp",
-      description: "Chat với đội ngũ hỗ trợ",
-      badge: "Online",
-    },
-    {
-      id: "2",
-      icon: Phone,
-      title: "Gọi Điện",
-      description: "+84 (028) 123-4567",
-      badge: null,
-    },
-    {
-      id: "3",
-      icon: Mail,
-      title: "Email Hỗ Trợ",
-      description: "support@evrental.vn",
-      badge: null,
-    },
-  ];
+  const handleCall = () => {
+    Linking.openURL("tel:+842812345678").catch(() => {
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Không thể mở ứng dụng điện thoại",
+      });
+    });
+  };
+
+  const handleEmail = () => {
+    Linking.openURL("mailto:support@evrental.vn").catch(() => {
+      Toast.show({
+        type: "error",
+        text1: "Lỗi",
+        text2: "Không thể mở ứng dụng email",
+      });
+    });
+  };
+
+  const handleChat = () => {
+    Toast.show({
+      type: "info",
+      text1: "Tính năng đang phát triển",
+      text2: "Chat trực tiếp sẽ có trong phiên bản sau",
+    });
+  };
 
   const faqs = [
     {
       id: "1",
       question: "Làm sao để thuê xe?",
       answer:
-        "Mở ứng dụng, tìm trạm gần bạn, quét mã QR trên xe để mở khóa và bắt đầu chuyến đi.",
+        "Bước 1: Tìm trạm xe gần bạn trên bản đồ. Bước 2: Quét mã QR trên xe. Bước 3: Chọn thời gian thuê và thanh toán qua MoMo. Bước 4: Xe sẽ tự động mở khóa và bạn có thể bắt đầu chuyến đi.",
     },
     {
       id: "2",
-      question: "Phí thuê xe là bao nhiêu?",
+      question: "Phương thức thanh toán nào được chấp nhận?",
       answer:
-        "Phí thuê là 10.000đ/phút hoặc 200.000đ/ngày. Phí mở khóa ban đầu là 5.000đ.",
+        "Hiện tại chúng tôi chấp nhận thanh toán qua MoMo. Các phương thức khác như Ví điện tử, Thẻ tín dụng sẽ được bổ sung trong tương lai.",
     },
     {
       id: "3",
-      question: "Nếu xe hết pin giữa đường thì sao?",
+      question: "Nếu xe gặp sự cố giữa đường thì sao?",
       answer:
-        "Hãy liên hệ hỗ trợ ngay lập tức. Chúng tôi sẽ hỗ trợ đổi xe miễn phí nếu xe hết pin trong quá trình thuê.",
+        "Hãy liên hệ hỗ trợ ngay qua hotline: +84 (028) 123-4567. Chúng tôi sẽ hỗ trợ đổi xe miễn phí hoặc cứu hộ nếu cần thiết. Bạn sẽ không bị tính phí trong thời gian chờ đợi.",
     },
     {
       id: "4",
-      question: "Tôi có thể đỗ xe ở đâu?",
+      question: "Tôi có thể trả xe ở trạm khác không?",
       answer:
-        "Bạn chỉ có thể đỗ xe tại các trạm được chỉ định. Đỗ xe ngoài trạm sẽ bị tính phí phạt.",
+        "Có, bạn có thể trả xe tại bất kỳ trạm nào trong hệ thống. Tuy nhiên, hãy đảm bảo trạm đó có chỗ trống. Nếu trạm đầy, vui lòng chọn trạm gần nhất.",
     },
     {
       id: "5",
-      question: "Làm thế nào để hủy chuyến đi?",
+      question: "Làm thế nào để hủy đặt xe?",
       answer:
-        "Bạn có thể hủy chuyến đi trong vòng 5 phút đầu tiên mà không mất phí. Sau 5 phút sẽ tính phí bình thường.",
+        "Bạn có thể hủy đặt xe trong phần 'Chuyến Đi' trước khi bắt đầu chuyến. Nếu hủy trước 1 giờ, bạn sẽ được hoàn tiền 100%. Hủy trong vòng 1 giờ sẽ bị trừ 20% phí đặt cọc.",
+    },
+    {
+      id: "6",
+      question: "Yêu cầu bằng lái xe như thế nào?",
+      answer:
+        "Bạn cần có bằng lái xe hạng A1 trở lên và đã được xác minh trong hồ sơ. Để xác minh bằng lái, vào Hồ Sơ → Thông Tin Cá Nhân → Upload ảnh bằng lái mặt trước và sau.",
     },
   ];
 
@@ -86,17 +98,17 @@ export default function SupportScreen() {
     {
       id: "1",
       icon: Shield,
-      text: "Đeo mũ bảo hiểm khi đi xe",
+      text: "Luôn đeo mũ bảo hiểm và tuân thủ luật giao thông",
     },
     {
       id: "2",
       icon: Clock,
-      text: "Kiểm tra mức pin trước khi xuất phát",
+      text: "Kiểm tra mức pin và tình trạng xe trước khi khởi hành",
     },
     {
       id: "3",
       icon: DollarSign,
-      text: "Đỗ xe đúng trạm để tránh phí phạt",
+      text: "Trả xe đúng trạm để tránh phí phạt ngoài dự kiến",
     },
   ];
 
@@ -119,22 +131,44 @@ export default function SupportScreen() {
         {/* Contact Options */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Liên Hệ Hỗ Trợ</Text>
-          <View style={styles.optionsContainer}>
-            {supportOptions.map((option) => (
-              <ListItem
-                key={option.id}
-                icon={option.icon}
-                title={option.title}
-                subtitle={option.description}
-                badge={
-                  option.badge ? (
-                    <Badge variant="success" text={option.badge} />
-                  ) : undefined
-                }
-                onPress={() => {}}
-              />
-            ))}
-          </View>
+
+          {/* Chat Support - Coming Soon */}
+          <Pressable style={styles.contactCard} onPress={handleChat}>
+            <View style={styles.iconWrapper}>
+              <MessageCircle size={24} color="#10b981" />
+            </View>
+            <View style={styles.contactContent}>
+              <Text style={styles.contactTitle}>Trò Chuyện Trực Tiếp</Text>
+              <Text style={styles.contactSubtitle}>
+                Chat với đội ngũ hỗ trợ
+              </Text>
+            </View>
+            <View style={styles.comingSoonBadge}>
+              <Text style={styles.comingSoonText}>Sắp ra mắt</Text>
+            </View>
+          </Pressable>
+
+          {/* Phone Support */}
+          <Pressable style={styles.contactCard} onPress={handleCall}>
+            <View style={styles.iconWrapper}>
+              <Phone size={24} color="#10b981" />
+            </View>
+            <View style={styles.contactContent}>
+              <Text style={styles.contactTitle}>Gọi Điện</Text>
+              <Text style={styles.contactSubtitle}>+84 (028) 123-4567</Text>
+            </View>
+          </Pressable>
+
+          {/* Email Support */}
+          <Pressable style={styles.contactCard} onPress={handleEmail}>
+            <View style={styles.iconWrapper}>
+              <Mail size={24} color="#10b981" />
+            </View>
+            <View style={styles.contactContent}>
+              <Text style={styles.contactTitle}>Email Hỗ Trợ</Text>
+              <Text style={styles.contactSubtitle}>support@evrental.vn</Text>
+            </View>
+          </Pressable>
         </View>
 
         {/* FAQ Section */}
@@ -197,16 +231,16 @@ export default function SupportScreen() {
         {/* Additional Resources */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tài Liệu Thêm</Text>
-          <ListItem
-            icon={FileText}
-            title="Hướng Dẫn Sử Dụng Chi Tiết"
-            onPress={() => {}}
-          />
-          <ListItem
-            icon={AlertCircle}
-            title="Báo Cáo Sự Cố Hoặc Vấn Đề"
-            onPress={() => {}}
-          />
+
+          <Pressable style={styles.resourceCard}>
+            <FileText size={20} color="#10b981" />
+            <Text style={styles.resourceText}>Hướng Dẫn Sử Dụng Chi Tiết</Text>
+          </Pressable>
+
+          <Pressable style={styles.resourceCard}>
+            <AlertCircle size={20} color="#10b981" />
+            <Text style={styles.resourceText}>Báo Cáo Sự Cố Hoặc Vấn Đề</Text>
+          </Pressable>
         </View>
 
         {/* Bottom Spacing */}
@@ -260,6 +294,65 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     marginBottom: 12,
+  },
+  contactCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  iconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#ecfdf5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  contactContent: {
+    flex: 1,
+  },
+  contactTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: 2,
+  },
+  contactSubtitle: {
+    fontSize: 13,
+    color: "#6b7280",
+  },
+  comingSoonBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: "#fef3c7",
+  },
+  comingSoonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#92400e",
+  },
+  resourceCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    gap: 12,
+  },
+  resourceText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#111827",
   },
   optionsContainer: {
     gap: 12,
