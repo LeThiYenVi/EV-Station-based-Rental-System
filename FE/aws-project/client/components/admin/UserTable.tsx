@@ -77,13 +77,23 @@ export default function UserTable({
   const allSelected = users.length > 0 && selectedUsers.length === users.length;
 
   // Role badge colors
-  const getRoleBadge = (role: UserRole) => {
-    const configs = {
-      admin: { label: "Admin", variant: "destructive" as const },
-      staff: { label: "Staff", variant: "default" as const },
-      renter: { label: "Customer", variant: "secondary" as const },
+  const getRoleBadge = (role: UserRole | string) => {
+    const key = String(role).toUpperCase();
+    const configs: Record<
+      string,
+      {
+        label: string;
+        variant: "default" | "secondary" | "destructive" | "outline";
+      }
+    > = {
+      ADMIN: { label: "ADMIN", variant: "destructive" },
+      STAFF: { label: "STAFF", variant: "default" },
+      RENTER: { label: "RENTER", variant: "secondary" },
     };
-    const config = configs[role];
+    const config = configs[key] ?? {
+      label: key || "UNKNOWN",
+      variant: "outline",
+    };
     return (
       <Badge variant={config.variant} className="font-medium">
         {config.label}
@@ -92,8 +102,9 @@ export default function UserTable({
   };
 
   // Status badge colors
-  const getStatusBadge = (status: UserStatus) => {
-    const configs = {
+  const getStatusBadge = (status: UserStatus | string) => {
+    const key = String(status).toLowerCase();
+    const configs: Record<string, { label: string; className: string }> = {
       active: {
         label: "Active",
         className: "bg-green-100 text-green-800 hover:bg-green-100",
@@ -107,7 +118,10 @@ export default function UserTable({
         className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
       },
     };
-    const config = configs[status];
+    const config = configs[key] ?? {
+      label: key || "Unknown",
+      className: "bg-gray-100 text-gray-800 hover:bg-gray-100",
+    };
     return (
       <Badge className={config.className} variant="outline">
         {config.label}

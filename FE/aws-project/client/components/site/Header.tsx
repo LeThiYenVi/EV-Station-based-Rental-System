@@ -9,7 +9,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useMessage } from "@/components/ui/message";
-import "./Header.css";
 
 const links = [
   { href: "/nearly-stations", label: "Tìm trạm gần bạn" },

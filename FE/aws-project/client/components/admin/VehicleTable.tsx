@@ -4,7 +4,29 @@
  */
 
 import { useState } from "react";
-import { Vehicle, VehicleStatus } from "@shared/types";
+// Minimal local types to avoid alias issues and normalize fields
+type VehicleStatus =
+  | "available"
+  | "rented"
+  | "maintenance"
+  | "charging"
+  | "unavailable"
+  | string;
+interface Vehicle {
+  id: string;
+  name: string;
+  brand: string;
+  license_plate: string;
+  type: "electricity" | "gasoline" | string;
+  capacity: number;
+  rating: number;
+  rent_count: number;
+  hourly_rate: number;
+  daily_rate: number;
+  deposit_amount: number;
+  status: VehicleStatus;
+  photos?: string[];
+}
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -74,8 +96,9 @@ export default function VehicleTable({
 
   // Status badge - theo ERD: available, rented, maintenance, charging, unavailable
   const getStatusBadge = (status: VehicleStatus) => {
+    const key = String(status).toLowerCase();
     const configs: Record<
-      VehicleStatus,
+      string,
       { label: string; className: string; icon: string }
     > = {
       available: {
@@ -104,7 +127,11 @@ export default function VehicleTable({
         icon: "⚫",
       },
     };
-    const config = configs[status];
+    const config = configs[key] ?? {
+      label: key || "Unknown",
+      className: "bg-gray-100 text-gray-800 hover:bg-gray-100",
+      icon: "❔",
+    };
     return (
       <Badge className={config.className}>
         {config.icon} {config.label}

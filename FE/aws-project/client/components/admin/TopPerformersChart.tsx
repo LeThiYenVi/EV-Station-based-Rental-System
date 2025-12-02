@@ -191,7 +191,7 @@ export default function TopPerformersChart({
             <Bar dataKey="value" radius={[8, 8, 0, 0]}>
               {data.map((entry, index) => (
                 <Cell
-                  key={`cell-${index}`}
+                  key={`cell-${entry.id ?? entry.name ?? index}`}
                   fill={BAR_COLORS[index % BAR_COLORS.length]}
                 />
               ))}
