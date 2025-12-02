@@ -228,4 +228,69 @@ public class UserService {
         return UserMapper.fromEntity(userRepository.save(user));
     }
 
+    public List<UserResponse> searchUsers(String keyword) {
+        log.info("Searching users with keyword: {}", keyword);
+        return userRepository.findAll().stream()
+                .filter(u -> keyword == null ||
+                        (u.getFullName() != null && u.getFullName().toLowerCase().contains(keyword.toLowerCase())) ||
+                        (u.getEmail() != null && u.getEmail().toLowerCase().contains(keyword.toLowerCase())) ||
+                        (u.getPhone() != null && u.getPhone().contains(keyword)) ||
+                        (u.getLicenseNumber() != null && u.getLicenseNumber().toLowerCase().contains(keyword.toLowerCase())))
+                .map(UserMapper::fromEntity)
+                .toList();
+    }
+
+    public List<UserResponse> filterUsers(String name, String email, String phone, String role, Boolean verification) {
+        log.info("Filtering users - name: {}, email: {}, phone: {}, role: {}, verification: {}", 
+                 name, email, phone, role, verification);
+        return userRepository.findAll().stream()
+                .filter(u -> name == null || (u.getFullName() != null && u.getFullName().toLowerCase().contains(name.toLowerCase())))
+                .filter(u -> email == null || (u.getEmail() != null && u.getEmail().toLowerCase().contains(email.toLowerCase())))
+                .filter(u -> phone == null || (u.getPhone() != null && u.getPhone().contains(phone)))
+                .filter(u -> role == null || (u.getRole() != null && u.getRole().name().equalsIgnoreCase(role)))
+                .filter(u -> verification == null || u.getIsLicenseVerified().equals(verification))
+                .map(UserMapper::fromEntity)
+                .toList();
+    }
+
+    public long countUsersByRole(UserRole role) {
+        log.info("Counting users by role: {}", role);
+        return userRepository.countByRole(role);
+    }
+
+    public long countVerifiedUsers() {
+        log.info("Counting verified users");
+        return userRepository.countByIsLicenseVerified(true);
+    }
+
+    public long countUnverifiedUsers() {
+        log.info("Counting unverified users");
+        return userRepository.countByIsLicenseVerified(false);
+    }
+
+    public List<UserResponse> getUsersCreatedAfter(LocalDateTime date) {
+        log.info("Fetching users created after: {}", date);
+        return userRepository.findByCreatedAtAfter(date).stream()
+                .map(UserMapper::fromEntity)
+                .toList();
+    }
+
+    @Transactional
+    @CacheEvict(value = "users", allEntries = true)
+    public void attachStaffToStation(UUID staffId, UUID stationId) {
+        log.info("Attaching staff {} to station {}", staffId, stationId);
+        var staff = userRepository.findById(staffId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + staffId));
+
+        if (staff.getRole() != UserRole.STAFF) {
+            throw new IllegalArgumentException("User is not a staff member");
+        }
+
+        stationRepository.findById(stationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Station not found with id: " + stationId));
+
+        staff.setStationId(stationId);
+        userRepository.save(staff);
+    }
+
 }
