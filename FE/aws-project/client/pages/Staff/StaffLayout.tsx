@@ -10,16 +10,28 @@ import {
   LogoutOutlined,
   CheckCircleOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Routes, Route, useLocation } from "react-router-dom";
+import Confirmations from "./Confirmations";
 
 const { Header, Sider, Content } = Layout;
 
 export default function StaffLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  // Get current menu key from location
+  const getCurrentKey = () => {
+    const path = location.pathname;
+    if (path.includes("/confirmations")) return "3";
+    if (path.includes("/bookings")) return "2";
+    if (path.includes("/vehicles")) return "4";
+    if (path.includes("/customers")) return "5";
+    return "1"; // dashboard
+  };
 
   const handleLogout = () => {
     navigate("/login");
@@ -58,7 +70,7 @@ export default function StaffLayout() {
         <Menu
           theme="dark"
           mode="inline"
-          defaultSelectedKeys={["1"]}
+          selectedKeys={[getCurrentKey()]}
           className="!bg-blue-700 !border-none"
           style={{
             background: "#1d4ed8",
@@ -138,66 +150,124 @@ export default function StaffLayout() {
 
         {/* Content */}
         <Content
-          className="m-6 p-6 bg-white"
+          className="m-6 bg-white"
           style={{
             minHeight: 280,
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}
         >
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">
-                Staff Dashboard
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Chào mừng đến với trang quản lý vận hành
-              </p>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-lg">
-                <div className="flex items-center justify-between">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <div className="space-y-6 p-6">
                   <div>
-                    <p className="text-blue-100 text-sm">Đơn chờ xác nhận</p>
-                    <h3 className="text-3xl font-bold mt-2">12</h3>
+                    <h1 className="text-3xl font-bold text-gray-800">
+                      Staff Dashboard
+                    </h1>
+                    <p className="text-gray-600 mt-2">
+                      Chào mừng đến với trang quản lý vận hành
+                    </p>
                   </div>
-                  <ShoppingOutlined className="text-4xl text-blue-200" />
-                </div>
-              </div>
 
-              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-100 text-sm">Đơn đang thuê</p>
-                    <h3 className="text-3xl font-bold mt-2">34</h3>
-                  </div>
-                  <CheckCircleOutlined className="text-4xl text-green-200" />
-                </div>
-              </div>
+                  {/* Stats Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-blue-100 text-sm">
+                            Đơn chờ xác nhận
+                          </p>
+                          <h3 className="text-3xl font-bold mt-2">12</h3>
+                        </div>
+                        <ShoppingOutlined className="text-4xl text-blue-200" />
+                      </div>
+                    </div>
 
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-100 text-sm">Xe cần kiểm tra</p>
-                    <h3 className="text-3xl font-bold mt-2">8</h3>
-                  </div>
-                  <CarOutlined className="text-4xl text-purple-200" />
-                </div>
-              </div>
+                    <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-green-100 text-sm">
+                            Đơn đang thuê
+                          </p>
+                          <h3 className="text-3xl font-bold mt-2">34</h3>
+                        </div>
+                        <CheckCircleOutlined className="text-4xl text-green-200" />
+                      </div>
+                    </div>
 
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-6 text-white shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-orange-100 text-sm">Khách hàng mới</p>
-                    <h3 className="text-3xl font-bold mt-2">56</h3>
+                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-purple-100 text-sm">
+                            Xe cần kiểm tra
+                          </p>
+                          <h3 className="text-3xl font-bold mt-2">8</h3>
+                        </div>
+                        <CarOutlined className="text-4xl text-purple-200" />
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-6 text-white shadow-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-orange-100 text-sm">
+                            Khách hàng mới
+                          </p>
+                          <h3 className="text-3xl font-bold mt-2">56</h3>
+                        </div>
+                        <UserOutlined className="text-4xl text-orange-200" />
+                      </div>
+                    </div>
                   </div>
-                  <UserOutlined className="text-4xl text-orange-200" />
                 </div>
-              </div>
-            </div>
-          </div>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <div className="space-y-6 p-6">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-800">
+                      Staff Dashboard
+                    </h1>
+                    <p className="text-gray-600 mt-2">
+                      Chào mừng đến với trang quản lý vận hành
+                    </p>
+                  </div>
+                </div>
+              }
+            />
+            <Route path="/confirmations" element={<Confirmations />} />
+            <Route
+              path="/bookings"
+              element={
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold">Quản lý đơn thuê</h1>
+                  <p className="text-gray-600 mt-2">Đang phát triển...</p>
+                </div>
+              }
+            />
+            <Route
+              path="/vehicles"
+              element={
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold">Kiểm tra xe</h1>
+                  <p className="text-gray-600 mt-2">Đang phát triển...</p>
+                </div>
+              }
+            />
+            <Route
+              path="/customers"
+              element={
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold">Khách hàng</h1>
+                  <p className="text-gray-600 mt-2">Đang phát triển...</p>
+                </div>
+              }
+            />
+          </Routes>
         </Content>
       </Layout>
     </Layout>
