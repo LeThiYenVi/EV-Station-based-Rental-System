@@ -5,106 +5,58 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AvatarDemo from "@/components/ui/AvatarDemo";
-import { Calendar, Clock, User, Search, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import {
+  Calendar,
+  Clock,
+  User,
+  Search,
+  ArrowRight,
+  Loader2,
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import { useBlog } from "@/hooks/useBlog";
+import type { BlogResponse } from "@/service/types/blog.types";
 
-// Mock data for blogs
-const blogData = [
-  {
-    id: 1,
-    title: "Top 10 xe tự lái được yêu thích nhất năm 2028",
-    excerpt:
-      "Khám phá danh sách những mẫu xe tự lái được khách hàng đánh giá cao nhất với dịch vụ hoàn hảo và giá cả hợp lý...",
-    category: "Xu hướng",
-    author: "Admin",
-    date: "05/10/2025",
-    readTime: "5 phút đọc",
-    image: "/mocks/city/hanoi.webp",
-    views: 1250,
-  },
-  {
-    id: 2,
-    title: "Hướng dẫn thuê xe tự lái cho người mới",
-    excerpt:
-      "Tất cả những điều bạn cần biết khi lần đầu thuê xe tự lái: thủ tục, giấy tờ, kinh nghiệm và lưu ý quan trọng...",
-    category: "Hướng dẫn",
-    author: "Staff",
-    date: "03/10/2025",
-    readTime: "8 phút đọc",
-    image: "/mocks/city/hcm.jpg",
-    views: 2100,
-  },
-  {
-    id: 3,
-    title: "5 địa điểm du lịch lý tưởng cùng xe tự lái",
-    excerpt:
-      "Cùng khám phá những địa điểm tuyệt vời để trải nghiệm chuyến đi với xe tự lái, từ biển xanh đến núi non hùng vĩ...",
-    category: "Du lịch",
-    author: "Admin",
-    date: "01/10/2025",
-    readTime: "6 phút đọc",
-    image: "/mocks/city/dalat.webp",
-    views: 1800,
-  },
-  {
-    id: 4,
-    title: "Bí quyết tiết kiệm chi phí thuê xe",
-    excerpt:
-      "Những mẹo nhỏ giúp bạn tiết kiệm tối đa chi phí khi thuê xe tự lái mà vẫn đảm bảo chất lượng dịch vụ...",
-    category: "Mẹo hay",
-    author: "Staff",
-    date: "28/09/2025",
-    readTime: "4 phút đọc",
-    image: "/mocks/city/danang.jpg",
-    views: 980,
-  },
-  {
-    id: 5,
-    title: "Đánh giá Mazda 2 2024 - Xe thuê hot nhất",
-    excerpt:
-      "Tìm hiểu chi tiết về Mazda 2 2024 - mẫu xe được khách hàng yêu thích và đặt thuê nhiều nhất hiện nay...",
-    category: "Đánh giá",
-    author: "Admin",
-    date: "25/09/2025",
-    readTime: "7 phút đọc",
-    image: "/mocks/city/nhatrang.jpg",
-    views: 3200,
-  },
-  {
-    id: 6,
-    title: "Chính sách bảo hiểm khi thuê xe tự lái",
-    excerpt:
-      "Hiểu rõ về các gói bảo hiểm, quyền lợi và trách nhiệm của khách hàng khi thuê xe để có chuyến đi an toàn...",
-    category: "Chính sách",
-    author: "Staff",
-    date: "22/09/2025",
-    readTime: "5 phút đọc",
-    image: "/mocks/city/phuquoc.jpg",
-    views: 1500,
-  },
-];
+// Helper function to format date
+const formatDate = (dateString: string | null): string => {
+  if (!dateString) return "Chưa xuất bản";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
 
-const categories = [
-  "Tất cả",
-  "Xu hướng",
-  "Hướng dẫn",
-  "Du lịch",
-  "Mẹo hay",
-  "Đánh giá",
-  "Chính sách",
-];
+// Helper function to estimate read time based on content length
+const estimateReadTime = (content: string): string => {
+  const wordsPerMinute = 200;
+  const wordCount = content.split(/\s+/).length;
+  const minutes = Math.ceil(wordCount / wordsPerMinute);
+  return `${Math.max(1, minutes)} phút đọc`;
+};
 
 export default function Blog() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Tất cả");
+  const [currentPage, setCurrentPage] = useState(0);
+  const { loading, error, blogs, pagination, getAllBlogs } = useBlog();
 
-  const filteredBlogs = blogData.filter((blog) => {
+  // Fetch blogs on component mount and when page changes
+  useEffect(() => {
+    getAllBlogs({
+      page: currentPage,
+      size: 10,
+      sortBy: "createdAt",
+      sortDirection: "DESC",
+    });
+  }, [currentPage, getAllBlogs]);
+
+  // Filter blogs based on search query (client-side filtering)
+  const filteredBlogs = blogs.filter((blog) => {
     const matchesSearch =
       blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      blog.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "Tất cả" || blog.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+      blog.content.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
 
   return (
@@ -144,26 +96,36 @@ export default function Blog() {
       </div>
 
       <div className="container mx-auto px-6 py-12">
-        {/* Category Filter */}
-        <div className="flex flex-wrap gap-3 mb-8 justify-center">
-          {categories.map((category) => (
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+            <span className="ml-2 text-gray-600">Đang tải bài viết...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <p className="text-red-500 text-lg mb-4">{error}</p>
             <Button
-              key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
-              onClick={() => setSelectedCategory(category)}
-              className={
-                selectedCategory === category
-                  ? "bg-green-600 hover:bg-green-700 text-white"
-                  : "border-gray-300 text-green-600 hover:border-green-600 hover:text-green-700"
+              onClick={() =>
+                getAllBlogs({
+                  page: currentPage,
+                  size: 10,
+                  sortBy: "createdAt",
+                  sortDirection: "DESC",
+                })
               }
+              className="bg-green-600 hover:bg-green-700"
             >
-              {category}
+              Thử lại
             </Button>
-          ))}
-        </div>
+          </div>
+        )}
 
         {/* Blog Grid */}
-        {filteredBlogs.length > 0 ? (
+        {!loading && !error && filteredBlogs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredBlogs.map((blog) => (
               <Card
@@ -174,13 +136,19 @@ export default function Blog() {
                   {/* Image */}
                   <div className="relative h-48 overflow-hidden">
                     <img
-                      src={blog.image}
+                      src={blog.thumbnailUrl || "/mocks/city/hanoi.webp"}
                       alt={blog.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "/mocks/city/hanoi.webp";
+                      }}
                     />
-                    <Badge className="absolute top-4 left-4 bg-green-600 hover:bg-green-700">
-                      {blog.category}
-                    </Badge>
+                    {!blog.published && (
+                      <Badge className="absolute top-4 left-4 bg-yellow-500 hover:bg-yellow-600">
+                        Nháp
+                      </Badge>
+                    )}
                   </div>
 
                   <CardHeader>
@@ -191,22 +159,24 @@ export default function Blog() {
 
                   <CardContent className="space-y-4">
                     <p className="text-gray-600 text-sm line-clamp-3">
-                      {blog.excerpt}
+                      {blog.content}
                     </p>
 
                     {/* Meta Info */}
                     <div className="flex items-center gap-4 text-xs text-gray-500">
                       <div className="flex items-center gap-1">
                         <User className="w-4 h-4" />
-                        <span>{blog.author}</span>
+                        <span>{blog.authorName}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        <span>{blog.date}</span>
+                        <span>
+                          {formatDate(blog.publishedAt || blog.createdAt)}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        <span>{blog.readTime}</span>
+                        <span>{estimateReadTime(blog.content)}</span>
                       </div>
                     </div>
 
@@ -217,17 +187,17 @@ export default function Blog() {
                           <div className="flex -space-x-1">
                             <Avatar className="size-6">
                               <AvatarImage
-                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${blog.author}`}
-                                alt={blog.author}
+                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${blog.authorName}`}
+                                alt={blog.authorName}
                                 className="border-2 border-background hover:z-10"
                               />
                               <AvatarFallback className="bg-green-600 text-white text-xs">
-                                {blog.author.charAt(0)}
+                                {blog.authorName.charAt(0)}
                               </AvatarFallback>
                             </Avatar>
                             <Avatar className="size-6">
                               <AvatarImage
-                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${blog.author}2`}
+                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${blog.authorName}2`}
                                 alt="Reader"
                                 className="border-2 border-background hover:z-10"
                               />
@@ -237,7 +207,7 @@ export default function Blog() {
                             </Avatar>
                             <Avatar className="size-6">
                               <AvatarImage
-                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${blog.author}3`}
+                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${blog.authorName}3`}
                                 alt="Reader"
                                 className="border-2 border-background hover:z-10"
                               />
@@ -247,7 +217,7 @@ export default function Blog() {
                             </Avatar>
                           </div>
                           <span className="text-xs text-gray-600 me-1.5">
-                            {blog.views.toLocaleString()} lượt xem
+                            {blog.viewCount.toLocaleString()} lượt xem
                           </span>
                         </div>
                       </div>
@@ -263,11 +233,34 @@ export default function Blog() {
               </Card>
             ))}
           </div>
-        ) : (
+        ) : !loading && !error ? (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">
               Không tìm thấy bài viết nào phù hợp
             </p>
+          </div>
+        ) : null}
+
+        {/* Pagination */}
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-8">
+            <Button
+              variant="outline"
+              disabled={currentPage === 0}
+              onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
+            >
+              Trang trước
+            </Button>
+            <span className="flex items-center px-4 text-gray-600">
+              Trang {currentPage + 1} / {pagination.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              disabled={currentPage >= pagination.totalPages - 1}
+              onClick={() => setCurrentPage((prev) => prev + 1)}
+            >
+              Trang sau
+            </Button>
           </div>
         )}
       </div>

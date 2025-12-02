@@ -33,7 +33,8 @@ export default function SelfDrive() {
 
   // ✅ Sử dụng API hooks
   const {
-    getAvailableVehicles,
+    getAllVehicles,
+    getVehiclesByStation,
     searchVehicles,
     filterByPriceRange,
     formatPricePerDay,
@@ -75,18 +76,30 @@ export default function SelfDrive() {
   };
 
   const loadVehicles = async () => {
-    const filters: any = {
-      status: VehicleStatus.AVAILABLE,
-    };
+    let result;
 
     if (selectedLocation !== "all") {
-      filters.stationId = selectedLocation;
-    }
-
-    const result = await getAvailableVehicles(filters);
-    if (result.success && result.data) {
-      setVehicles(result.data);
-      setFilteredVehicles(result.data);
+      // Nếu có chọn location cụ thể, lấy xe theo station
+      result = await getVehiclesByStation(selectedLocation);
+      if (result.success && result.data) {
+        // Filter chỉ lấy xe AVAILABLE
+        const availableVehicles = result.data.filter(
+          (v: any) => v.status === VehicleStatus.AVAILABLE,
+        );
+        setVehicles(availableVehicles);
+        setFilteredVehicles(availableVehicles);
+      }
+    } else {
+      // Lấy tất cả xe với pagination
+      result = await getAllVehicles({ page: 0, size: 50 });
+      if (result.success && result.data) {
+        // Filter chỉ lấy xe AVAILABLE từ content
+        const availableVehicles = (result.data.content || []).filter(
+          (v: any) => v.status === VehicleStatus.AVAILABLE,
+        );
+        setVehicles(availableVehicles);
+        setFilteredVehicles(availableVehicles);
+      }
     }
   };
 
@@ -605,6 +618,7 @@ export default function SelfDrive() {
                   <div className="relative h-56 overflow-hidden">
                     <img
                       src={
+                        vehicle.photos?.[0] ||
                         vehicle.photoUrls?.[0] ||
                         "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop"
                       }
@@ -623,7 +637,10 @@ export default function SelfDrive() {
                         Chỉ từ
                       </span>
                       <span className="text-xl font-bold text-green-600">
-                        {formatPricePerDay(vehicle.pricePerDay)}
+                        {(
+                          vehicle.dailyRate || vehicle.pricePerDay
+                        )?.toLocaleString("vi-VN") || "Liên hệ"}{" "}
+                        VNĐ/ngày
                       </span>
                     </div>
 
@@ -637,7 +654,9 @@ export default function SelfDrive() {
                     <div className="flex gap-4 mb-6 pb-6 border-b border-gray-200">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <User className="w-4 h-4" />
-                        <span>{vehicle.seats} chỗ</span>
+                        <span>
+                          {vehicle.capacity || vehicle.seats || 5} chỗ
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Zap className="w-4 h-4" />
