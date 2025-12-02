@@ -1,7 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { Table, Button, Modal, Form, Input, Select, Space, Tag, message, Popconfirm } from "antd";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Space,
+  Tag,
+  message,
+  Popconfirm,
+} from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { EnvironmentOutlined, PlusOutlined, ReloadOutlined } from "@ant-design/icons";
+import {
+  EnvironmentOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from "@ant-design/icons";
 import { stationService } from "@/service";
 import type {
   StationResponse,
@@ -31,11 +46,18 @@ export default function Stations() {
   const load = async (page = pagination.page, size = pagination.size) => {
     try {
       setLoading(true);
-      const res = await stationService.getAllStations({ page: page - 1, size, sortBy: "name", sortDirection: "ASC" });
+      const res = await stationService.getAllStations({
+        page: page - 1,
+        size,
+        sortBy: "name",
+        sortDirection: "ASC",
+      });
       setStations(res.content);
       setPagination({ page, size, total: res.totalElements });
     } catch (e: any) {
-      message.error(e?.response?.data?.message || "Không thể tải danh sách trạm");
+      message.error(
+        e?.response?.data?.message || "Không thể tải danh sách trạm",
+      );
     } finally {
       setLoading(false);
     }
@@ -74,7 +96,10 @@ export default function Stations() {
     try {
       setLoading(true);
       if (editing) {
-        await stationService.updateStation(editing.id, values as UpdateStationRequest);
+        await stationService.updateStation(
+          editing.id,
+          values as UpdateStationRequest,
+        );
         message.success("Đã cập nhật trạm");
       } else {
         await stationService.createStation(values as CreateStationRequest);
@@ -124,7 +149,8 @@ export default function Stations() {
           MAINTENANCE: "gold",
           CLOSED: "red",
         } as const;
-        const label = statusOptions.find((s) => s.value === status)?.label || status;
+        const label =
+          statusOptions.find((s) => s.value === status)?.label || status;
         return <Tag color={colorMap[status]}>{label}</Tag>;
       },
     },
@@ -144,7 +170,9 @@ export default function Stations() {
             size="middle"
             style={{ width: 140 }}
             value={record.status}
-            onChange={(val) => handleChangeStatus(record.id, val as StationStatus)}
+            onChange={(val) =>
+              handleChangeStatus(record.id, val as StationStatus)
+            }
             options={statusOptions}
           />
           <Popconfirm
@@ -167,7 +195,11 @@ export default function Stations() {
           <h1 className="text-xl font-semibold">Quản lý trạm</h1>
         </div>
         <Space>
-          <Button icon={<ReloadOutlined />} onClick={() => load()} loading={loading}>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => load()}
+            loading={loading}
+          >
             Tải lại
           </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
@@ -199,13 +231,25 @@ export default function Stations() {
         confirmLoading={loading}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="Tên trạm" rules={[{ required: true, message: "Nhập tên trạm" }]}>
+          <Form.Item
+            name="name"
+            label="Tên trạm"
+            rules={[{ required: true, message: "Nhập tên trạm" }]}
+          >
             <Input placeholder="VD: Trạm Quận 1" />
           </Form.Item>
-          <Form.Item name="address" label="Địa chỉ" rules={[{ required: true, message: "Nhập địa chỉ" }]}>
+          <Form.Item
+            name="address"
+            label="Địa chỉ"
+            rules={[{ required: true, message: "Nhập địa chỉ" }]}
+          >
             <Input placeholder="Số nhà, đường..." />
           </Form.Item>
-          <Form.Item name="city" label="Thành phố" rules={[{ required: true, message: "Nhập thành phố" }]}>
+          <Form.Item
+            name="city"
+            label="Thành phố"
+            rules={[{ required: true, message: "Nhập thành phố" }]}
+          >
             <Input placeholder="VD: Hồ Chí Minh" />
           </Form.Item>
           <Form.Item name="district" label="Quận/Huyện">
