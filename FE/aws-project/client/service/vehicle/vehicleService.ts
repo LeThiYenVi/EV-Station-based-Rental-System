@@ -269,16 +269,20 @@ class VehicleService {
 
   /**
    * Calculate total rental cost
+   * Supports both old (pricePerHour/pricePerDay) and new (hourlyRate/dailyRate) API fields
    */
-  calculateRentalCost(vehicle: VehicleResponse, hours: number): {
+  calculateRentalCost(vehicle: any, hours: number): {
     hourlyTotal: number;
     dailyTotal: number;
     recommended: 'hourly' | 'daily';
     recommendedTotal: number;
   } {
-    const hourlyTotal = vehicle.pricePerHour * hours;
+    const hourlyPrice = vehicle.hourlyRate || vehicle.pricePerHour || 0;
+    const dailyPrice = vehicle.dailyRate || vehicle.pricePerDay || 0;
+    
+    const hourlyTotal = hourlyPrice * hours;
     const days = Math.ceil(hours / 24);
-    const dailyTotal = vehicle.pricePerDay * days;
+    const dailyTotal = dailyPrice * days;
 
     return {
       hourlyTotal,
@@ -311,10 +315,11 @@ class VehicleService {
 
   /**
    * Filter vehicles by price range
+   * Supports both old (pricePerDay) and new (dailyRate) API fields
    */
-  filterByPriceRange(vehicles: VehicleResponse[], minPrice?: number, maxPrice?: number): VehicleResponse[] {
+  filterByPriceRange(vehicles: any[], minPrice?: number, maxPrice?: number): any[] {
     return vehicles.filter(v => {
-      const price = v.pricePerDay;
+      const price = v.dailyRate || v.pricePerDay || 0;
       if (minPrice && price < minPrice) return false;
       if (maxPrice && price > maxPrice) return false;
       return true;
@@ -323,17 +328,21 @@ class VehicleService {
 
   /**
    * Filter vehicles by seats
+   * Supports both old (seats) and new (capacity) API fields
    */
-  filterBySeats(vehicles: VehicleResponse[], minSeats: number): VehicleResponse[] {
-    return vehicles.filter(v => v.seats >= minSeats);
+  filterBySeats(vehicles: any[], minSeats: number): any[] {
+    return vehicles.filter(v => (v.capacity || v.seats || 0) >= minSeats);
   }
 
   /**
    * Sort vehicles by price
+   * Supports both old (pricePerDay) and new (dailyRate) API fields
    */
-  sortByPrice(vehicles: VehicleResponse[], ascending: boolean = true): VehicleResponse[] {
+  sortByPrice(vehicles: any[], ascending: boolean = true): any[] {
     return [...vehicles].sort((a, b) => {
-      const comparison = a.pricePerDay - b.pricePerDay;
+      const priceA = a.dailyRate || a.pricePerDay || 0;
+      const priceB = b.dailyRate || b.pricePerDay || 0;
+      const comparison = priceA - priceB;
       return ascending ? comparison : -comparison;
     });
   }

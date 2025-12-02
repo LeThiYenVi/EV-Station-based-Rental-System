@@ -1,6 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+DROP TABLE IF EXISTS blogs CASCADE;
 DROP TABLE IF EXISTS feedbacks CASCADE;
 DROP TABLE IF EXISTS payments CASCADE;
 DROP TABLE IF EXISTS bookings CASCADE;
@@ -175,15 +176,36 @@ CREATE INDEX idx_payments_transaction_id ON payments(transaction_id);
 CREATE INDEX idx_feedbacks_booking_id ON feedbacks(booking_id);
 CREATE INDEX idx_feedbacks_renter_id ON feedbacks(renter_id);
 
+CREATE TABLE blogs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    thumbnail_url TEXT,
+    author_id UUID NOT NULL,
+    published BOOLEAN DEFAULT FALSE,
+    view_count INTEGER DEFAULT 0,
+    published_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_blog_author FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_blogs_author_id ON blogs(author_id);
+CREATE INDEX idx_blogs_published ON blogs(published);
+CREATE INDEX idx_blogs_published_at ON blogs(published_at);
+CREATE INDEX idx_blogs_view_count ON blogs(view_count);
+
 INSERT INTO stations (name, address, latitude, longitude, hotline, status, photo, start_time, end_time, location) VALUES
 ('Station A', '123 Main Street, District 1, Ho Chi Minh City', 10.762622, 106.660172, '+84901234567', 'ACTIVE', 'https://example.com/station-a.jpg', '2024-01-01 06:00:00', '2024-01-01 22:00:00', ST_SetSRID(ST_MakePoint(106.660172, 10.762622), 4326)),
 ('Station B', '456 Nguyen Hue Blvd, District 1, Ho Chi Minh City', 10.774929, 106.701234, '+84901234568', 'ACTIVE', 'https://example.com/station-b.jpg', '2024-01-01 07:00:00', '2024-01-01 21:00:00', ST_SetSRID(ST_MakePoint(106.701234, 10.774929), 4326)),
 ('Station C', '789 Le Loi Street, District 3, Ho Chi Minh City', 10.776889, 106.692789, '+84901234569', 'ACTIVE', 'https://example.com/station-c.jpg', '2024-01-01 06:00:00', '2024-01-01 23:00:00', ST_SetSRID(ST_MakePoint(106.692789, 10.776889), 4326));
 
--- Insert users with explicit UUIDs
-INSERT INTO users (id, email, full_name, phone, cognito_sub, avatar_url, role, license_number, identity_number, license_card_image_url, is_license_verified, verified_at, station_id, created_at, updated_at) VALUES
-('fb698478-d7a4-430d-b89a-c076037cad64', 'tranngocchuongtnc@gmail.com', 'tranngocchuong', '0123456789', '998af50c-90d1-704b-62eb-2706228d2fe1', 'https://avatar.iran.liara.run/public/84', 'RENTER', NULL, NULL, NULL, false, NULL, NULL, '2025-11-06 09:27:37.308294', '2025-11-06 09:27:37.308294'),
-('54b1154a-a2b8-45ef-804d-624a4988089b', 'nguyenthienandzpro@gmail.com', 'nguyen thien an', '0397812502', '299ad5dc-0021-7093-562b-e26888bcce37', 'https://s3-upload-files-sys.s3.amazonaws.com/assets/avatars/06f33517-591d-4bb2-88a4-667e99951c20.jpg', 'ADMIN', NULL, NULL, NULL, false, NULL, NULL, '2025-11-04 15:03:59.693771', '2025-11-04 15:15:11.124447');
+INSERT INTO users (id, email, full_name, phone, address, cognito_sub, avatar_url, role, license_number, identity_number, license_card_front_image_url, license_card_back_image_url, is_license_verified, verified_at, station_id, created_at, updated_at) VALUES
+('fb698478-d7a4-430d-b89a-c076037cad64', 'tranngocchuongtnc@gmail.com', 'Tran Ngoc Chuong', '0123456789', NULL, '998af50c-90d1-704b-62eb-2706228d2fe1', 'https://avatar.iran.liara.run/public/84', 'ADMIN', NULL, NULL, NULL, NULL, false, NULL, NULL, '2025-11-06 09:27:37.308294', '2025-11-06 09:27:37.308294'),
+('54b1154a-a2b8-45ef-804d-624a4988089b', 'nguyenthienandzpro@gmail.com', 'Nguyen Thien An', '0397812502', NULL, '299ad5dc-0021-7093-562b-e26888bcce37', 'https://s3-upload-files-sys.s3.amazonaws.com/assets/avatars/06f33517-591d-4bb2-88a4-667e99951c20.jpg', 'ADMIN', NULL, NULL, NULL, NULL, false, NULL, NULL, '2025-11-04 15:03:59.693771', '2025-11-04 15:15:11.124447'),
+(uuid_generate_v4(), 'truongnguyenthaibinh1050@gmail.com', 'Truong Nguyen Thai Binh', NULL, NULL, NULL, 'https://avatar.iran.liara.run/public/1', 'STAFF', NULL, NULL, NULL, NULL, false, NULL, (SELECT id FROM stations WHERE name = 'Station A' LIMIT 1), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(uuid_generate_v4(), 'viltyse182544@fpt.edu.vn', 'Vi', NULL, NULL, NULL, 'https://avatar.iran.liara.run/public/2', 'RENTER', NULL, NULL, NULL, NULL, false, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
 
 
 INSERT INTO vehicles (station_id, license_plate, name, brand, color, fuel_type, capacity, status, hourly_rate, daily_rate, deposit_amount, rating, rent_count) 

@@ -216,4 +216,14 @@ public class StationService {
         log.info("Station photo uploaded successfully for ID: {}", stationId);
         return stationMapper.toResponse(updatedStation);
     }
+
+    @Transactional(readOnly = true)
+    public List<StationResponse> getFeaturedStations(int limit) {
+        log.info("Fetching {} featured stations", limit);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        List<Station> stations = stationRepository.findFeaturedStations(pageable);
+        return stations.stream()
+                .map(stationMapper::toResponse)
+                .collect(Collectors.toList());
+    }
 }

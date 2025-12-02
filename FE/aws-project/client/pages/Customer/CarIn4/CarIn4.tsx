@@ -27,7 +27,6 @@ import {
   Star,
   Shield,
   Users,
-  Fuel,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -41,48 +40,17 @@ import {
   QrCode,
   Copy,
   CheckCircle2,
+  Zap,
 } from "lucide-react";
+import { useVehicle } from "@/hooks/useVehicle";
 
-// Mock data - sẽ thay bằng API call
-const carData = {
-  id: 1,
-  name: "MAZDA 2 2024",
-  rating: 4.9,
-  trips: 50,
-  location: "Phường Linh Đông, TP Thủ Đức",
-  price: 602000,
-  originalPrice: 722000,
-  discount: 19,
-  transmission: "Số tự động",
-  seats: 5,
-  fuel: "Xăng",
-  fuelConsumption: "6L/100km",
-  images: [
-    "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&h=600&fit=crop",
-  ],
-  features: {
-    "Bản đồ": true,
-    "Nắp thùng xe bán tải": false,
-    "Camera hành trình": true,
-    "Cảm biến va chạm": true,
-    "Cảnh báo tốc độ": true,
-    "Khe cắm USB": true,
-    Bluetooth: true,
-    "Túi khí an toàn": true,
-    "Camera cửa sổ": false,
-    "Camera 360": false,
-    "Cảm biến lốp": true,
-    "Cửa sổ trời": false,
-    ETC: true,
-  },
-  description: "Xe mới, đẹp, sạch sẽ. Chủ xe thân thiện, nhiệt tình.",
-  ownerVerified: true,
-  deliveryAvailable: true,
-  insuranceIncluded: true,
-};
+// Default images when API returns null photos
+const defaultImages = [
+  "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&h=600&fit=crop",
+];
 
 const mapContainerStyle = {
   width: "100%",
@@ -90,7 +58,7 @@ const mapContainerStyle = {
 };
 
 const center = {
-  lat: 10.8494, // Tọa độ Phường Linh Đông, TP Thủ Đức
+  lat: 10.8494,
   lng: 106.7619,
 };
 
@@ -99,6 +67,13 @@ export default function CarIn4() {
   const navigate = useNavigate();
   const { contextHolder, showSuccess, showError, showWarning, showInfo } =
     useMessage();
+
+  // API hook
+  const { getVehicleById, loading: vehicleLoading } = useVehicle();
+
+  // Vehicle data from API
+  const [vehicleData, setVehicleData] = useState<any>(null);
+
   const [selectedImage, setSelectedImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showMap, setShowMap] = useState(false);
@@ -156,6 +131,28 @@ export default function CarIn4() {
   // Mock verified users (trong thực tế sẽ lưu trong database)
   const verifiedUsers = ["admin", "staff"];
 
+  // Load vehicle data from API
+  useEffect(() => {
+    const loadVehicleData = async () => {
+      if (!id) return;
+
+      const result = await getVehicleById(id);
+      if (result.success && result.data) {
+        setVehicleData(result.data);
+      }
+    };
+
+    loadVehicleData();
+  }, [id]);
+
+  // Helper function to get vehicle images
+  const getVehicleImages = () => {
+    if (vehicleData?.photos && vehicleData.photos.length > 0) {
+      return vehicleData.photos;
+    }
+    return defaultImages;
+  };
+
   // Calculate rental details
   const calculateRentalDetails = () => {
     const pickup = new Date(`${pickupDate}T${pickupTime}`);
@@ -164,9 +161,10 @@ export default function CarIn4() {
     const diffHours = diffMs / (1000 * 60 * 60);
     const diffDays = Math.ceil(diffHours / 24);
 
-    // Tính giá thuê
+    // Tính giá thuê - sử dụng dailyRate từ API
     let rentalDays = diffDays > 0 ? diffDays : 1;
-    const carPrice = carData.price * rentalDays;
+    const dailyRate = vehicleData?.dailyRate || 0;
+    const carPrice = dailyRate * rentalDays;
 
     // Bảo hiểm thuê xe (10% giá xe)
     const insurance = Math.round(carPrice * 0.1);
@@ -179,11 +177,11 @@ export default function CarIn4() {
       ? additionalInsuranceFee * rentalDays
       : 0;
 
-    // Tiền cọc (5 triệu mặc định)
-    const deposit = 5000000;
+    // Tiền cọc - sử dụng depositAmount từ API
+    const deposit = vehicleData?.depositAmount || 5000000;
 
-    // Giảm giá (lấy từ carData.discount)
-    const discountAmount = Math.round(carPrice * (carData.discount / 100));
+    // Giảm giá (không có discount trong API, để 0)
+    const discountAmount = 0;
 
     // Tổng tiền
     const total =
@@ -243,7 +241,7 @@ export default function CarIn4() {
     email: "customer@gmail.com",
     pickupLocation:
       deliveryOption === "pickup"
-        ? carData.location
+        ? vehicleData?.stationName || "Trạm xe"
         : deliveryAddress || "Giao xe tận nơi",
     pickupDate: pickupDate.split("-").reverse().join("/"),
     pickupTime: pickupTime,
@@ -401,10 +399,11 @@ export default function CarIn4() {
       setPaymentSuccess(true);
 
       // Save order to localStorage
+      const vehicleImages = getVehicleImages();
       const newOrder = {
         bookingId: bookingDetails.bookingId,
-        carName: carData.name,
-        carImage: carData.images[0],
+        carName: vehicleData?.name || "Unknown",
+        carImage: vehicleImages[0],
         renterName: bookingDetails.renterName,
         phone: bookingDetails.phone,
         email: bookingDetails.email,
@@ -428,9 +427,9 @@ export default function CarIn4() {
         status: "pending" as const,
         createdAt: new Date().toLocaleString("vi-VN"),
         paymentMethod: paymentMethod,
-        transmission: carData.transmission,
-        seats: carData.seats,
-        fuel: carData.fuel,
+        transmission: "Tự động",
+        seats: vehicleData?.capacity || 5,
+        fuel: vehicleData?.fuelType || "ELECTRICITY",
       };
 
       // Get existing orders from localStorage
@@ -468,6 +467,41 @@ export default function CarIn4() {
     showSuccess("Đã sao chép! Nội dung đã được sao chép vào clipboard.");
   };
 
+  // Get images for display
+  const vehicleImages = getVehicleImages();
+
+  // Loading state
+  if (vehicleLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải thông tin xe...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not found state
+  if (!vehicleData && !vehicleLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Không tìm thấy xe</h2>
+            <p className="text-gray-600 mb-6">
+              Xe bạn tìm kiếm không tồn tại hoặc đã bị xóa.
+            </p>
+            <Button onClick={() => navigate("/services/self-drive")}>
+              Xem các xe khác
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {contextHolder}
@@ -488,8 +522,8 @@ export default function CarIn4() {
             <div className="lg:col-span-2">
               <div className="relative rounded-2xl overflow-hidden bg-gray-200 aspect-[16/10]">
                 <img
-                  src={carData.images[selectedImage]}
-                  alt={carData.name}
+                  src={vehicleImages[selectedImage]}
+                  alt={vehicleData?.name}
                   className="w-full h-full object-cover"
                 />
                 {/* Navigation Arrows */}
@@ -497,8 +531,8 @@ export default function CarIn4() {
                   onClick={() =>
                     setSelectedImage(
                       (prev) =>
-                        (prev - 1 + carData.images.length) %
-                        carData.images.length,
+                        (prev - 1 + vehicleImages.length) %
+                        vehicleImages.length,
                     )
                   }
                   className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg"
@@ -506,46 +540,47 @@ export default function CarIn4() {
                   <ChevronLeft className="w-6 h-6" />
                 </button>
                 <button
-                  onClick={() =>
-                    setSelectedImage(
-                      (prev) => (prev + 1) % carData.images.length,
-                    )
-                  }
+                  onClick={() => {
+                    const images = getVehicleImages();
+                    setSelectedImage((prev) => (prev + 1) % images.length);
+                  }}
                   className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg"
                 >
                   <ChevronRight className="w-6 h-6" />
                 </button>
                 {/* Image Counter */}
                 <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
-                  {selectedImage + 1} / {carData.images.length}
+                  {selectedImage + 1} / {getVehicleImages().length}
                 </div>
               </div>
             </div>
 
             {/* Thumbnail Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
-              {carData.images.slice(0, 3).map((image, index) => (
-                <div
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`relative rounded-xl overflow-hidden cursor-pointer aspect-[16/10] ${
-                    selectedImage === index
-                      ? "ring-4 ring-green-500"
-                      : "ring-2 ring-gray-200 hover:ring-gray-300"
-                  }`}
-                >
-                  <img
-                    src={image}
-                    alt={`Thumbnail ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  {index === 2 && carData.images.length > 3 && (
-                    <button className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-semibold hover:bg-black/60">
-                      Xem tất cả ảnh
-                    </button>
-                  )}
-                </div>
-              ))}
+              {getVehicleImages()
+                .slice(0, 3)
+                .map((image, index) => (
+                  <div
+                    key={index}
+                    onClick={() => setSelectedImage(index)}
+                    className={`relative rounded-xl overflow-hidden cursor-pointer aspect-[16/10] ${
+                      selectedImage === index
+                        ? "ring-4 ring-green-500"
+                        : "ring-2 ring-gray-200 hover:ring-gray-300"
+                    }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    {index === 2 && getVehicleImages().length > 3 && (
+                      <button className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-semibold hover:bg-black/60">
+                        Xem tất cả ảnh
+                      </button>
+                    )}
+                  </div>
+                ))}
             </div>
           </div>
         </div>
@@ -566,9 +601,7 @@ export default function CarIn4() {
                       <Settings className="w-8 h-8 text-green-600" />
                     </div>
                     <p className="text-xs text-gray-500 mb-1">Truyền động</p>
-                    <p className="font-bold text-gray-900">
-                      {carData.transmission}
-                    </p>
+                    <p className="font-bold text-gray-900">Tự động</p>
                   </div>
                   <div className="text-center">
                     <div className="flex justify-center mb-2">
@@ -576,23 +609,29 @@ export default function CarIn4() {
                     </div>
                     <p className="text-xs text-gray-500 mb-1">Số ghế</p>
                     <p className="font-bold text-gray-900">
-                      {carData.seats} chỗ
+                      {vehicleData?.capacity || 5} chỗ
                     </p>
                   </div>
                   <div className="text-center">
                     <div className="flex justify-center mb-2">
-                      <Fuel className="w-8 h-8 text-green-600" />
+                      <Zap className="w-8 h-8 text-green-600" />
                     </div>
                     <p className="text-xs text-gray-500 mb-1">Nhiên liệu</p>
-                    <p className="font-bold text-gray-900">{carData.fuel}</p>
+                    <p className="font-bold text-gray-900">
+                      {vehicleData?.fuelType === "ELECTRICITY"
+                        ? "Điện"
+                        : vehicleData?.fuelType || "Điện"}
+                    </p>
                   </div>
                   <div className="text-center">
                     <div className="flex justify-center mb-2">
-                      <Fuel className="w-8 h-8 text-green-600" />
+                      <Zap className="w-8 h-8 text-green-600" />
                     </div>
                     <p className="text-xs text-gray-500 mb-1">Tiêu hao</p>
                     <p className="font-bold text-gray-900">
-                      {carData.fuelConsumption}
+                      {vehicleData?.fuelType === "ELECTRICITY"
+                        ? "15kWh/100km"
+                        : "7L/100km"}
                     </p>
                   </div>
                 </div>
@@ -995,7 +1034,7 @@ export default function CarIn4() {
                   {/* Car Title & Actions */}
                   <div className="flex items-start justify-between mb-3">
                     <h1 className="text-xl font-bold text-gray-900">
-                      {carData.name}
+                      {vehicleData?.name || "Loading..."}
                     </h1>
                     <div className="flex gap-2">
                       <button
@@ -1018,19 +1057,19 @@ export default function CarIn4() {
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                       <span className="font-semibold text-sm">
-                        {carData.rating}
+                        {vehicleData?.rating || 0}
                       </span>
                     </div>
                     <span className="text-gray-400">•</span>
                     <div className="flex items-center gap-1">
                       <Settings className="w-4 h-4 text-gray-600" />
                       <span className="text-sm text-gray-600">
-                        {carData.trips} chuyến
+                        {vehicleData?.rentCount || 0} chuyến
                       </span>
                     </div>
                     <span className="text-gray-400">•</span>
                     <span className="text-sm text-gray-600">
-                      {carData.location}
+                      {vehicleData?.stationName || "Đang tải..."}
                     </span>
                   </div>
 
@@ -1048,20 +1087,20 @@ export default function CarIn4() {
 
                   {/* Price Section */}
                   <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-gray-400 line-through text-sm">
-                        {carData.originalPrice.toLocaleString()}K
-                      </span>
-                      <Badge className="bg-red-500 text-white text-xs px-1.5 py-0.5">
-                        {carData.discount}%
-                      </Badge>
-                    </div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-bold text-gray-900">
-                        {carData.price.toLocaleString()}K
+                        {(
+                          (vehicleData?.dailyRate || 0) / 1000
+                        ).toLocaleString()}
+                        K
                       </span>
                       <span className="text-gray-500">/ngày</span>
                     </div>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Giá theo giờ:{" "}
+                      {((vehicleData?.hourlyRate || 0) / 1000).toLocaleString()}
+                      K/giờ
+                    </p>
                   </div>
 
                   {/* Date & Time Picker */}
@@ -1151,7 +1190,7 @@ export default function CarIn4() {
                             </Badge>
                           </div>
                           <p className="text-xs text-gray-500 mt-1">
-                            {carData.location}
+                            {vehicleData?.stationName || "Đang tải..."}
                           </p>
                         </div>
                       </label>
@@ -1224,7 +1263,7 @@ export default function CarIn4() {
                       )}
                     {rentalCalc.discount > 0 && (
                       <div className="flex items-center justify-between text-sm text-green-600">
-                        <span>Giảm giá ({carData.discount}%)</span>
+                        <span>Giảm giá</span>
                         <span className="font-semibold">
                           -{rentalCalc.discount.toLocaleString()}đ
                         </span>
@@ -1792,7 +1831,7 @@ export default function CarIn4() {
                             )}
                           {bookingDetails.discount > 0 && (
                             <div className="flex justify-between text-sm text-green-600">
-                              <span>Giảm giá ({carData.discount}%)</span>
+                              <span>Giảm giá</span>
                               <span className="font-semibold">
                                 -{bookingDetails.discount.toLocaleString()}đ
                               </span>
