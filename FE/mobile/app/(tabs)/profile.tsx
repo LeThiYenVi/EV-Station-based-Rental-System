@@ -74,7 +74,7 @@ export default function ProfileScreen() {
       icon: <User size={22} color="#6b7280" />,
       title: "Thông Tin Cá Nhân",
       subtitle: "Cập nhật thông tin của bạn",
-      screen: "/(profile)/personal-info",
+      screen: "/personal-info" as any,
     },
     {
       id: "2",

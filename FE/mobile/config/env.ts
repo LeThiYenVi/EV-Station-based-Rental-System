@@ -7,7 +7,7 @@ export const ENV_CONFIG = {
 
   // API Base URL
   API_BASE_URL: __DEV__
-    ? "http://localhost:8080/api" // Local Spring Boot backend
+    ? "http://localhost:3001/api" // Proxy server (bypass CORS)
     : "https://api.evrental.vn/api", // Production
 
   // Request timeout (ms)

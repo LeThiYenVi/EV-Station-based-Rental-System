@@ -8,6 +8,7 @@ import {
   TextInput,
   StyleSheet,
   Animated,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -21,16 +22,49 @@ import {
   User,
 } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/services/api";
+import type { StationResponse } from "@/types";
+import Toast from "react-native-toast-message";
 
 export default function ExploreScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [stations, setStations] = useState<StationResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(-20)).current;
+
+  // Fetch stations from API
+  useEffect(() => {
+    const fetchStations = async () => {
+      try {
+        setIsLoading(true);
+        const response = await api.getStations();
+
+        // API returns paginated response
+        if (response.data && Array.isArray(response.data.content)) {
+          setStations(response.data.content);
+        } else if (Array.isArray(response.data)) {
+          setStations(response.data);
+        }
+      } catch (error: any) {
+        console.error("Failed to fetch stations:", error);
+        Toast.show({
+          type: "error",
+          text1: "Lỗi",
+          text2: "Không thể tải danh sách trạm",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStations();
+  }, []);
 
   // Animate greeting on mount
   useEffect(() => {
@@ -68,49 +102,10 @@ export default function ExploreScreen() {
     },
   ];
 
-  // Mock data for stations - expanded
-  const stations = [
-    {
-      id: "1",
-      name: "Trạm Trung Tâm",
-      distance: "0.5 km",
-      available: 12,
-      total: 20,
-      rating: 4.8,
-    },
-    {
-      id: "2",
-      name: "Trạm Park Avenue",
-      distance: "1.2 km",
-      available: 8,
-      total: 15,
-      rating: 4.6,
-    },
-    {
-      id: "3",
-      name: "Trạm Khu Công Nghệ",
-      distance: "2.0 km",
-      available: 15,
-      total: 25,
-      rating: 4.9,
-    },
-    {
-      id: "4",
-      name: "Trạm Sân Bay",
-      distance: "5.8 km",
-      available: 3,
-      total: 18,
-      rating: 4.5,
-    },
-    {
-      id: "5",
-      name: "Trạm Quận 1",
-      distance: "3.2 km",
-      available: 10,
-      total: 20,
-      rating: 4.7,
-    },
-  ];
+  // Filter stations based on search query
+  const filteredStations = stations.filter((station) =>
+    station.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Recent searches
   const recentSearches = ["Trạm Trung Tâm", "Sân Bay", "Quận 1"];
@@ -237,52 +232,66 @@ export default function ExploreScreen() {
         {/* Stations List */}
         <View style={styles.stationsSection}>
           <Text style={styles.stationsTitle}>
-            Trạm Gần Đây ({stations.length})
+            Trạm Gần Đây ({filteredStations.length})
           </Text>
 
-          {stations.map((station) => (
-            <Pressable
-              key={station.id}
-              style={({ pressed }) => [
-                styles.stationCard,
-                pressed && styles.stationCardPressed,
-              ]}
-              onPress={() => router.push(`/station/${station.id}`)}
-            >
-              <View style={styles.stationCardHeader}>
-                <View style={styles.stationInfo}>
-                  <Text style={styles.stationName}>{station.name}</Text>
-                  <View style={styles.stationMeta}>
-                    <MapPin size={14} color="#9ca3af" />
-                    <Text style={styles.distanceText}>{station.distance}</Text>
-                    <View style={styles.separator} />
-                    <Star size={14} color="#fbbf24" fill="#fbbf24" />
-                    <Text style={styles.ratingText}>{station.rating}</Text>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#10b981" />
+              <Text style={styles.loadingText}>Đang tải trạm...</Text>
+            </View>
+          ) : filteredStations.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <MapPin size={48} color="#d1d5db" />
+              <Text style={styles.emptyText}>Không tìm thấy trạm nào</Text>
+            </View>
+          ) : (
+            filteredStations.map((station) => (
+              <Pressable
+                key={station.id}
+                style={({ pressed }) => [
+                  styles.stationCard,
+                  pressed && styles.stationCardPressed,
+                ]}
+                onPress={() => router.push(`/station/${station.id}`)}
+              >
+                <View style={styles.stationCardHeader}>
+                  <View style={styles.stationInfo}>
+                    <Text style={styles.stationName}>{station.name}</Text>
+                    <View style={styles.stationMeta}>
+                      <MapPin size={14} color="#9ca3af" />
+                      <Text style={styles.distanceText}>{station.address}</Text>
+                      <View style={styles.separator} />
+                      <Star size={14} color="#fbbf24" fill="#fbbf24" />
+                      <Text style={styles.ratingText}>
+                        {station.rating?.toFixed(1) || "N/A"}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-                <View
-                  style={[
-                    styles.availabilityBadge,
-                    station.available === 0 && styles.availabilityBadgeEmpty,
-                  ]}
-                >
-                  <Text
+                  <View
                     style={[
-                      styles.availabilityText,
-                      station.available === 0 && styles.availabilityTextEmpty,
+                      styles.availabilityBadge,
+                      station.status !== "ACTIVE" &&
+                        styles.availabilityBadgeEmpty,
                     ]}
                   >
-                    {station.available}/{station.total}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.availabilityText,
+                        station.status !== "ACTIVE" &&
+                          styles.availabilityTextEmpty,
+                      ]}
+                    >
+                      {station.status === "ACTIVE" ? "Hoạt động" : "Đóng cửa"}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.vehiclesText}>
-                {station.available > 0
-                  ? `${station.available} xe có sẵn`
-                  : "Hết xe"}
-              </Text>
-            </Pressable>
-          ))}
+                <Text style={styles.vehiclesText}>
+                  {station.hotline || "Không có số điện thoại"}
+                </Text>
+              </Pressable>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -576,5 +585,26 @@ const styles = StyleSheet.create({
   vehiclesText: {
     color: "#6b7280",
     fontSize: 14,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: "#6b7280",
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#9ca3af",
+    fontWeight: "500",
   },
 });

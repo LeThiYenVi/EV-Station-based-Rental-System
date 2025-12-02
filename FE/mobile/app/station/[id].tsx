@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Pressable,
   StyleSheet,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
@@ -19,77 +20,41 @@ import {
   Zap,
 } from "lucide-react-native";
 import { Button } from "@/components/common";
+import { api } from "@/services/api";
+import type { StationDetailResponse, VehicleResponse } from "@/types";
+import Toast from "react-native-toast-message";
 
 export default function StationDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [station, setStation] = useState<StationDetailResponse | null>(null);
 
-  // Mock data - sẽ thay bằng API call sau
-  const station = {
-    id,
-    name: "Trạm Trung Tâm",
-    address: "123 Nguyễn Huệ, Quận 1, TP.HCM",
-    rating: 4.8,
-    totalReviews: 234,
-    distance: "0.5 km",
-    phone: "0901234567",
-    openTime: "06:00",
-    closeTime: "22:00",
-    photo: null,
-    latitude: 10.7769,
-    longitude: 106.7009,
-    totalSlots: 20,
-    availableVehicles: 12,
-  };
+  // Fetch station details from API
+  useEffect(() => {
+    const fetchStationDetails = async () => {
+      try {
+        setIsLoading(true);
+        const response = await api.getStationById(id as string);
+        setStation(response.data as StationDetailResponse);
+      } catch (error: any) {
+        console.error("Failed to fetch station:", error);
+        Toast.show({
+          type: "error",
+          text1: "Lỗi",
+          text2: "Không thể tải thông tin trạm",
+        });
+        router.back();
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // Mock vehicles
-  const vehicles = [
-    {
-      id: "v1",
-      name: "Honda Vision 2024",
-      type: "Xe Máy Điện",
-      battery: 85,
-      licensePlate: "59A-12345",
-      hourlyRate: 25000,
-      dailyRate: 150000,
-      status: "available",
-      photo: null,
-    },
-    {
-      id: "v2",
-      name: "VinFast Klara S",
-      type: "Xe Máy Điện",
-      battery: 92,
-      licensePlate: "59B-67890",
-      hourlyRate: 30000,
-      dailyRate: 180000,
-      status: "available",
-      photo: null,
-    },
-    {
-      id: "v3",
-      name: "Honda Air Blade",
-      type: "Xe Máy Điện",
-      battery: 78,
-      licensePlate: "59C-11223",
-      hourlyRate: 28000,
-      dailyRate: 160000,
-      status: "available",
-      photo: null,
-    },
-    {
-      id: "v4",
-      name: "Yamaha Janus",
-      type: "Xe Máy Điện",
-      battery: 65,
-      licensePlate: "59D-44556",
-      hourlyRate: 22000,
-      dailyRate: 130000,
-      status: "available",
-      photo: null,
-    },
-  ];
+    if (id) {
+      fetchStationDetails();
+    }
+  }, [id]);
 
   const handleBookVehicle = () => {
     if (!selectedVehicle) {
@@ -110,11 +75,35 @@ export default function StationDetailScreen() {
     }).format(amount);
   };
 
-  const getBatteryColor = (battery: number) => {
-    if (battery >= 80) return "#10b981";
-    if (battery >= 50) return "#fbbf24";
+  const getBatteryColor = (rating: number) => {
+    if (rating >= 4) return "#10b981";
+    if (rating >= 3) return "#fbbf24";
     return "#ef4444";
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#10b981" />
+          <Text style={styles.loadingText}>Đang tải thông tin trạm...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!station) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>Không tìm thấy thông tin trạm</Text>
+          <Button title="Quay lại" onPress={() => router.back()} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const vehicles = station.vehicles || [];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -150,14 +139,14 @@ export default function StationDetailScreen() {
               <View style={styles.ratingRow}>
                 <Star size={16} color="#fbbf24" fill="#fbbf24" />
                 <Text style={styles.ratingText}>
-                  {station.rating} ({station.totalReviews} đánh giá)
+                  {station.rating.toFixed(1)} đánh giá
                 </Text>
               </View>
             </View>
             <View style={styles.availabilityBadge}>
               <Zap size={16} color="#10b981" />
               <Text style={styles.availabilityText}>
-                {station.availableVehicles}/{station.totalSlots}
+                {station.availableVehicles}/{station.totalVehicles}
               </Text>
             </View>
           </View>
@@ -169,19 +158,25 @@ export default function StationDetailScreen() {
               <Text style={styles.detailText}>{station.address}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Navigation size={18} color="#6b7280" />
-              <Text style={styles.detailText}>{station.distance} từ bạn</Text>
-            </View>
-            <View style={styles.detailRow}>
               <Clock size={18} color="#6b7280" />
               <Text style={styles.detailText}>
-                {station.openTime} - {station.closeTime}
+                {new Date(station.startTime).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}{" "}
+                -{" "}
+                {new Date(station.endTime).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </Text>
             </View>
-            <View style={styles.detailRow}>
-              <Phone size={18} color="#6b7280" />
-              <Text style={styles.detailText}>{station.phone}</Text>
-            </View>
+            {station.hotline && (
+              <View style={styles.detailRow}>
+                <Phone size={18} color="#6b7280" />
+                <Text style={styles.detailText}>{station.hotline}</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -204,7 +199,9 @@ export default function StationDetailScreen() {
                 </View>
                 <View style={styles.vehicleInfo}>
                   <Text style={styles.vehicleName}>{vehicle.name}</Text>
-                  <Text style={styles.vehicleType}>{vehicle.type}</Text>
+                  <Text style={styles.vehicleType}>
+                    {vehicle.brand} - {vehicle.fuelType}
+                  </Text>
                   <Text style={styles.licensePlate}>
                     {vehicle.licensePlate}
                   </Text>
@@ -220,14 +217,14 @@ export default function StationDetailScreen() {
 
               <View style={styles.vehicleDetails}>
                 <View style={styles.batteryRow}>
-                  <Zap size={14} color={getBatteryColor(vehicle.battery)} />
+                  <Star size={14} color={getBatteryColor(vehicle.rating)} />
                   <Text
                     style={[
                       styles.batteryText,
-                      { color: getBatteryColor(vehicle.battery) },
+                      { color: getBatteryColor(vehicle.rating) },
                     ]}
                   >
-                    Pin: {vehicle.battery}%
+                    Đánh giá: {vehicle.rating.toFixed(1)}/5 ⭐
                   </Text>
                 </View>
                 <View style={styles.priceRow}>
@@ -281,6 +278,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ffffff",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#6b7280",
+    marginTop: 16,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#ef4444",
+    marginBottom: 16,
+    textAlign: "center",
   },
   header: {
     flexDirection: "row",

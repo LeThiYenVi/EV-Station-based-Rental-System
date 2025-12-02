@@ -11,6 +11,7 @@ import { api } from "@/services/api";
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
@@ -34,6 +35,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -43,10 +45,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loadUser = async () => {
     try {
       setIsLoading(true);
-      const token = await storage.getToken();
+      const savedToken = await storage.getToken();
       const savedUser = await storage.getUser();
 
-      if (token && savedUser) {
+      if (savedToken && savedUser) {
+        setToken(savedToken);
         setUser(savedUser);
         console.log("✅ User loaded from storage:", savedUser.name);
       } else {
@@ -85,6 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Save token and user
       await storage.setToken(response.data.accessToken);
       await storage.setUser(userData);
+      setToken(response.data.accessToken);
       setUser(userData);
 
       console.log("✅ Login Success:", userData.name);
@@ -161,6 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Save token and user
       await storage.setToken(loginResponse.data.accessToken);
       await storage.setUser(userData);
+      setToken(loginResponse.data.accessToken);
       setUser(userData);
 
       console.log("✅ Login Success after OTP verification:", userData.name);
@@ -197,6 +202,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clear local storage
       await storage.removeToken();
       await storage.removeUser();
+      setToken(null);
       setUser(null);
 
       console.log("✅ Logout Success");
@@ -212,6 +218,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
+        token,
         isLoading,
         login,
         register,

@@ -4,6 +4,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
+    "dev": "concurrently \"npm:proxy\" \"npm:start\"",
+    "proxy": "node proxy-server.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
@@ -14,6 +16,7 @@
     "expo": "~54.0.25",
     "expo-constants": "~18.0.10",
     "expo-image": "~3.0.10",
+    "expo-image-picker": "~17.0.8",
     "expo-linking": "~8.0.9",
     "expo-router": "~6.0.15",
     "expo-secure-store": "~15.0.7",
@@ -34,6 +37,7 @@
     "@types/react-native": "^0.72.8",
     "babel-plugin-module-resolver": "^5.0.2",
     "babel-preset-expo": "^54.0.7",
+    "concurrently": "^9.2.1",
     "tailwindcss": "^3.4.18",
     "typescript": "^5.9.3"
   }

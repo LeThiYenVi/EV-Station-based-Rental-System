@@ -7,3 +7,4 @@ export { Avatar } from "./Avatar";
 export { ListItem } from "./ListItem";
 export { InfoRow } from "./InfoRow";
 export { Tabs } from "./Tabs";
+export { default as TripCard } from "./TripCard";
