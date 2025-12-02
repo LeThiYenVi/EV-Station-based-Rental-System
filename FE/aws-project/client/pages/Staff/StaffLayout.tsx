@@ -13,6 +13,7 @@ import {
 import { useNavigate, Routes, Route, useLocation } from "react-router-dom";
 import Confirmations from "./Confirmations";
 import ActiveBookings from "./ActiveBookings";
+import VehicleInspection from "./VehicleInspection";
 
 const { Header, Sider, Content } = Layout;
 
@@ -242,15 +243,7 @@ export default function StaffLayout() {
             />
             <Route path="/confirmations" element={<Confirmations />} />
             <Route path="/bookings" element={<ActiveBookings />} />
-            <Route
-              path="/vehicles"
-              element={
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold">Kiểm tra xe</h1>
-                  <p className="text-gray-600 mt-2">Đang phát triển...</p>
-                </div>
-              }
-            />
+            <Route path="/vehicles" element={<VehicleInspection />} />
             <Route
               path="/customers"
               element={
