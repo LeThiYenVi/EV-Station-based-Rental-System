@@ -68,7 +68,7 @@ import {
   BulbOutlined,
   DashboardOutlined,
   HomeOutlined,
-  CleaningOutlined,
+  //CleaningOutlined,
   PlusOutlined,
   EyeOutlined,
   EditOutlined,
