@@ -12,6 +12,7 @@ import {
 } from "@ant-design/icons";
 import { useNavigate, Routes, Route, useLocation } from "react-router-dom";
 import Confirmations from "./Confirmations";
+import ActiveBookings from "./ActiveBookings";
 
 const { Header, Sider, Content } = Layout;
 
@@ -240,15 +241,7 @@ export default function StaffLayout() {
               }
             />
             <Route path="/confirmations" element={<Confirmations />} />
-            <Route
-              path="/bookings"
-              element={
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold">Quản lý đơn thuê</h1>
-                  <p className="text-gray-600 mt-2">Đang phát triển...</p>
-                </div>
-              }
-            />
+            <Route path="/bookings" element={<ActiveBookings />} />
             <Route
               path="/vehicles"
               element={
