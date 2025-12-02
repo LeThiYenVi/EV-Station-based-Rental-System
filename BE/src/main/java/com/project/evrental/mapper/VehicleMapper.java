@@ -3,10 +3,10 @@ package com.project.evrental.mapper;
 import com.project.evrental.domain.dto.response.AvailableVehicleSummary;
 import com.project.evrental.domain.dto.response.VehicleResponse;
 import com.project.evrental.domain.entity.Vehicle;
+import org.springframework.stereotype.Component;
 
+@Component
 public class VehicleMapper {
-
-    private VehicleMapper() {}
 
     public static AvailableVehicleSummary mapToSummary(Vehicle vehicle) {
         return AvailableVehicleSummary.builder()

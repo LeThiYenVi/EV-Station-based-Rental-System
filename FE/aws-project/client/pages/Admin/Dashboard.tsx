@@ -99,7 +99,7 @@ export default function Dashboard() {
   const revenueData = [
     { month: "Apr", revenue: 180000000, bookings: 280 },
     { month: "May", revenue: 210000000, bookings: 315 },
-    { month: "Jun", revenue: 195000000, bookings: 295 },
+    { month: "Jun", revenue: 195000000, bookings: 900 },
     { month: "Jul", revenue: 234000000, bookings: 342 },
     { month: "Aug", revenue: 220000000, bookings: 328 },
     { month: "Sep", revenue: 245000000, bookings: 365 },
@@ -125,7 +125,6 @@ export default function Dashboard() {
   const bookingByTypeData = [
     { type: "Electric", bookings: 612, revenue: 1650000000 },
     { type: "Gasoline", bookings: 189, revenue: 485000000 },
-    { type: "Hybrid", bookings: 89, revenue: 280000000 },
   ];
 
   // Recent activities
