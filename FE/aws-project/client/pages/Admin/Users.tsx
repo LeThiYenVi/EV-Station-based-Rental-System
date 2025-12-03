@@ -2,12 +2,10 @@
  * Users Management Page
  * Trang quản lý người dùng cho Admin
  * Route: /admin/users
- *
- * NOTE: File này đang dùng MOCK_USERS với snake_case fields
- * TODO: Migrate sang API thực tế (xem API_INTEGRATION_GUIDE.md)
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import adminService from "@/services/admin.service";
 
 // Type aliases để tương thích với mock data
 interface User {
@@ -195,12 +193,115 @@ export default function Users() {
   const { toast } = useToast();
 
   // State
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
+  const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [filters, setFilters] = useState<UserFilterParams>({});
   const [userFormOpen, setUserFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [viewDetailUser, setViewDetailUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState<any>(null);
+
+  // ==================== FETCH DATA ====================
+  useEffect(() => {
+    fetchUsers();
+    fetchMetrics();
+  }, []);
+
+  // Re-fetch when filters change
+  useEffect(() => {
+    if (Object.keys(filters).length > 0 && filters.search) {
+      // Only use API filter if there's a search term
+      handleFilterUsers();
+    } else if (Object.keys(filters).length === 0) {
+      // Reset to all users
+      fetchUsers();
+    }
+  }, [filters]);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await adminService.users.getAllUsers();
+      // Map camelCase to snake_case for frontend compatibility
+      const mappedUsers = response.data.map((user: any) => ({
+        id: user.id,
+        email: user.email,
+        full_name: user.fullName,
+        phone: user.phone,
+        avatar_url: user.avatarUrl,
+        role: user.role,
+        license_number: user.licenseNumber,
+        identity_number: user.identityNumber,
+        license_card_image_url: user.licenseCardFrontImageUrl,
+        is_verified: user.isLicenseVerified || false,
+        verified_at: user.verifiedAt,
+        status: "active" as UserStatus, // Default status
+        stationid: user.stationId,
+        created_at: user.createdAt,
+        updated_at: user.updatedAt,
+        total_bookings: user.totalBookings || 0,
+        total_spent: 0,
+      }));
+      setUsers(mappedUsers);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load users. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMetrics = async () => {
+    try {
+      const response = await adminService.users.getUserMetrics();
+      setMetrics(response.data);
+    } catch (error) {
+      console.error("Failed to fetch metrics:", error);
+    }
+  };
+
+  const handleFilterUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await adminService.users.filterUsers({
+        name: filters.search,
+        email: filters.search,
+        phone: filters.search,
+        role: filters.role,
+        verification: filters.is_verified,
+      });
+
+      const mappedUsers = response.data.map((user: any) => ({
+        id: user.id,
+        email: user.email,
+        full_name: user.fullName,
+        phone: user.phone,
+        avatar_url: user.avatarUrl,
+        role: user.role,
+        license_number: user.licenseNumber,
+        identity_number: user.identityNumber,
+        license_card_image_url: user.licenseCardFrontImageUrl,
+        is_verified: user.isLicenseVerified || false,
+        verified_at: user.verifiedAt,
+        status: "active" as UserStatus,
+        stationid: user.stationId,
+        created_at: user.createdAt,
+        updated_at: user.updatedAt,
+        total_bookings: user.totalBookings || 0,
+        total_spent: 0,
+      }));
+      setUsers(mappedUsers);
+    } catch (error) {
+      console.error("Failed to filter users:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ==================== FILTERING ====================
   const filteredUsers = useMemo(() => {
@@ -252,6 +353,16 @@ export default function Users() {
 
   // ==================== STATISTICS ====================
   const stats = useMemo(() => {
+    if (metrics) {
+      return {
+        total: metrics.totalUser,
+        verified: metrics.totalVerifiedUser,
+        active: metrics.totalUser - metrics.totalBlockedUser,
+        blocked: metrics.totalBlockedUser,
+      };
+    }
+
+    // Fallback calculation from local users
     const total = users.length;
     const verified = users.filter((u) => u.is_verified).length;
     const active = users.filter((u) => u.status === "active").length;
@@ -264,53 +375,80 @@ export default function Users() {
 
   /**
    * Create new user
-   * TODO: Replace with actual API call
+   * NOTE: AdminApi.md không có endpoint tạo user từ Admin panel
+   * Keeping mock implementation for UI demo
    */
   const handleCreateUser = async (data: CreateUserDto) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // TODO: Implement create user API when available
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      email: data.email,
-      full_name: data.full_name,
-      phone: data.phone,
-      avatar_url: null,
-      role: data.role,
-      license_number: data.license_number || null,
-      identity_number: data.identity_number || null,
-      license_card_image_url: null,
-      is_verified: false,
-      verified_at: null,
-      status: "pending",
-      stationid: data.stationid || null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+      const newUser: User = {
+        id: `user-${Date.now()}`,
+        email: data.email,
+        full_name: data.full_name,
+        phone: data.phone,
+        avatar_url: null,
+        role: data.role,
+        license_number: data.license_number || null,
+        identity_number: data.identity_number || null,
+        license_card_image_url: null,
+        is_verified: false,
+        verified_at: null,
+        status: "pending",
+        stationid: data.stationid || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-    setUsers([...users, newUser]);
+      setUsers([...users, newUser]);
+      toast({
+        title: "User Created",
+        description: "New user has been added successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create user",
+        variant: "destructive",
+      });
+    }
   };
 
   /**
    * Update existing user
-   * TODO: Replace with actual API call
+   * NOTE: AdminApi.md không có endpoint update user từ Admin panel
+   * Keeping mock implementation for UI demo
    */
   const handleUpdateUser = async (data: UpdateUserDto) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // TODO: Implement update user API when available
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    setUsers(
-      users.map((user) =>
-        user.id === editingUser?.id
-          ? {
-              ...user,
-              ...data,
-              status: (data.status as UserStatus) || user.status,
-              updated_at: new Date().toISOString(),
-            }
-          : user,
-      ),
-    );
+      setUsers(
+        users.map((user) =>
+          user.id === editingUser?.id
+            ? {
+                ...user,
+                ...data,
+                status: (data.status as UserStatus) || user.status,
+                updated_at: new Date().toISOString(),
+              }
+            : user,
+        ),
+      );
+
+      toast({
+        title: "User Updated",
+        description: "User information has been updated",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update user",
+        variant: "destructive",
+      });
+    }
   };
 
   /**
@@ -353,31 +491,45 @@ export default function Users() {
   };
 
   /**
-   * Verify user
-   * TODO: Replace with actual API call
+   * Verify user license
+   * POST /api/staff/users/{userId}/verify-license
    */
-  const handleVerifyUser = async (userId: string) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
+  const handleVerifyUser = async (userId: string, approved: boolean = true) => {
+    try {
+      // Get current user's staff ID from auth context or use a default
+      // In a real app, you'd get this from the authenticated user
+      const staffId = "current-staff-id"; // TODO: Get from auth context
 
-    setUsers(
-      users.map((user) =>
-        user.id === userId
-          ? {
-              ...user,
-              is_verified: true,
-              verified_at: new Date().toISOString(),
-              status: "active",
-              updated_at: new Date().toISOString(),
-            }
-          : user,
-      ),
-    );
+      await adminService.staff.verifyUserLicense(userId, staffId, approved);
 
-    toast({
-      title: "User Verified",
-      description: "User has been verified successfully",
-    });
+      setUsers(
+        users.map((user) =>
+          user.id === userId
+            ? {
+                ...user,
+                is_verified: approved,
+                verified_at: approved ? new Date().toISOString() : null,
+                status: approved ? "active" : user.status,
+                updated_at: new Date().toISOString(),
+              }
+            : user,
+        ),
+      );
+
+      toast({
+        title: approved ? "User Verified" : "Verification Rejected",
+        description: approved
+          ? "User license has been verified successfully"
+          : "User license verification was rejected",
+      });
+    } catch (error) {
+      console.error("Failed to verify user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to verify user license",
+        variant: "destructive",
+      });
+    }
   };
 
   // ==================== SELECTION ====================

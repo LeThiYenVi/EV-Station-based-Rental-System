@@ -11,6 +11,7 @@ import {
   ShoppingOutlined,
   SettingOutlined,
   LogoutOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import "./AdminLayout.css";
@@ -19,6 +20,9 @@ import Users from "./Users";
 import Vehicles from "./Vehicles";
 import Bookings from "./Bookings";
 import Reports from "./Reports";
+import Uploads from "./Uploads.tsx";
+import Settings from "./Settings";
+import Stations from "./Stations";
 
 const { Header, Sider, Content } = Layout;
 
@@ -101,6 +105,12 @@ export default function AdminLayout() {
               onClick: () => navigate("/admin/reports"),
             },
             {
+              key: "6-stations",
+              icon: <EnvironmentOutlined />,
+              label: "Quản lý trạm",
+              onClick: () => navigate("/admin/stations"),
+            },
+            {
               key: "6",
               icon: <UploadOutlined />,
               label: "Tải lên",
@@ -170,6 +180,9 @@ export default function AdminLayout() {
             <Route path="/vehicles" element={<Vehicles />} />
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/uploads" element={<Uploads />} />
+            <Route path="/stations" element={<Stations />} />
             {/* Add more routes here */}
           </Routes>
         </Content>

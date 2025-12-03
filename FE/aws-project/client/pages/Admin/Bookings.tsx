@@ -13,14 +13,70 @@
  * TODO: Thay thế mock data bằng API calls khi backend sẵn sàng
  */
 
-import { useState, useMemo } from "react";
-import {
-  Booking,
-  BookingFilterParams,
-  BookingStatus,
-  User,
-  Vehicle,
-} from "@shared/types";
+import { useState, useMemo, useEffect } from "react";
+import adminService from "@/services/admin.service";
+// Local minimal types to avoid unresolved '@shared/types'
+type BookingStatus =
+  | "pending"
+  | "confirmed"
+  | "picked_up"
+  | "completed"
+  | "cancelled";
+
+interface BookingFilterParams {
+  search?: string;
+  status?: BookingStatus | "all";
+  payment_status?: string | "all";
+  renter_id?: string;
+  vehicle_id?: string;
+  checked_out_by?: string;
+  checked_in_by?: string;
+  date_range?: "all" | "past" | "current" | "upcoming";
+  start_date?: string;
+  end_date?: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  phone?: string;
+  role: string;
+}
+
+interface Vehicle {
+  id: string;
+  name: string;
+  license_plate: string;
+}
+
+interface Booking {
+  id: string;
+  booking_code: string;
+  renter_id?: string;
+  vehicle_id?: string;
+  start_time: string;
+  expected_end_time: string;
+  actual_end_time?: string;
+  status: BookingStatus;
+  checked_out_by?: string;
+  checked_in_by?: string;
+  base_price: number;
+  deposit_paid: number;
+  extra_fee: number;
+  total_amount: number;
+  payment_status: string;
+  pickup_notes?: string;
+  return_notes?: string;
+  body_condition?: string;
+  photos?: string[];
+  created_at: string;
+  updated_at?: string;
+  renter?: { id: string; full_name: string; email?: string };
+  vehicle?: { id: string; name: string; license_plate: string };
+  checked_out_staff?: { id: string; full_name: string };
+  checked_in_staff?: { id: string; full_name: string };
+}
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -58,297 +114,111 @@ import { Textarea } from "@/components/ui/textarea";
 export default function Bookings() {
   const { toast } = useToast();
 
-  // ==================== MOCK DATA ====================
-  // TODO: Replace with API call - GET /api/bookings
-
-  const mockUsers: User[] = [
-    {
-      id: "user-001",
-      email: "nguyenvana@gmail.com",
-      full_name: "Nguyễn Văn A",
-      phone: "0901234567",
-      avatar_url: null,
-      role: "renter",
-      license_number: "B2-123456",
-      identity_number: "001234567890",
-      license_card_image_url: null,
-      is_verified: true,
-      verified_at: "2025-01-15T10:00:00Z",
-      status: "active",
-      stationid: null,
-      created_at: "2025-01-01T00:00:00Z",
-      updated_at: "2025-01-15T10:00:00Z",
-    },
-    {
-      id: "user-002",
-      email: "tranthib@gmail.com",
-      full_name: "Trần Thị B",
-      phone: "0912345678",
-      avatar_url: null,
-      role: "renter",
-      license_number: "B2-654321",
-      identity_number: "009876543210",
-      license_card_image_url: null,
-      is_verified: true,
-      verified_at: "2025-02-01T10:00:00Z",
-      status: "active",
-      stationid: null,
-      created_at: "2025-01-20T00:00:00Z",
-      updated_at: "2025-02-01T10:00:00Z",
-    },
-    {
-      id: "staff-001",
-      email: "staff1@evstation.com",
-      full_name: "Lê Văn Staff 1",
-      phone: "0923456789",
-      avatar_url: null,
-      role: "staff",
-      license_number: null,
-      identity_number: null,
-      license_card_image_url: null,
-      is_verified: true,
-      verified_at: "2024-12-01T00:00:00Z",
-      status: "active",
-      stationid: "station-001",
-      created_at: "2024-12-01T00:00:00Z",
-      updated_at: "2025-01-01T00:00:00Z",
-    },
-    {
-      id: "staff-002",
-      email: "staff2@evstation.com",
-      full_name: "Phạm Thị Staff 2",
-      phone: "0934567890",
-      avatar_url: null,
-      role: "staff",
-      license_number: null,
-      identity_number: null,
-      license_card_image_url: null,
-      is_verified: true,
-      verified_at: "2024-12-01T00:00:00Z",
-      status: "active",
-      stationid: "station-001",
-      created_at: "2024-12-01T00:00:00Z",
-      updated_at: "2025-01-01T00:00:00Z",
-    },
-  ];
-
-  const mockVehicles: Vehicle[] = [
-    {
-      id: "vehicle-001",
-      station_id: "station-001",
-      license_plate: "30A-12345",
-      name: "Tesla Model 3 Long Range",
-      brand: "Tesla",
-      type: "electricity",
-      rating: 4.8,
-      capacity: 5,
-      rent_count: 127,
-      photos: [
-        "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=500",
-        "https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=500",
-      ],
-      status: "rented",
-      hourly_rate: 150000,
-      daily_rate: 1200000,
-      deposit_amount: 10000000,
-      polices: [
-        "Yêu cầu GPLX hạng B2 còn hiệu lực",
-        "Đặt cọc 10.000.000 VNĐ",
-        "Không hút thuốc trong xe",
-      ],
-      created_at: "2024-10-01T00:00:00Z",
-      updated_at: "2025-10-10T00:00:00Z",
-    },
-    {
-      id: "vehicle-002",
-      station_id: "station-001",
-      license_plate: "30B-67890",
-      name: "VinFast VF8",
-      brand: "VinFast",
-      type: "electricity",
-      rating: 4.5,
-      capacity: 5,
-      rent_count: 89,
-      photos: [
-        "https://images.unsplash.com/photo-1617788138017-80ad40651399?w=500",
-      ],
-      status: "available",
-      hourly_rate: 120000,
-      daily_rate: 950000,
-      deposit_amount: 8000000,
-      polices: ["Yêu cầu GPLX hạng B2", "Đặt cọc 8.000.000 VNĐ"],
-      created_at: "2024-11-01T00:00:00Z",
-      updated_at: "2025-10-10T00:00:00Z",
-    },
-    {
-      id: "vehicle-003",
-      station_id: "station-001",
-      license_plate: "51F-11111",
-      name: "Toyota Camry 2024",
-      brand: "Toyota",
-      type: "gasoline",
-      rating: 4.2,
-      capacity: 5,
-      rent_count: 156,
-      photos: [
-        "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500",
-      ],
-      status: "maintenance",
-      hourly_rate: 100000,
-      daily_rate: 800000,
-      deposit_amount: 5000000,
-      polices: ["GPLX hạng B2", "Đặt cọc 5.000.000 VNĐ", "Trả đầy bình xăng"],
-      created_at: "2024-09-01T00:00:00Z",
-      updated_at: "2025-10-08T00:00:00Z",
-    },
-  ];
-
-  const mockBookings: Booking[] = [
-    {
-      id: "booking-001",
-      booking_code: "BK2025100001",
-      renter_id: "user-001",
-      vehicle_id: "vehicle-001",
-      start_time: "2025-10-08T08:00:00Z",
-      expected_end_time: "2025-10-12T18:00:00Z",
-      actual_end_time: null,
-      status: "picked_up",
-      checked_out_by: "staff-001",
-      checked_in_by: null,
-      base_price: 4800000, // 4 ngày * 1.200.000
-      deposit_paid: 10000000,
-      extra_fee: 0,
-      total_amount: 4800000,
-      payment_status: "deposit_paid",
-      pickup_notes:
-        "Xe đã kiểm tra kỹ, tình trạng tốt. Khách hàng đã ký biên bản.",
-      return_notes: null,
-      body_condition: "normal",
-      photos: [
-        "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=300",
-        "https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=300",
-      ],
-      created_at: "2025-10-05T10:00:00Z",
-      updated_at: "2025-10-08T08:15:00Z",
-      renter: mockUsers[0],
-      vehicle: mockVehicles[0],
-      checked_out_staff: mockUsers[2],
-      checked_in_staff: undefined,
-    },
-    {
-      id: "booking-002",
-      booking_code: "BK2025100002",
-      renter_id: "user-002",
-      vehicle_id: "vehicle-002",
-      start_time: "2025-10-15T10:00:00Z",
-      expected_end_time: "2025-10-18T10:00:00Z",
-      actual_end_time: null,
-      status: "confirmed",
-      checked_out_by: null,
-      checked_in_by: null,
-      base_price: 2850000, // 3 ngày * 950.000
-      deposit_paid: 8000000,
-      extra_fee: 0,
-      total_amount: 2850000,
-      payment_status: "deposit_paid",
-      pickup_notes: null,
-      return_notes: null,
-      body_condition: "normal",
-      photos: [],
-      created_at: "2025-10-10T14:00:00Z",
-      updated_at: "2025-10-10T14:30:00Z",
-      renter: mockUsers[1],
-      vehicle: mockVehicles[1],
-      checked_out_staff: undefined,
-      checked_in_staff: undefined,
-    },
-    {
-      id: "booking-003",
-      booking_code: "BK2025090050",
-      renter_id: "user-001",
-      vehicle_id: "vehicle-003",
-      start_time: "2025-09-20T08:00:00Z",
-      expected_end_time: "2025-09-25T18:00:00Z",
-      actual_end_time: "2025-09-25T17:30:00Z",
-      status: "completed",
-      checked_out_by: "staff-001",
-      checked_in_by: "staff-002",
-      base_price: 4000000, // 5 ngày * 800.000
-      deposit_paid: 5000000,
-      extra_fee: 200000, // Phí trả xe muộn 30 phút
-      total_amount: 4200000,
-      payment_status: "paid",
-      pickup_notes: "Xe giao lúc 8:00 sáng, khách hàng hài lòng.",
-      return_notes: "Xe trả muộn 30 phút, tính phí 200k. Tình trạng xe tốt.",
-      body_condition: "normal",
-      photos: [
-        "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=300",
-      ],
-      created_at: "2025-09-15T10:00:00Z",
-      updated_at: "2025-09-25T17:45:00Z",
-      renter: mockUsers[0],
-      vehicle: mockVehicles[2],
-      checked_out_staff: mockUsers[2],
-      checked_in_staff: mockUsers[3],
-    },
-    {
-      id: "booking-004",
-      booking_code: "BK2025100003",
-      renter_id: "user-002",
-      vehicle_id: "vehicle-001",
-      start_time: "2025-10-20T09:00:00Z",
-      expected_end_time: "2025-10-22T18:00:00Z",
-      actual_end_time: null,
-      status: "pending",
-      checked_out_by: null,
-      checked_in_by: null,
-      base_price: 2400000, // 2 ngày * 1.200.000
-      deposit_paid: 0,
-      extra_fee: 0,
-      total_amount: 2400000,
-      payment_status: "pending",
-      pickup_notes: null,
-      return_notes: null,
-      body_condition: "normal",
-      photos: [],
-      created_at: "2025-10-11T09:00:00Z",
-      updated_at: "2025-10-11T09:00:00Z",
-      renter: mockUsers[1],
-      vehicle: mockVehicles[0],
-      checked_out_staff: undefined,
-      checked_in_staff: undefined,
-    },
-    {
-      id: "booking-005",
-      booking_code: "BK2025090045",
-      renter_id: "user-001",
-      vehicle_id: "vehicle-002",
-      start_time: "2025-09-10T08:00:00Z",
-      expected_end_time: "2025-09-15T18:00:00Z",
-      actual_end_time: null,
-      status: "cancelled",
-      checked_out_by: null,
-      checked_in_by: null,
-      base_price: 4750000, // 5 ngày * 950.000
-      deposit_paid: 8000000,
-      extra_fee: 0,
-      total_amount: 4750000,
-      payment_status: "failed",
-      pickup_notes: null,
-      return_notes: "Khách hủy đơn do lý do cá nhân. Đã hoàn cọc 100%.",
-      body_condition: "normal",
-      photos: [],
-      created_at: "2025-09-05T10:00:00Z",
-      updated_at: "2025-09-08T14:00:00Z",
-      renter: mockUsers[0],
-      vehicle: mockVehicles[1],
-      checked_out_staff: undefined,
-      checked_in_staff: undefined,
-    },
-  ];
-
   // ==================== STATE ====================
-  const [bookings, setBookings] = useState<Booking[]>(mockBookings);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [metricsData, setMetricsData] = useState<any>(null);
+  const [staffList, setStaffList] = useState<User[]>([]);
+
+  // Fetch data on mount
+  useEffect(() => {
+    fetchMetrics();
+    fetchBookings();
+    fetchStaffList();
+  }, []);
+
+  const fetchMetrics = async () => {
+    try {
+      const response = await adminService.bookings.getBookingMetrics();
+      setMetricsData(response.data);
+    } catch (error) {
+      console.error("Failed to fetch metrics:", error);
+    }
+  };
+
+  const fetchStaffList = async () => {
+    try {
+      const response = await adminService.users.filterUsers({ role: "STAFF" });
+      const mapped = (response.data || []).map((u: any) => ({
+        id: u.id,
+        email: u.email,
+        full_name: u.fullName,
+        phone: u.phone,
+        role: "staff",
+      }));
+      setStaffList(mapped);
+    } catch (error) {
+      console.error("Failed to fetch staff list:", error);
+    }
+  };
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      const response = await adminService.bookings.getAllBookings();
+      // Map API response (camelCase) to frontend format (snake_case)
+      const mappedBookings = (response.data || []).map((b: any) => ({
+        id: b.id,
+        booking_code: b.bookingCode,
+        renter_id: b.renterId,
+        vehicle_id: b.vehicleId,
+        start_time: b.startTime,
+        expected_end_time: b.expectedEndTime,
+        actual_end_time: b.actualEndTime,
+        status: b.status?.toLowerCase() || "pending",
+        checked_out_by: b.checkedOutById,
+        checked_in_by: b.checkedInById,
+        base_price: b.basePrice || 0,
+        deposit_paid: b.depositPaid || 0,
+        extra_fee: b.extraFee || 0,
+        total_amount: b.totalAmount || 0,
+        payment_status: b.paymentStatus?.toLowerCase() || "pending",
+        pickup_notes: b.pickupNote,
+        return_notes: b.returnNote,
+        body_condition: "normal",
+        photos: [],
+        created_at: b.createdAt,
+        updated_at: b.updatedAt,
+        renter: b.renterName
+          ? {
+              id: b.renterId,
+              full_name: b.renterName,
+              email: b.renterEmail,
+            }
+          : undefined,
+        vehicle: b.vehicleName
+          ? {
+              id: b.vehicleId,
+              name: b.vehicleName,
+              license_plate: b.licensePlate,
+            }
+          : undefined,
+        checked_out_staff: b.checkedOutByName
+          ? {
+              id: b.checkedOutById,
+              full_name: b.checkedOutByName,
+            }
+          : undefined,
+        checked_in_staff: b.checkedInByName
+          ? {
+              id: b.checkedInById,
+              full_name: b.checkedInByName,
+            }
+          : undefined,
+      }));
+      setBookings(mappedBookings);
+    } catch (error) {
+      console.error("Failed to fetch bookings:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể tải danh sách đơn thuê",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const [filters, setFilters] = useState<BookingFilterParams>({});
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -450,6 +320,16 @@ export default function Bookings() {
 
   // ==================== STATISTICS ====================
   const statistics = useMemo(() => {
+    if (metricsData) {
+      return {
+        totalBookings: metricsData.totalBooking,
+        totalRevenue: metricsData.totalRevenueFromCompletedBooking,
+        pendingBookings: bookings.filter((b) => b.status === "pending").length,
+        activeBookings: metricsData.totalOnGoingBooking,
+      };
+    }
+
+    // Fallback calculation
     const totalBookings = bookings.length;
     const totalRevenue = bookings
       .filter((b) => b.status === "completed")
@@ -462,7 +342,7 @@ export default function Bookings() {
     ).length;
 
     return { totalBookings, totalRevenue, pendingBookings, activeBookings };
-  }, [bookings]);
+  }, [bookings, metricsData]);
 
   // ==================== HANDLERS ====================
 
@@ -481,23 +361,36 @@ export default function Bookings() {
     newStatus: BookingStatus,
     notes?: string,
   ) => {
-    // TODO: Replace with API call - PATCH /api/bookings/:id/status
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === bookingId
-          ? {
-              ...b,
-              status: newStatus,
-              updated_at: new Date().toISOString(),
-              return_notes: notes || b.return_notes,
-              actual_end_time:
-                newStatus === "completed"
-                  ? new Date().toISOString()
-                  : b.actual_end_time,
-            }
-          : b,
-      ),
-    );
+    try {
+      // TODO: Implement status update API when available
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === bookingId
+            ? {
+                ...b,
+                status: newStatus,
+                updated_at: new Date().toISOString(),
+                return_notes: notes || b.return_notes,
+                actual_end_time:
+                  newStatus === "completed"
+                    ? new Date().toISOString()
+                    : b.actual_end_time,
+              }
+            : b,
+        ),
+      );
+
+      toast({
+        title: "Status Updated",
+        description: `Booking status changed to ${newStatus}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update booking status",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleAssignStaff = (booking: Booking) => {
@@ -518,33 +411,27 @@ export default function Bookings() {
       return;
     }
 
-    // TODO: Replace with API call - PATCH /api/bookings/:id/assign-staff
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === selectedBooking.id
-          ? {
-              ...b,
-              [selectedStaffType]: selectedStaffId,
-              updated_at: new Date().toISOString(),
-              pickup_notes:
-                selectedStaffType === "checked_out_by"
-                  ? staffNotes || b.pickup_notes
-                  : b.pickup_notes,
-              return_notes:
-                selectedStaffType === "checked_in_by"
-                  ? staffNotes || b.return_notes
-                  : b.return_notes,
-            }
-          : b,
-      ),
-    );
+    try {
+      if (selectedStaffType === "checked_out_by") {
+        await adminService.bookings.confirmBooking(
+          selectedBooking.id,
+          selectedStaffId,
+        );
+      }
 
-    toast({
-      title: "Phân công thành công",
-      description: `Đã phân công nhân viên cho đơn #${selectedBooking.booking_code}`,
-    });
-
-    setStaffModalOpen(false);
+      await fetchBookings();
+      setStaffModalOpen(false);
+      toast({
+        title: "Phân công thành công",
+        description: `Đã phân công nhân viên cho đơn #${selectedBooking.booking_code}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to assign staff",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -777,7 +664,7 @@ export default function Bookings() {
                   <SelectValue placeholder="Chọn staff..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockUsers
+                  {staffList
                     .filter((u) => u.role === "staff")
                     .map((staff) => (
                       <SelectItem key={staff.id} value={staff.id}>

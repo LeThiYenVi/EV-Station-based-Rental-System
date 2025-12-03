@@ -1,28 +1,18 @@
-import { useEffect } from "react";
-import { useRouter } from "expo-router";
-import { useAuth } from "@/context/authContext";
+import { Redirect } from "expo-router";
+import { useAuth } from "@/hooks/useAuth";
 import { View, ActivityIndicator } from "react-native";
 
-export default function IndexPage() {
-  const { user } = useAuth();
-  const router = useRouter();
+export default function Index() {
+  const { isAuthenticated, isLoading } = useAuth();
 
-  useEffect(() => {
-    // Delay navigation slightly to ensure Stack is mounted
-    const timer = setTimeout(() => {
-      if (user) {
-        router.replace("/(tab)/dashboard");
-      } else {
-        router.replace("/login");
-      }
-    }, 1);
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator size="large" color="#10b981" />
+      </View>
+    );
+  }
 
-    return () => clearTimeout(timer);
-  }, [user]);
-
-  return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-      <ActivityIndicator size="large" />
-    </View>
-  );
+  // Always redirect to tabs - the profile tab handles login/guest state
+  return <Redirect href="/(tabs)" />;
 }

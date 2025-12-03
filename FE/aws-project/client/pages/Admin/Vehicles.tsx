@@ -3,14 +3,55 @@
  * Main page cho Vehicle Management Module
  */
 
-import { useState, useMemo } from "react";
-import {
-  Vehicle,
-  VehicleFilterParams,
-  VehicleStatus,
-  CreateVehicleDto,
-  UpdateVehicleDto,
-} from "@shared/types";
+import { useState, useMemo, useEffect } from "react";
+import adminService from "@/services/admin.service";
+// Local minimal typings for this page to avoid external alias dependency
+type VehicleStatus =
+  | "available"
+  | "rented"
+  | "maintenance"
+  | "charging"
+  | "unavailable";
+
+interface Vehicle {
+  id: string;
+  name: string;
+  brand: string;
+  license_plate: string;
+  type: string;
+  capacity: number;
+  status: VehicleStatus;
+  rating: number;
+  rent_count: number;
+  hourly_rate: number;
+  daily_rate: number;
+  deposit_amount: number;
+}
+
+interface VehicleFilterParams {
+  search?: string;
+  status?: VehicleStatus;
+  type?: string;
+  capacity?: number;
+  min_price?: number;
+  max_price?: number;
+}
+
+interface CreateVehicleDto {
+  station_id: string;
+  license_plate: string;
+  name: string;
+  brand: string;
+  color: string;
+  type: string;
+  capacity: number;
+  hourly_rate: number;
+  daily_rate: number;
+  deposit_amount: number;
+  polices?: string;
+}
+
+interface UpdateVehicleDto extends Partial<CreateVehicleDto> {}
 import {
   Card,
   CardContent,
@@ -55,95 +96,47 @@ import { exportToCSV, exportToExcel } from "@/lib/export-utils";
 export default function Vehicles() {
   const { toast } = useToast();
 
-  // Mock data - Replace with API calls (Theo ERD Vehicle schema)
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    {
-      id: "v1",
-      station_id: "station-1",
-      license_plate: "30A-12345",
-      name: "Tesla Model 3 Long Range",
-      brand: "Tesla",
-      type: "electricity",
-      rating: 4.8,
-      capacity: 5,
-      rent_count: 127,
-      photos: ["/placeholder.svg", "/placeholder.svg"],
-      status: "available",
-      hourly_rate: 150000,
-      daily_rate: 2000000,
-      deposit_amount: 10000000,
-      polices: [
-        "Bằng lái xe hạng B2 trở lên",
-        "CCCD gốc còn hạn",
-        "Đặt cọc 10.000.000 VNĐ",
-        "Không sử dụng xe vào mục đích phi pháp",
-      ],
-      created_at: "2024-01-15T00:00:00Z",
-      updated_at: "2024-10-05T00:00:00Z",
-      station_name: "Trạm Quận 1",
-      total_bookings: 127,
-      total_revenue: 254000000,
-    },
-    {
-      id: "v2",
-      station_id: "station-1",
-      license_plate: "29B-67890",
-      name: "VinFast VF8 Plus",
-      brand: "VinFast",
-      type: "electricity",
-      rating: 4.5,
-      capacity: 5,
-      rent_count: 89,
-      photos: ["/placeholder.svg"],
-      status: "rented",
-      hourly_rate: 120000,
-      daily_rate: 1500000,
-      deposit_amount: 8000000,
-      polices: [
-        "Bằng lái xe hạng B2",
-        "CCCD/CMND gốc",
-        "Đặt cọc 8.000.000 VNĐ",
-        "Hoàn trả xe đúng giờ",
-      ],
-      created_at: "2024-03-01T00:00:00Z",
-      updated_at: "2024-10-08T00:00:00Z",
-      station_name: "Trạm Quận 1",
-      total_bookings: 89,
-      total_revenue: 133500000,
-    },
-    {
-      id: "v3",
-      station_id: "station-2",
-      license_plate: "51G-11111",
-      name: "Toyota Camry 2.5Q",
-      brand: "Toyota",
-      type: "gasoline",
-      rating: 4.2,
-      capacity: 5,
-      rent_count: 156,
-      photos: ["/placeholder.svg"],
-      status: "maintenance",
-      hourly_rate: 80000,
-      daily_rate: 1000000,
-      deposit_amount: 5000000,
-      polices: [
-        "Bằng lái B1 trở lên",
-        "CCCD gốc",
-        "Đặt cọc 5.000.000 VNĐ",
-        "Trả đúng mức nhiên liệu ban đầu",
-      ],
-      created_at: "2023-08-10T00:00:00Z",
-      updated_at: "2024-10-07T00:00:00Z",
-      station_name: "Trạm Quận 2",
-      total_bookings: 156,
-      total_revenue: 156000000,
-    },
-  ]);
+  // State
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [metricsData, setMetricsData] = useState<any>(null);
+
+  // Fetch data on mount
+  useEffect(() => {
+    fetchMetrics();
+    fetchVehicles();
+  }, []);
+
+  const fetchMetrics = async () => {
+    try {
+      const response = await adminService.vehicles.getVehicleMetrics();
+      setMetricsData(response.data);
+    } catch (error) {
+      console.error("Failed to fetch metrics:", error);
+    }
+  };
+
+  const fetchVehicles = async () => {
+    try {
+      setLoading(true);
+      const response = await adminService.vehicles.filterVehicles({});
+      setVehicles(response.data as any);
+    } catch (error) {
+      console.error("Failed to fetch vehicles:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load vehicles",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [filters, setFilters] = useState<VehicleFilterParams>({});
   const [selectedVehicles, setSelectedVehicles] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Filtered vehicles - Theo ERD fields
@@ -171,8 +164,18 @@ export default function Vehicles() {
     });
   }, [vehicles, filters]);
 
-  // Statistics
+  // Statistics - Use API metrics if available
   const stats = useMemo(() => {
+    if (metricsData) {
+      return {
+        total: metricsData.totalVehicles,
+        available: metricsData.totalAvailable,
+        inService: metricsData.totalAvailable + metricsData.totalOnGoing,
+        maintenance: metricsData.totalMaintenance,
+      };
+    }
+
+    // Fallback calculation (based on current vehicles list)
     const available = vehicles.filter((v) => v.status === "available").length;
     const rented = vehicles.filter((v) => v.status === "rented").length;
     const maintenance = vehicles.filter(
@@ -186,55 +189,125 @@ export default function Vehicles() {
       inService,
       maintenance,
     };
-  }, [vehicles]);
+  }, [vehicles, metricsData]);
 
-  // Handlers
+  // Handlers với API integration
   const handleCreate = async (data: CreateVehicleDto) => {
-    const newVehicle: Vehicle = {
-      id: `v${vehicles.length + 1}`,
-      ...data,
-      rating: 0, // Default rating
-      rent_count: 0, // Default rent count
-      status: "available",
-      photos: data.photos || [], // photos thay vì images
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    setVehicles([...vehicles, newVehicle]);
+    try {
+      await adminService.vehicles.createVehicle({
+        stationId: data.station_id,
+        licensePlate: data.license_plate,
+        name: data.name,
+        brand: data.brand,
+        color: data.color,
+        fuelType: data.type, // Map type -> fuelType
+        capacity: data.capacity,
+        hourlyRate: data.hourly_rate,
+        dailyRate: data.daily_rate,
+        depositAmount: data.deposit_amount,
+        polices: Array.isArray(data.polices)
+          ? data.polices
+          : data.polices
+            ? [data.polices]
+            : [],
+      });
+
+      await fetchVehicles(); // Refresh list
+      toast({
+        title: "Vehicle Created",
+        description: "New vehicle has been added successfully",
+      });
+    } catch (error) {
+      console.error("Failed to create vehicle:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create vehicle",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleUpdate = async (data: UpdateVehicleDto) => {
     if (!editingVehicle) return;
-    setVehicles(
-      vehicles.map((v) =>
-        v.id === editingVehicle.id
-          ? { ...v, ...data, updated_at: new Date().toISOString() }
-          : v,
-      ),
-    );
+
+    try {
+      await adminService.vehicles.updateVehicle(editingVehicle.id, {
+        licensePlate: data.license_plate,
+        name: data.name,
+        brand: data.brand,
+        color: data.color,
+        fuelType: data.type,
+        capacity: data.capacity,
+        hourlyRate: data.hourly_rate,
+        dailyRate: data.daily_rate,
+        depositAmount: data.deposit_amount,
+        polices: Array.isArray(data.polices)
+          ? data.polices
+          : data.polices
+            ? [data.polices]
+            : [],
+      });
+
+      await fetchVehicles();
+      toast({
+        title: "Vehicle Updated",
+        description: "Vehicle information has been updated",
+      });
+    } catch (error) {
+      console.error("Failed to update vehicle:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update vehicle",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDelete = () => {
-    setVehicles(vehicles.filter((v) => !selectedVehicles.includes(v.id)));
-    setSelectedVehicles([]);
-    setShowDeleteDialog(false);
-    toast({
-      title: "Vehicles Deleted",
-      description: `${selectedVehicles.length} vehicle(s) deleted successfully`,
-    });
+  const handleDelete = async () => {
+    try {
+      await Promise.all(
+        selectedVehicles.map((id) => adminService.vehicles.deleteVehicle(id)),
+      );
+
+      await fetchVehicles();
+      setSelectedVehicles([]);
+      setShowDeleteDialog(false);
+      toast({
+        title: "Vehicles Deleted",
+        description: `${selectedVehicles.length} vehicle(s) deleted successfully`,
+      });
+    } catch (error) {
+      console.error("Failed to delete vehicles:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete vehicles",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleStatusChange = (status: VehicleStatus) => {
-    setVehicles(
-      vehicles.map((v) =>
-        selectedVehicles.includes(v.id) ? { ...v, status } : v,
-      ),
-    );
-    setSelectedVehicles([]);
-    toast({
-      title: "Status Updated",
-      description: `Updated status for ${selectedVehicles.length} vehicle(s)`,
-    });
+  const handleStatusChange = async (status: VehicleStatus) => {
+    try {
+      await Promise.all(
+        selectedVehicles.map((id) =>
+          adminService.vehicles.changeVehicleStatus(id, status),
+        ),
+      );
+
+      await fetchVehicles();
+      setSelectedVehicles([]);
+      toast({
+        title: "Status Updated",
+        description: `Updated status for ${selectedVehicles.length} vehicle(s)`,
+      });
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update vehicle status",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleExportCSV = () => {
@@ -448,7 +521,7 @@ export default function Vehicles() {
               );
             }}
             onEdit={(vehicle) => {
-              setEditingVehicle(vehicle);
+              setEditingVehicle(vehicle as any);
               setShowForm(true);
             }}
             onDelete={(vehicleId) => {
@@ -458,7 +531,7 @@ export default function Vehicles() {
             onChangeStatus={(vehicleId, status) => {
               setVehicles(
                 vehicles.map((v) =>
-                  v.id === vehicleId ? { ...v, status } : v,
+                  v.id === vehicleId ? ({ ...v, status } as Vehicle) : v,
                 ),
               );
             }}
