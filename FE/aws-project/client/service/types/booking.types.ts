@@ -1,10 +1,10 @@
 // Booking Enums
 export enum BookingStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
+  PENDING = "PENDING",
+  CONFIRMED = "CONFIRMED",
+  ONGOING = "ONGOING",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
 }
 
 // Booking Request DTOs
@@ -145,7 +145,7 @@ export interface BookingQueryParams {
   page?: number;
   size?: number;
   sortBy?: string;
-  sortDirection?: 'ASC' | 'DESC';
+  sortDirection?: "ASC" | "DESC";
   status?: BookingStatus;
   vehicleId?: string;
   stationId?: string;

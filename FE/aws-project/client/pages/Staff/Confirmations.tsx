@@ -64,7 +64,10 @@ import {
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import { BookingResponse, BookingStatus } from "@/service/types/booking.types";
+import { BookingResponse } from "@/service/types/booking.types";
+import { BookingStatus } from "@/service/types/enums";
+import bookingService from "@/service/booking/bookingService";
+import staffService from "@/service/staff/staffService";
 
 const { TextArea } = Input;
 
@@ -258,8 +261,71 @@ const mockPendingBookings: PendingBooking[] = [
 ];
 
 export default function Confirmations() {
-  const [bookings, setBookings] =
-    useState<PendingBooking[]>(mockPendingBookings);
+  const [bookings, setBookings] = useState<PendingBooking[]>([]);
+  const staffId = "staff-uuid-placeholder"; // TODO: replace with authenticated staff id
+
+  useEffect(() => {
+    const loadPending = async () => {
+      try {
+        const list = await bookingService.getBookingsByStatus(
+          BookingStatus.PENDING,
+        );
+        // Map minimal BookingResponse to PendingBooking-like shape (fallback to mock fields if missing)
+        const mapped: PendingBooking[] = list.map((b: any) => ({
+          id: b.id,
+          bookingCode: b.bookingCode,
+          vehicleId: b.vehicleId,
+          renterId: b.renterId,
+          pickupStationId: b.pickupStationId,
+          returnStationId: b.returnStationId,
+          pickupTime: b.pickupTime,
+          returnTime: b.returnTime,
+          status: b.status,
+          totalPrice: b.totalPrice,
+          notes: b.notes,
+          createdAt: b.createdAt,
+          updatedAt: b.updatedAt,
+          renter: {
+            id: b.renter?.id || b.renterId,
+            fullName: b.renter?.fullName || "Khách hàng",
+            email: b.renter?.email || "",
+            phoneNumber: b.renter?.phoneNumber || "",
+            identityNumber: b.renter?.identityNumber || "",
+            licenseNumber: b.renter?.licenseNumber || "",
+            identityCardFront: b.renter?.licenseCardFrontImageUrl,
+            identityCardBack: b.renter?.licenseCardBackImageUrl,
+            isVerified: !!b.renter?.isLicenseVerified,
+          },
+          vehicle: {
+            id: b.vehicle?.id || b.vehicleId,
+            name: b.vehicle?.name || "Xe",
+            brand: b.vehicle?.brand || "",
+            plateNumber: b.vehicle?.licensePlate || "",
+            type: b.vehicle?.fuelType || "",
+            status: (b.vehicle?.status || "available").toString().toLowerCase(),
+            imageUrl: b.vehicle?.imageUrl,
+            pricePerDay: b.vehicle?.pricePerDay || 0,
+            depositAmount: b.depositAmount || 0,
+          },
+          pickupStation: {
+            id: b.station?.id || b.pickupStationId,
+            name: b.station?.name || "Trạm",
+            address: b.station?.address || "",
+          },
+          returnStation: {
+            id: b.returnStation?.id || b.returnStationId,
+            name: b.returnStation?.name || "Trạm",
+            address: b.returnStation?.address || "",
+          },
+        }));
+        setBookings(mapped);
+      } catch (e) {
+        message.error("Không tải được danh sách đơn chờ xác nhận");
+        setBookings(mockPendingBookings);
+      }
+    };
+    loadPending();
+  }, []);
   const [selectedBooking, setSelectedBooking] = useState<PendingBooking | null>(
     null,
   );
@@ -346,10 +412,8 @@ export default function Confirmations() {
 
     setLoading(true);
     try {
-      // TODO: Call API to confirm/reject booking
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-
       if (action === "confirm") {
+        await staffService.confirmBookingAsStaff(selectedBooking.id, staffId);
         // Update booking status to CONFIRMED
         setBookings((prev) => prev.filter((b) => b.id !== selectedBooking.id));
         message.success({
@@ -357,7 +421,7 @@ export default function Confirmations() {
           duration: 5,
         });
       } else {
-        // Update booking status to CANCELLED
+        await bookingService.cancelBooking(selectedBooking.id);
         setBookings((prev) => prev.filter((b) => b.id !== selectedBooking.id));
         message.warning({
           content: `Đã từ chối đơn ${selectedBooking.bookingCode}. Email thông báo đã được gửi cho khách hàng.`,
@@ -367,8 +431,8 @@ export default function Confirmations() {
 
       setConfirmModalOpen(false);
       form.resetFields();
-    } catch (error) {
-      message.error("Có lỗi xảy ra, vui lòng thử lại!");
+    } catch (error: any) {
+      message.error(error?.message || "Có lỗi xảy ra, vui lòng thử lại!");
     } finally {
       setLoading(false);
     }
