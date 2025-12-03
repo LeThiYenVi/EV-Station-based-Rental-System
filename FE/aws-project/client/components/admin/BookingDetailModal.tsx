@@ -21,23 +21,23 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
-  User,
-  Car,
-  Calendar,
-  DollarSign,
-  CreditCard,
-  FileText,
-  Image as ImageIcon,
-  Star,
-  Phone,
-  Mail,
-  IdCard,
-  Zap,
-  Fuel,
-  Users,
-  AlertTriangle,
-  CheckCircle,
-} from "lucide-react";
+  UserOutlined,
+  CarOutlined,
+  CalendarOutlined,
+  DollarOutlined,
+  CreditCardOutlined,
+  FileTextOutlined,
+  PictureOutlined,
+  StarOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  IdcardOutlined,
+  ThunderboltOutlined,
+  FireOutlined,
+  TeamOutlined,
+  ExclamationCircleOutlined,
+  CheckCircleOutlined,
+} from "@ant-design/icons";
 
 interface BookingDetailModalProps {
   open: boolean;
@@ -95,17 +95,17 @@ export default function BookingDetailModal({
       normal: {
         label: "✅ Bình thường",
         variant: "default" as const,
-        icon: CheckCircle,
+        icon: CheckCircleOutlined,
       },
       minor_damage: {
         label: "⚠️ Hư hại nhẹ",
         variant: "secondary" as const,
-        icon: AlertTriangle,
+        icon: ExclamationCircleOutlined,
       },
       major_damage: {
         label: "🔴 Hư hại nặng",
         variant: "destructive" as const,
-        icon: AlertTriangle,
+        icon: ExclamationCircleOutlined,
       },
     };
     return conditionConfig[condition];
@@ -121,7 +121,7 @@ export default function BookingDetailModal({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
-            <FileText className="h-6 w-6" />
+            <FileTextOutlined style={{ fontSize: 24 }} />
             Chi tiết đơn thuê #{booking.booking_code}
           </DialogTitle>
           <DialogDescription className="flex items-center gap-2 mt-2">
@@ -134,27 +134,27 @@ export default function BookingDetailModal({
           {/* SECTION 1: KHÁCH HÀNG */}
           <div className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" />
+              <UserOutlined style={{ fontSize: 20 }} className="text-primary" />
               Thông tin khách hàng
             </h3>
             <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
-                  <User className="h-4 w-4 text-muted-foreground" />
+                  <UserOutlined className="text-muted-foreground" />
                   <span className="text-muted-foreground">Họ tên:</span>
                   <span className="font-medium">
                     {booking.renter?.full_name || "N/A"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <PhoneOutlined className="text-muted-foreground" />
                   <span className="text-muted-foreground">Điện thoại:</span>
                   <span className="font-medium">
                     {booking.renter?.phone || "—"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <MailOutlined className="text-muted-foreground" />
                   <span className="text-muted-foreground">Email:</span>
                   <span className="font-medium">
                     {booking.renter?.email || "—"}
@@ -163,21 +163,21 @@ export default function BookingDetailModal({
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
-                  <IdCard className="h-4 w-4 text-muted-foreground" />
+                  <IdcardOutlined className="text-muted-foreground" />
                   <span className="text-muted-foreground">CCCD/CMND:</span>
                   <span className="font-medium">
                     {booking.renter?.identity_number || "—"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <IdCard className="h-4 w-4 text-muted-foreground" />
+                  <IdcardOutlined className="text-muted-foreground" />
                   <span className="text-muted-foreground">Số GPLX:</span>
                   <span className="font-medium">
                     {booking.renter?.license_number || "—"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                  <CheckCircleOutlined className="text-muted-foreground" />
                   <span className="text-muted-foreground">Xác thực:</span>
                   {booking.renter?.is_verified ? (
                     <Badge variant="default" className="text-xs">
@@ -198,27 +198,27 @@ export default function BookingDetailModal({
           {/* SECTION 2: XE */}
           <div className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Car className="h-5 w-5 text-primary" />
+              <CarOutlined style={{ fontSize: 20 }} className="text-primary" />
               Thông tin xe
             </h3>
             <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
-                  <Car className="h-4 w-4 text-muted-foreground" />
+                  <CarOutlined className="text-muted-foreground" />
                   <span className="text-muted-foreground">Tên xe:</span>
                   <span className="font-medium">
                     {booking.vehicle?.name || "N/A"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Car className="h-4 w-4 text-muted-foreground" />
+                  <CarOutlined className="text-muted-foreground" />
                   <span className="text-muted-foreground">Biển số:</span>
                   <span className="font-medium font-mono">
                     {booking.vehicle?.license_plate || "—"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Car className="h-4 w-4 text-muted-foreground" />
+                  <CarOutlined className="text-muted-foreground" />
                   <span className="text-muted-foreground">Hãng:</span>
                   <span className="font-medium">
                     {booking.vehicle?.brand || "—"}
@@ -228,9 +228,9 @@ export default function BookingDetailModal({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   {booking.vehicle?.type === "electricity" ? (
-                    <Zap className="h-4 w-4 text-blue-500" />
+                    <ThunderboltOutlined className="text-blue-500" />
                   ) : (
-                    <Fuel className="h-4 w-4 text-orange-500" />
+                    <FireOutlined className="text-orange-500" />
                   )}
                   <span className="text-muted-foreground">Loại:</span>
                   <span className="font-medium">
@@ -240,14 +240,14 @@ export default function BookingDetailModal({
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <TeamOutlined className="text-muted-foreground" />
                   <span className="text-muted-foreground">Số chỗ:</span>
                   <span className="font-medium">
                     {booking.vehicle?.capacity || "—"} chỗ
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                  <StarOutlined className="text-yellow-400" />
                   <span className="text-muted-foreground">Đánh giá:</span>
                   <span className="font-medium">
                     {booking.vehicle?.rating || "—"}/5.0
@@ -262,21 +262,24 @@ export default function BookingDetailModal({
           {/* SECTION 3: THỜI GIAN THUÊ */}
           <div className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
+              <CalendarOutlined
+                style={{ fontSize: 20 }}
+                className="text-primary"
+              />
               Thời gian thuê xe
             </h3>
             <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Bắt đầu thuê</p>
                 <p className="font-semibold text-green-600 flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
+                  <CalendarOutlined />
                   {formatDateTime(booking.start_time)}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Dự kiến trả xe</p>
                 <p className="font-semibold text-orange-600 flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
+                  <CalendarOutlined />
                   {formatDateTime(booking.expected_end_time)}
                 </p>
               </div>
@@ -286,7 +289,7 @@ export default function BookingDetailModal({
                     Thực tế trả xe
                   </p>
                   <p className="font-semibold text-blue-600 flex items-center gap-1">
-                    <CheckCircle className="h-4 w-4" />
+                    <CheckCircleOutlined />
                     {formatDateTime(booking.actual_end_time)}
                   </p>
                 </div>
@@ -299,7 +302,10 @@ export default function BookingDetailModal({
           {/* SECTION 4: CHI PHÍ */}
           <div className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
+              <DollarOutlined
+                style={{ fontSize: 20 }}
+                className="text-primary"
+              />
               Chi phí thuê xe
             </h3>
             <div className="p-4 bg-muted/50 rounded-lg space-y-3">
@@ -331,7 +337,7 @@ export default function BookingDetailModal({
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-2">
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                <CreditCardOutlined className="text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
                   Trạng thái thanh toán:
                 </span>
@@ -347,7 +353,7 @@ export default function BookingDetailModal({
           {/* SECTION 5: STAFF PHỤ TRÁCH */}
           <div className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" />
+              <UserOutlined style={{ fontSize: 20 }} className="text-primary" />
               Nhân viên phụ trách
             </h3>
             <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
@@ -385,7 +391,10 @@ export default function BookingDetailModal({
           {/* SECTION 6: GHI CHÚ */}
           <div className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
+              <FileTextOutlined
+                style={{ fontSize: 20 }}
+                className="text-primary"
+              />
               Ghi chú
             </h3>
             <div className="grid grid-cols-2 gap-4">
@@ -430,7 +439,7 @@ export default function BookingDetailModal({
               {booking.photos && booking.photos.length > 0 ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <ImageIcon className="h-4 w-4" />
+                    <PictureOutlined />
                     <span>Ảnh chụp xe ({booking.photos.length} ảnh)</span>
                   </div>
                   <div className="grid grid-cols-4 gap-3">
@@ -452,7 +461,10 @@ export default function BookingDetailModal({
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <PictureOutlined
+                    style={{ fontSize: 48 }}
+                    className="mx-auto mb-2 opacity-50"
+                  />
                   <p className="text-sm">Chưa có ảnh xe</p>
                 </div>
               )}

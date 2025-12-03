@@ -20,7 +20,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Filter, X, Calendar } from "lucide-react";
+import {
+  SearchOutlined,
+  FilterOutlined,
+  CloseOutlined,
+  CalendarOutlined,
+} from "@ant-design/icons";
 
 interface BookingFilterProps {
   onFilterChange: (filters: BookingFilterParams) => void;
@@ -78,7 +83,10 @@ export default function BookingFilter({
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-primary" />
+              <FilterOutlined
+                style={{ fontSize: 20 }}
+                className="text-primary"
+              />
               <h3 className="text-lg font-semibold">Lọc đơn thuê</h3>
               <span className="text-sm text-muted-foreground">
                 ({filteredBookings}/{totalBookings} đơn)
@@ -86,7 +94,7 @@ export default function BookingFilter({
             </div>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={handleReset}>
-                <X className="h-4 w-4 mr-1" />
+                <CloseOutlined className="mr-1" />
                 Xóa bộ lọc
               </Button>
             )}
@@ -98,7 +106,7 @@ export default function BookingFilter({
             <div className="space-y-2">
               <Label htmlFor="search">Tìm kiếm</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <SearchOutlined className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="search"
                   placeholder="Mã đơn thuê..."
@@ -252,7 +260,7 @@ export default function BookingFilter({
               <div className="space-y-2">
                 <Label htmlFor="start_date">Từ ngày</Label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <CalendarOutlined className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="start_date"
                     type="date"
@@ -271,7 +279,7 @@ export default function BookingFilter({
               <div className="space-y-2">
                 <Label htmlFor="end_date">Đến ngày</Label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <CalendarOutlined className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="end_date"
                     type="date"

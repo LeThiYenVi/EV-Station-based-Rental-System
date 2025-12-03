@@ -483,6 +483,7 @@ export const adminVehicleService = {
     color?: string;
     fuelType: string;
     capacity: number;
+    photos?: string[];
     hourlyRate: number;
     dailyRate: number;
     depositAmount: number;

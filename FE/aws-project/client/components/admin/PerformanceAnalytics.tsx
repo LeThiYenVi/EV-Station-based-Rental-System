@@ -6,15 +6,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  XCircle,
-  Car,
-  Users,
-  Clock,
-  Activity,
-} from "lucide-react";
+  RiseOutlined,
+  FallOutlined,
+  CalendarOutlined,
+  CloseCircleOutlined,
+  CarOutlined,
+  TeamOutlined,
+  ClockCircleOutlined,
+  LineChartOutlined,
+} from "@ant-design/icons";
 
 interface PerformanceData {
   totalBookings: number;
@@ -90,7 +90,10 @@ export default function PerformanceAnalytics({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-xl flex items-center gap-2">
-                <Activity className="h-5 w-5 text-primary" />
+                <LineChartOutlined
+                  style={{ fontSize: 20 }}
+                  className="text-primary"
+                />
                 Phân tích hiệu suất hoạt động
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
@@ -118,14 +121,14 @@ export default function PerformanceAnalytics({
                 <div className="flex items-center gap-1 mt-2">
                   {data.bookingsGrowth >= 0 ? (
                     <>
-                      <TrendingUp className="h-4 w-4 text-green-600" />
+                      <RiseOutlined className="text-green-600" />
                       <span className="text-xs text-green-600 font-medium">
                         +{data.bookingsGrowth}%
                       </span>
                     </>
                   ) : (
                     <>
-                      <TrendingDown className="h-4 w-4 text-red-600" />
+                      <FallOutlined className="text-red-600" />
                       <span className="text-xs text-red-600 font-medium">
                         {data.bookingsGrowth}%
                       </span>
@@ -137,7 +140,10 @@ export default function PerformanceAnalytics({
                 </div>
               </div>
               <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-blue-600" />
+                <CalendarOutlined
+                  style={{ fontSize: 24 }}
+                  className="text-blue-600"
+                />
               </div>
             </div>
           </CardContent>
@@ -160,7 +166,10 @@ export default function PerformanceAnalytics({
                 </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                <Activity className="h-6 w-6 text-green-600" />
+                <LineChartOutlined
+                  style={{ fontSize: 24 }}
+                  className="text-green-600"
+                />
               </div>
             </div>
           </CardContent>
@@ -180,7 +189,10 @@ export default function PerformanceAnalytics({
                 </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                <XCircle className="h-6 w-6 text-red-600" />
+                <CloseCircleOutlined
+                  style={{ fontSize: 24 }}
+                  className="text-red-600"
+                />
               </div>
             </div>
           </CardContent>
@@ -202,7 +214,10 @@ export default function PerformanceAnalytics({
                 </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-purple-600" />
+                <RiseOutlined
+                  style={{ fontSize: 24 }}
+                  className="text-purple-600"
+                />
               </div>
             </div>
           </CardContent>
@@ -215,7 +230,10 @@ export default function PerformanceAnalytics({
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Car className="h-5 w-5 text-yellow-600" />
+              <CarOutlined
+                style={{ fontSize: 20 }}
+                className="text-yellow-600"
+              />
               🏆 Xe được thuê nhiều nhất
             </CardTitle>
           </CardHeader>
@@ -259,7 +277,10 @@ export default function PerformanceAnalytics({
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-600" />
+              <TeamOutlined
+                style={{ fontSize: 20 }}
+                className="text-blue-600"
+              />
               👑 Khách hàng VIP
             </CardTitle>
           </CardHeader>
@@ -304,14 +325,20 @@ export default function PerformanceAnalytics({
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <Clock className="h-5 w-5 text-orange-600" />
+            <ClockCircleOutlined
+              style={{ fontSize: 20 }}
+              className="text-orange-600"
+            />
             Thống kê thời gian thuê
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-6">
             <div className="text-center p-4 bg-orange-50 rounded-lg">
-              <Clock className="h-8 w-8 mx-auto text-orange-600 mb-2" />
+              <ClockCircleOutlined
+                style={{ fontSize: 32 }}
+                className="mx-auto text-orange-600 mb-2"
+              />
               <p className="text-sm text-muted-foreground mb-1">
                 Thời gian thuê trung bình
               </p>
@@ -322,7 +349,10 @@ export default function PerformanceAnalytics({
             </div>
 
             <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <Calendar className="h-8 w-8 mx-auto text-blue-600 mb-2" />
+              <CalendarOutlined
+                style={{ fontSize: 32 }}
+                className="mx-auto text-blue-600 mb-2"
+              />
               <p className="text-sm text-muted-foreground mb-1">
                 Đơn hoàn thành
               </p>
@@ -333,7 +363,10 @@ export default function PerformanceAnalytics({
             </div>
 
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <TrendingUp className="h-8 w-8 mx-auto text-green-600 mb-2" />
+              <RiseOutlined
+                style={{ fontSize: 32 }}
+                className="mx-auto text-green-600 mb-2"
+              />
               <p className="text-sm text-muted-foreground mb-1">
                 Tốc độ tăng trưởng
               </p>

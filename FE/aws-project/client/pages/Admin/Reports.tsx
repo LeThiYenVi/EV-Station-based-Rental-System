@@ -25,14 +25,14 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
-  CalendarIcon,
-  Download,
-  RefreshCw,
-  TrendingUp,
-  BarChart3,
-  PieChart,
-  Users,
-} from "lucide-react";
+  CalendarOutlined,
+  DownloadOutlined,
+  ReloadOutlined,
+  RiseOutlined,
+  BarChartOutlined,
+  PieChartOutlined,
+  TeamOutlined,
+} from "@ant-design/icons";
 import RevenueChart from "@/components/admin/RevenueChart";
 import PerformanceAnalytics from "@/components/admin/PerformanceAnalytics";
 import VehicleStatusChart from "@/components/admin/VehicleStatusChart";
@@ -166,7 +166,7 @@ export default function Reports() {
                   !dateRange && "text-muted-foreground",
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
+                <CalendarOutlined className="mr-2" />
                 {dateRange?.from ? (
                   dateRange.to ? (
                     <>
@@ -209,14 +209,12 @@ export default function Reports() {
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
-            <RefreshCw
-              className={cn("h-4 w-4", isRefreshing && "animate-spin")}
-            />
+            <ReloadOutlined className={cn(isRefreshing && "animate-spin")} />
           </Button>
 
           {/* Export Button */}
           <Button onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
+            <DownloadOutlined className="mr-2" />
             Xuất báo cáo
           </Button>
         </div>
@@ -230,19 +228,19 @@ export default function Reports() {
       >
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
+            <BarChartOutlined />
             Tổng quan
           </TabsTrigger>
           <TabsTrigger value="revenue" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
+            <RiseOutlined />
             Doanh thu
           </TabsTrigger>
           <TabsTrigger value="performance" className="flex items-center gap-2">
-            <PieChart className="h-4 w-4" />
+            <PieChartOutlined />
             Hiệu suất
           </TabsTrigger>
           <TabsTrigger value="customer" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
+            <TeamOutlined />
             Khách hàng
           </TabsTrigger>
         </TabsList>
@@ -401,7 +399,10 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               <div className="py-12 text-center text-muted-foreground">
-                <Users className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <TeamOutlined
+                  style={{ fontSize: 64 }}
+                  className="mx-auto mb-4 opacity-50"
+                />
                 <p>Tính năng phân tích khách hàng đang được phát triển</p>
                 <p className="text-sm mt-2">
                   Sẽ bao gồm: User mới, Retention rate, CLV, Phân khúc khách

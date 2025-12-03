@@ -21,7 +21,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Wrench, Calendar, AlertCircle } from "lucide-react";
+import {
+  PlusOutlined,
+  ToolOutlined,
+  CalendarOutlined,
+  ExclamationCircleOutlined,
+} from "@ant-design/icons";
 import { format } from "date-fns";
 
 interface VehicleMaintenanceProps {
@@ -127,7 +132,7 @@ export default function VehicleMaintenance({
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Wrench className="h-5 w-5" />
+            <ToolOutlined style={{ fontSize: 20 }} />
             Maintenance Schedule - {vehicle.name}
           </DialogTitle>
         </DialogHeader>
@@ -137,7 +142,7 @@ export default function VehicleMaintenance({
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-blue-50 p-4 rounded-lg">
               <div className="flex items-center gap-2 text-blue-700 mb-2">
-                <Calendar className="h-5 w-5" />
+                <CalendarOutlined style={{ fontSize: 20 }} />
                 <span className="font-medium">Total Maintenance</span>
               </div>
               <div className="text-2xl font-bold text-blue-900">
@@ -147,7 +152,7 @@ export default function VehicleMaintenance({
 
             <div className="bg-green-50 p-4 rounded-lg">
               <div className="flex items-center gap-2 text-green-700 mb-2">
-                <Wrench className="h-5 w-5" />
+                <ToolOutlined style={{ fontSize: 20 }} />
                 <span className="font-medium">Completed</span>
               </div>
               <div className="text-2xl font-bold text-green-900">
@@ -160,7 +165,7 @@ export default function VehicleMaintenance({
 
             <div className="bg-orange-50 p-4 rounded-lg">
               <div className="flex items-center gap-2 text-orange-700 mb-2">
-                <AlertCircle className="h-5 w-5" />
+                <ExclamationCircleOutlined style={{ fontSize: 20 }} />
                 <span className="font-medium">Total Cost</span>
               </div>
               <div className="text-xl font-bold text-orange-900">
@@ -175,7 +180,7 @@ export default function VehicleMaintenance({
               onClick={() => setShowAddForm(true)}
               className="bg-green-600 hover:bg-green-700"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <PlusOutlined className="mr-2" />
               Add Maintenance Schedule
             </Button>
           </div>

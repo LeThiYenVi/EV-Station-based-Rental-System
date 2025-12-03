@@ -80,15 +80,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import {
-  UserPlus,
-  Download,
-  Mail,
-  MoreVertical,
-  Users as UsersIcon,
-  UserCheck,
-  UserX,
-  Printer,
-} from "lucide-react";
+  UserAddOutlined,
+  DownloadOutlined,
+  MailOutlined,
+  MoreOutlined,
+  TeamOutlined,
+  UserOutlined,
+  UserDeleteOutlined,
+  PrinterOutlined,
+} from "@ant-design/icons";
 import { exportToCSV, exportToExcel, printUsers } from "@/lib/export-utils";
 
 // ==================== MOCK DATA ====================
@@ -247,8 +247,8 @@ export default function Users() {
     } catch (error) {
       console.error("Failed to fetch users:", error);
       toast({
-        title: "Error",
-        description: "Failed to load users. Please try again.",
+        title: "Lỗi",
+        description: "Không thể tải danh sách người dùng. Vui lòng thử lại.",
         variant: "destructive",
       });
     } finally {
@@ -403,13 +403,13 @@ export default function Users() {
 
       setUsers([...users, newUser]);
       toast({
-        title: "User Created",
-        description: "New user has been added successfully",
+        title: "Tạo người dùng thành công",
+        description: "Người dùng mới đã được thêm vào hệ thống",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create user",
+        title: "Lỗi",
+        description: "Không thể tạo người dùng",
         variant: "destructive",
       });
     }
@@ -439,13 +439,13 @@ export default function Users() {
       );
 
       toast({
-        title: "User Updated",
-        description: "User information has been updated",
+        title: "Cập nhật thành công",
+        description: "Thông tin người dùng đã được cập nhật",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update user",
+        title: "Lỗi",
+        description: "Không thể cập nhật người dùng",
         variant: "destructive",
       });
     }
@@ -463,8 +463,8 @@ export default function Users() {
     setSelectedUsers(selectedUsers.filter((id) => id !== userId));
 
     toast({
-      title: "User Deleted",
-      description: "User has been removed from the system",
+      title: "Xóa thành công",
+      description: "Người dùng đã được xóa khỏi hệ thống",
     });
   };
 
@@ -485,8 +485,8 @@ export default function Users() {
     );
 
     toast({
-      title: "Status Updated",
-      description: `User has been ${newStatus === "active" ? "activated" : "blocked"}`,
+      title: "Cập nhật trạng thái",
+      description: `Người dùng đã được ${newStatus === "active" ? "kích hoạt" : "khóa"}`,
     });
   };
 
@@ -517,16 +517,16 @@ export default function Users() {
       );
 
       toast({
-        title: approved ? "User Verified" : "Verification Rejected",
+        title: approved ? "Xác thực thành công" : "Từ chối xác thực",
         description: approved
-          ? "User license has been verified successfully"
-          : "User license verification was rejected",
+          ? "GPLX của người dùng đã được xác thực thành công"
+          : "GPLX của người dùng đã bị từ chối",
       });
     } catch (error) {
       console.error("Failed to verify user:", error);
       toast({
-        title: "Error",
-        description: "Failed to verify user license",
+        title: "Lỗi",
+        description: "Không thể xác thực GPLX người dùng",
         variant: "destructive",
       });
     }
@@ -553,7 +553,7 @@ export default function Users() {
 
     if (
       !window.confirm(
-        `Are you sure you want to delete ${selectedUsers.length} users?`,
+        `Bạn có chắc chắn muốn xóa ${selectedUsers.length} người dùng?`,
       )
     ) {
       return;
@@ -566,8 +566,8 @@ export default function Users() {
     setSelectedUsers([]);
 
     toast({
-      title: "Users Deleted",
-      description: `${selectedUsers.length} users have been deleted`,
+      title: "Xóa thành công",
+      description: `Đã xóa ${selectedUsers.length} người dùng`,
     });
   };
 
@@ -593,24 +593,24 @@ export default function Users() {
     setSelectedUsers([]);
 
     toast({
-      title: "Users Verified",
-      description: `${selectedUsers.length} users have been verified`,
+      title: "Xác thực thành công",
+      description: `Đã xác thực ${selectedUsers.length} người dùng`,
     });
   };
 
   const handleSendEmail = () => {
     if (selectedUsers.length === 0) {
       toast({
-        title: "No Users Selected",
-        description: "Please select users to send email",
+        title: "Chưa chọn người dùng",
+        description: "Vui lòng chọn người dùng để gửi email",
         variant: "destructive",
       });
       return;
     }
 
     toast({
-      title: "Email Sent",
-      description: `Email sent to ${selectedUsers.length} users`,
+      title: "Gửi email thành công",
+      description: `Đã gửi email đến ${selectedUsers.length} người dùng`,
     });
   };
 
@@ -625,8 +625,8 @@ export default function Users() {
     exportToCSV(dataToExport, "users");
 
     toast({
-      title: "Exported to CSV",
-      description: `${dataToExport.length} users exported successfully`,
+      title: "Xuất CSV thành công",
+      description: `Đã xuất ${dataToExport.length} người dùng`,
     });
   };
 
@@ -639,8 +639,8 @@ export default function Users() {
     exportToExcel(dataToExport, "users");
 
     toast({
-      title: "Exported to Excel",
-      description: `${dataToExport.length} users exported successfully`,
+      title: "Xuất Excel thành công",
+      description: `Đã xuất ${dataToExport.length} người dùng`,
     });
   };
 
@@ -682,9 +682,11 @@ export default function Users() {
       {/* Page Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Quản lý Người dùng
+          </h1>
           <p className="text-gray-600 mt-1">
-            Manage all users, roles, and permissions
+            Quản lý tất cả người dùng, vai trò và quyền hạn
           </p>
         </div>
 
@@ -693,8 +695,8 @@ export default function Users() {
             onClick={handleCreateNew}
             className="bg-green-600 hover:bg-green-700"
           >
-            <UserPlus className="mr-2 h-4 w-4" />
-            Add User
+            <UserAddOutlined className="mr-2" />
+            Thêm người dùng
           </Button>
         </div>
       </div>
@@ -703,53 +705,59 @@ export default function Users() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <UsersIcon className="h-4 w-4 text-gray-600" />
+            <CardTitle className="text-sm font-medium">
+              Tổng người dùng
+            </CardTitle>
+            <TeamOutlined className="text-gray-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-gray-600 mt-1">All registered users</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Verified</CardTitle>
-            <UserCheck className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {stats.verified}
-            </div>
             <p className="text-xs text-gray-600 mt-1">
-              {((stats.verified / stats.total) * 100).toFixed(0)}% of total
+              Tất cả người dùng đã đăng ký
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-            <UserCheck className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium">Đã xác thực</CardTitle>
+            <UserOutlined className="text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {stats.active}
+            <div className="text-2xl font-bold text-green-600">
+              {stats.verified}
             </div>
-            <p className="text-xs text-gray-600 mt-1">Currently active users</p>
+            <p className="text-xs text-gray-600 mt-1">
+              {((stats.verified / stats.total) * 100).toFixed(0)}% tổng số
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Blocked</CardTitle>
-            <UserX className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-sm font-medium">Hoạt động</CardTitle>
+            <UserOutlined className="text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {stats.active}
+            </div>
+            <p className="text-xs text-gray-600 mt-1">
+              Người dùng đang hoạt động
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Bị khóa</CardTitle>
+            <UserDeleteOutlined className="text-red-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
               {stats.blocked}
             </div>
-            <p className="text-xs text-gray-600 mt-1">Blocked accounts</p>
+            <p className="text-xs text-gray-600 mt-1">Tài khoản bị khóa</p>
           </CardContent>
         </Card>
       </div>
@@ -767,7 +775,7 @@ export default function Users() {
           {selectedUsers.length > 0 && (
             <>
               <span className="text-sm text-gray-600">
-                {selectedUsers.length} selected
+                Đã chọn {selectedUsers.length}
               </span>
               <Button
                 size="sm"
@@ -775,8 +783,8 @@ export default function Users() {
                 onClick={handleBulkVerify}
                 className="text-green-600 hover:text-green-700"
               >
-                <UserCheck className="mr-1 h-4 w-4" />
-                Verify
+                <UserOutlined className="mr-1" />
+                Xác thực
               </Button>
               <Button
                 size="sm"
@@ -784,8 +792,8 @@ export default function Users() {
                 onClick={handleSendEmail}
                 className="text-blue-600 hover:text-blue-700"
               >
-                <Mail className="mr-1 h-4 w-4" />
-                Send Email
+                <MailOutlined className="mr-1" />
+                Gửi Email
               </Button>
               <Button
                 size="sm"
@@ -793,7 +801,7 @@ export default function Users() {
                 onClick={handleBulkDelete}
                 className="text-red-600 hover:text-red-700"
               >
-                Delete
+                Xóa
               </Button>
             </>
           )}
@@ -801,29 +809,29 @@ export default function Users() {
 
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600">
-            {filteredUsers.length} users
+            {filteredUsers.length} người dùng
           </span>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="outline">
-                <Download className="mr-2 h-4 w-4" />
-                Export
-                <MoreVertical className="ml-2 h-4 w-4" />
+                <DownloadOutlined className="mr-2" />
+                Xuất
+                <MoreOutlined className="ml-2" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={handleExportCSV}>
-                <Download className="mr-2 h-4 w-4" />
-                Export to CSV
+                <DownloadOutlined className="mr-2" />
+                Xuất CSV
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExportExcel}>
-                <Download className="mr-2 h-4 w-4" />
-                Export to Excel
+                <DownloadOutlined className="mr-2" />
+                Xuất Excel
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handlePrint}>
-                <Printer className="mr-2 h-4 w-4" />
-                Print
+                <PrinterOutlined className="mr-2" />
+                In
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -858,9 +866,9 @@ export default function Users() {
       >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>User Details</DialogTitle>
+            <DialogTitle>Chi tiết người dùng</DialogTitle>
             <DialogDescription>
-              Detailed information about the user
+              Thông tin chi tiết về người dùng
             </DialogDescription>
           </DialogHeader>
 
@@ -868,7 +876,7 @@ export default function Users() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Full Name</p>
+                  <p className="text-sm font-medium text-gray-600">Họ và tên</p>
                   <p className="text-base">{viewDetailUser.full_name}</p>
                 </div>
                 <div>
@@ -876,37 +884,45 @@ export default function Users() {
                   <p className="text-base">{viewDetailUser.email}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Phone</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Số điện thoại
+                  </p>
                   <p className="text-base">{viewDetailUser.phone}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Role</p>
+                  <p className="text-sm font-medium text-gray-600">Vai trò</p>
                   <p className="text-base capitalize">{viewDetailUser.role}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Status</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Trạng thái
+                  </p>
                   <p className="text-base capitalize">
-                    {viewDetailUser.status}
+                    {viewDetailUser.status === "active"
+                      ? "Hoạt động"
+                      : viewDetailUser.status === "blocked"
+                        ? "Bị khóa"
+                        : "Chờ duyệt"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Verified</p>
+                  <p className="text-sm font-medium text-gray-600">Xác thực</p>
                   <p className="text-base">
-                    {viewDetailUser.is_verified ? "Yes" : "No"}
+                    {viewDetailUser.is_verified
+                      ? "Đã xác thực"
+                      : "Chưa xác thực"}
                   </p>
                 </div>
                 {viewDetailUser.license_number && (
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      License Number
-                    </p>
+                    <p className="text-sm font-medium text-gray-600">Số GPLX</p>
                     <p className="text-base">{viewDetailUser.license_number}</p>
                   </div>
                 )}
                 {viewDetailUser.identity_number && (
                   <div>
                     <p className="text-sm font-medium text-gray-600">
-                      Identity Number
+                      Số CMND/CCCD
                     </p>
                     <p className="text-base">
                       {viewDetailUser.identity_number}

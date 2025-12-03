@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -10,12 +10,18 @@ import {
   Tag,
   message,
   Popconfirm,
+  TimePicker,
+  InputNumber,
+  Row,
+  Col,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   EnvironmentOutlined,
   PlusOutlined,
   ReloadOutlined,
+  PhoneOutlined,
+  PictureOutlined,
 } from "@ant-design/icons";
 import { stationService } from "@/service";
 import type {
@@ -23,16 +29,28 @@ import type {
   StationStatus,
   CreateStationRequest,
   UpdateStationRequest,
-  StationFilters,
 } from "@/service/types/report-staff-station.types";
+import dayjs from "dayjs";
+
+// Interface cho form với địa chỉ tách
+interface StationFormValues {
+  name: string;
+  ward: string; // Xã/Phường/Địa chỉ cụ thể
+  city: string; // Tỉnh/Thành phố
+  latitude?: number;
+  longitude?: number;
+  hotline?: string;
+  photo?: string;
+  startTime?: dayjs.Dayjs;
+  endTime?: dayjs.Dayjs;
+}
 
 export default function Stations() {
   const [loading, setLoading] = useState(false);
   const [stations, setStations] = useState<StationResponse[]>([]);
   const [pagination, setPagination] = useState({ page: 1, size: 10, total: 0 });
-  const [filters, setFilters] = useState<Partial<StationFilters>>({});
 
-  const [form] = Form.useForm<CreateStationRequest | UpdateStationRequest>();
+  const [form] = Form.useForm<StationFormValues>();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<StationResponse | null>(null);
 
@@ -40,8 +58,49 @@ export default function Stations() {
     { label: "Hoạt động", value: "ACTIVE" },
     { label: "Không hoạt động", value: "INACTIVE" },
     { label: "Bảo trì", value: "MAINTENANCE" },
-    { label: "Đóng cửa", value: "CLOSED" },
   ];
+
+  // Hàm tách địa chỉ: "Xã/Phường, Tỉnh/Thành phố" -> { ward, city }
+  const splitAddress = (address: string): { ward: string; city: string } => {
+    if (!address) return { ward: "", city: "" };
+    const parts = address.split(",").map((p) => p.trim());
+    if (parts.length >= 2) {
+      return {
+        ward: parts.slice(0, -1).join(", "), // Tất cả trước phần tử cuối
+        city: parts[parts.length - 1], // Phần tử cuối là tỉnh/thành phố
+      };
+    }
+    return { ward: address, city: "" };
+  };
+
+  // Hàm ghép địa chỉ: { ward, city } -> "Xã/Phường, Tỉnh/Thành phố"
+  const combineAddress = (ward: string, city: string): string => {
+    if (!ward && !city) return "";
+    if (!city) return ward;
+    if (!ward) return city;
+    return `${ward}, ${city}`;
+  };
+
+  // Hàm parse time string "HH:mm" hoặc "HH:mm:ss" hoặc ISO string thành dayjs
+  const parseTime = (timeStr?: string): dayjs.Dayjs | undefined => {
+    if (!timeStr) return undefined;
+    // Nếu là ISO string, lấy phần giờ
+    if (timeStr.includes("T")) {
+      return dayjs(timeStr);
+    }
+    // Nếu là "HH:mm:ss"
+    if (timeStr.length === 8) {
+      return dayjs(timeStr, "HH:mm:ss");
+    }
+    // Nếu là "HH:mm"
+    return dayjs(timeStr, "HH:mm");
+  };
+
+  // Hàm format dayjs thành "HH:mm:ss" (Java LocalTime format)
+  const formatTime = (time?: dayjs.Dayjs): string | undefined => {
+    if (!time || !time.isValid()) return undefined;
+    return time.format("HH:mm:ss");
+  };
 
   const load = async (page = pagination.page, size = pagination.size) => {
     try {
@@ -49,8 +108,8 @@ export default function Stations() {
       const res = await stationService.getAllStations({
         page: page - 1,
         size,
-        sortBy: "name",
-        sortDirection: "ASC",
+        sortBy: "createdAt",
+        sortDirection: "DESC",
       });
       setStations(res.content);
       setPagination({ page, size, total: res.totalElements });
@@ -76,18 +135,18 @@ export default function Stations() {
 
   const handleEdit = (record: StationResponse) => {
     setEditing(record);
+    const { ward, city } = splitAddress(record.address);
     form.setFieldsValue({
       name: record.name,
-      address: record.address,
-      city: record.city,
-      district: record.district,
-      ward: record.ward,
-      phoneNumber: record.phoneNumber,
-      email: record.email,
-      openingTime: record.openingTime,
-      closingTime: record.closingTime,
-      amenities: undefined,
-    } as any);
+      ward,
+      city,
+      latitude: record.latitude,
+      longitude: record.longitude,
+      hotline: record.hotline,
+      photo: record.photo,
+      startTime: parseTime(record.startTime),
+      endTime: parseTime(record.endTime),
+    });
     setModalOpen(true);
   };
 
@@ -95,14 +154,37 @@ export default function Stations() {
     const values = await form.validateFields();
     try {
       setLoading(true);
+
+      // Chuyển đổi form values sang API request
+      // Không gửi startTime/endTime nếu không có giá trị (để backend xử lý default)
+      const requestData: CreateStationRequest = {
+        name: values.name,
+        address: combineAddress(values.ward, values.city),
+        latitude: values.latitude || 0,
+        longitude: values.longitude || 0,
+        hotline: values.hotline || undefined,
+        photo: values.photo || undefined,
+      };
+
+      // Chỉ thêm time nếu có giá trị hợp lệ
+      // Backend yêu cầu ISO datetime format với timezone: "2025-12-03T08:00:00.000Z"
+      if (values.startTime && values.startTime.isValid()) {
+        requestData.startTime = values.startTime.toISOString();
+      }
+      if (values.endTime && values.endTime.isValid()) {
+        requestData.endTime = values.endTime.toISOString();
+      }
+
+      console.log("Request data:", requestData);
+
       if (editing) {
         await stationService.updateStation(
           editing.id,
-          values as UpdateStationRequest,
+          requestData as UpdateStationRequest,
         );
         message.success("Đã cập nhật trạm");
       } else {
-        await stationService.createStation(values as CreateStationRequest);
+        await stationService.createStation(requestData);
         message.success("Đã tạo trạm mới");
       }
       setModalOpen(false);
@@ -135,13 +217,58 @@ export default function Stations() {
   };
 
   const columns: ColumnsType<StationResponse> = [
-    { title: "Tên trạm", dataIndex: "name", key: "name" },
+    { title: "Tên trạm", dataIndex: "name", key: "name", width: 180 },
     { title: "Địa chỉ", dataIndex: "address", key: "address", ellipsis: true },
-    { title: "Thành phố", dataIndex: "city", key: "city" },
+    {
+      title: "Hotline",
+      dataIndex: "hotline",
+      key: "hotline",
+      width: 120,
+      render: (hotline: string) =>
+        hotline ? (
+          <Space>
+            <PhoneOutlined />
+            {hotline}
+          </Space>
+        ) : (
+          <span className="text-gray-400">-</span>
+        ),
+    },
+    {
+      title: "Giờ hoạt động",
+      key: "operatingHours",
+      width: 130,
+      render: (_, record) => {
+        // Backend trả về ISO datetime, lấy phần giờ
+        const formatDisplayTime = (timeStr?: string) => {
+          if (!timeStr) return "--:--";
+          // Nếu là ISO datetime (có chữ T)
+          if (timeStr.includes("T")) {
+            return dayjs(timeStr).format("HH:mm");
+          }
+          // Nếu là HH:mm:ss
+          return dayjs(timeStr, "HH:mm:ss").format("HH:mm");
+        };
+        return `${formatDisplayTime(record.startTime)} - ${formatDisplayTime(record.endTime)}`;
+      },
+    },
+    {
+      title: "Đánh giá",
+      dataIndex: "rating",
+      key: "rating",
+      width: 90,
+      render: (rating: number) =>
+        rating ? (
+          <Tag color="gold">⭐ {rating.toFixed(1)}</Tag>
+        ) : (
+          <span className="text-gray-400">Chưa có</span>
+        ),
+    },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
+      width: 140,
       render: (status: StationStatus) => {
         const colorMap: Record<StationStatus, string> = {
           ACTIVE: "green",
@@ -155,14 +282,23 @@ export default function Stations() {
       },
     },
     {
-      title: "Xe khả dụng",
-      key: "available",
-      render: (_, r) => `${r.availableVehicles}/${r.totalVehicles}`,
+      title: "Ảnh",
+      dataIndex: "photo",
+      key: "photo",
+      width: 80,
+      render: (photo: string) =>
+        photo ? (
+          <a href={photo} target="_blank" rel="noopener noreferrer">
+            <PictureOutlined style={{ fontSize: 18, color: "#1890ff" }} />
+          </a>
+        ) : (
+          <span className="text-gray-400">-</span>
+        ),
     },
     {
       title: "Thao tác",
       key: "actions",
-      width: 260,
+      width: 280,
       render: (_, record) => (
         <Space>
           <Button onClick={() => handleEdit(record)}>Sửa</Button>
@@ -213,11 +349,13 @@ export default function Stations() {
         loading={loading}
         columns={columns}
         dataSource={stations}
+        scroll={{ x: 1200 }}
         pagination={{
           current: pagination.page,
           pageSize: pagination.size,
           total: pagination.total,
           showSizeChanger: true,
+          showTotal: (total) => `Tổng ${total} trạm`,
           onChange: (p, s) => load(p, s),
         }}
       />
@@ -228,50 +366,113 @@ export default function Stations() {
         onCancel={() => setModalOpen(false)}
         onOk={onSubmit}
         okText={editing ? "Lưu" : "Tạo"}
+        cancelText="Hủy"
         confirmLoading={loading}
+        width={600}
       >
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
             label="Tên trạm"
-            rules={[{ required: true, message: "Nhập tên trạm" }]}
+            rules={[{ required: true, message: "Vui lòng nhập tên trạm" }]}
           >
             <Input placeholder="VD: Trạm Quận 1" />
           </Form.Item>
-          <Form.Item
-            name="address"
-            label="Địa chỉ"
-            rules={[{ required: true, message: "Nhập địa chỉ" }]}
-          >
-            <Input placeholder="Số nhà, đường..." />
+
+          {/* Địa chỉ tách thành 2 ô */}
+          <Row gutter={16}>
+            <Col span={14}>
+              <Form.Item
+                name="ward"
+                label="Địa chỉ chi tiết (Số nhà, đường, phường/xã)"
+                rules={[
+                  { required: true, message: "Vui lòng nhập địa chỉ chi tiết" },
+                ]}
+              >
+                <Input placeholder="VD: 123 Nguyễn Huệ, Phường Bến Nghé" />
+              </Form.Item>
+            </Col>
+            <Col span={10}>
+              <Form.Item
+                name="city"
+                label="Tỉnh/Thành phố"
+                rules={[
+                  { required: true, message: "Vui lòng nhập tỉnh/thành phố" },
+                ]}
+              >
+                <Input placeholder="VD: TP. Hồ Chí Minh" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Tọa độ */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="latitude"
+                label="Vĩ độ (Latitude)"
+                rules={[{ required: true, message: "Vui lòng nhập vĩ độ" }]}
+              >
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="VD: 10.7769"
+                  step={0.0001}
+                  precision={6}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="longitude"
+                label="Kinh độ (Longitude)"
+                rules={[{ required: true, message: "Vui lòng nhập kinh độ" }]}
+              >
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="VD: 106.7009"
+                  step={0.0001}
+                  precision={6}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Hotline */}
+          <Form.Item name="hotline" label="Hotline">
+            <Input placeholder="VD: 0901234567" prefix={<PhoneOutlined />} />
           </Form.Item>
-          <Form.Item
-            name="city"
-            label="Thành phố"
-            rules={[{ required: true, message: "Nhập thành phố" }]}
-          >
-            <Input placeholder="VD: Hồ Chí Minh" />
+
+          {/* Ảnh đại diện */}
+          <Form.Item name="photo" label="Ảnh đại diện (URL)">
+            <Input
+              placeholder="VD: https://example.com/station.jpg"
+              prefix={<PictureOutlined />}
+            />
           </Form.Item>
-          <Form.Item name="district" label="Quận/Huyện">
-            <Input />
-          </Form.Item>
-          <Form.Item name="ward" label="Phường/Xã">
-            <Input />
-          </Form.Item>
-          <Form.Item name="phoneNumber" label="Số điện thoại">
-            <Input />
-          </Form.Item>
-          <Form.Item name="email" label="Email">
-            <Input type="email" />
-          </Form.Item>
-          <Space>
-            <Form.Item name="openingTime" label="Giờ mở" className="mb-0">
-              <Input placeholder="08:00" />
-            </Form.Item>
-            <Form.Item name="closingTime" label="Giờ đóng" className="mb-0">
-              <Input placeholder="20:00" />
-            </Form.Item>
-          </Space>
+
+          {/* Giờ hoạt động */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="startTime" label="Giờ mở cửa">
+                <TimePicker
+                  style={{ width: "100%" }}
+                  format="HH:mm"
+                  placeholder="Chọn giờ mở cửa"
+                  minuteStep={15}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="endTime" label="Giờ đóng cửa">
+                <TimePicker
+                  style={{ width: "100%" }}
+                  format="HH:mm"
+                  placeholder="Chọn giờ đóng cửa"
+                  minuteStep={15}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </div>

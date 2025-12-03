@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload } from "lucide-react";
+import { LoadingOutlined, UploadOutlined } from "@ant-design/icons";
 
 interface UserFormProps {
   open: boolean;
@@ -248,7 +248,7 @@ export default function UserForm({
                 variant="secondary"
                 className="absolute bottom-0 right-0 rounded-full h-8 w-8"
               >
-                <Upload className="h-4 w-4" />
+                <UploadOutlined />
               </Button>
             </div>
           </div>
@@ -412,7 +412,7 @@ export default function UserForm({
               disabled={loading}
               className="bg-green-600 hover:bg-green-700"
             >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading && <LoadingOutlined className="mr-2" spin />}
               {user ? "Update User" : "Create User"}
             </Button>
           </DialogFooter>

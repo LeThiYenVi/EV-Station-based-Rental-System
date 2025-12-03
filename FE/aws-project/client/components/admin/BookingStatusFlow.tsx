@@ -28,13 +28,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
-  CheckCircle,
-  XCircle,
-  ArrowRight,
-  Clock,
-  Loader2,
-  AlertTriangle,
-} from "lucide-react";
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ArrowRightOutlined,
+  ClockCircleOutlined,
+  LoadingOutlined,
+  ExclamationCircleOutlined,
+} from "@ant-design/icons";
 
 interface BookingStatusFlowProps {
   open: boolean;
@@ -126,7 +126,10 @@ export default function BookingStatusFlow({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
-            <ArrowRight className="h-5 w-5 text-primary" />
+            <ArrowRightOutlined
+              style={{ fontSize: 20 }}
+              className="text-primary"
+            />
             Cập nhật trạng thái đơn thuê
           </DialogTitle>
           <DialogDescription>
@@ -137,7 +140,10 @@ export default function BookingStatusFlow({
         <div className="space-y-6 py-4">
           {/* Current Status */}
           <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
-            <Clock className="h-5 w-5 text-muted-foreground" />
+            <ClockCircleOutlined
+              style={{ fontSize: 20 }}
+              className="text-muted-foreground"
+            />
             <div className="flex-1">
               <p className="text-sm text-muted-foreground">
                 Trạng thái hiện tại
@@ -160,41 +166,53 @@ export default function BookingStatusFlow({
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${booking.status === "pending" ? "bg-yellow-500" : "bg-gray-300"}`}
                 >
-                  <Clock className="h-5 w-5 text-white" />
+                  <ClockCircleOutlined
+                    style={{ fontSize: 20 }}
+                    className="text-white"
+                  />
                 </div>
                 <p>Chờ xác nhận</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              <ArrowRightOutlined className="text-muted-foreground" />
               <div className="text-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${booking.status === "confirmed" ? "bg-green-500" : "bg-gray-300"}`}
                 >
-                  <CheckCircle className="h-5 w-5 text-white" />
+                  <CheckCircleOutlined
+                    style={{ fontSize: 20 }}
+                    className="text-white"
+                  />
                 </div>
                 <p>Đã xác nhận</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              <ArrowRightOutlined className="text-muted-foreground" />
               <div className="text-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${booking.status === "picked_up" ? "bg-blue-500" : "bg-gray-300"}`}
                 >
-                  <CheckCircle className="h-5 w-5 text-white" />
+                  <CheckCircleOutlined
+                    style={{ fontSize: 20 }}
+                    className="text-white"
+                  />
                 </div>
                 <p>Đang thuê</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              <ArrowRightOutlined className="text-muted-foreground" />
               <div className="text-center">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${booking.status === "completed" ? "bg-purple-500" : "bg-gray-300"}`}
                 >
-                  <CheckCircle className="h-5 w-5 text-white" />
+                  <CheckCircleOutlined
+                    style={{ fontSize: 20 }}
+                    className="text-white"
+                  />
                 </div>
                 <p>Hoàn thành</p>
               </div>
             </div>
             <div className="mt-3 text-center">
               <div className="inline-flex items-center gap-2 text-xs">
-                <XCircle className="h-4 w-4 text-red-500" />
+                <CloseCircleOutlined className="text-red-500" />
                 <span className="text-red-500">
                   Hoặc: Hủy đơn (cancelled) ở bất kỳ giai đoạn nào
                 </span>
@@ -227,7 +245,9 @@ export default function BookingStatusFlow({
             </div>
           ) : (
             <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+              <ExclamationCircleOutlined
+                style={{ fontSize: 20, color: "#ca8a04" }}
+              />
               <div>
                 <p className="font-medium text-yellow-900">
                   Không thể chuyển trạng thái
@@ -255,7 +275,10 @@ export default function BookingStatusFlow({
           {/* Warnings */}
           {newStatus === "cancelled" && (
             <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+              <ExclamationCircleOutlined
+                style={{ fontSize: 20 }}
+                className="text-red-600 mt-0.5"
+              />
               <div className="text-sm">
                 <p className="font-medium text-red-900">
                   Cảnh báo: Hủy đơn thuê
@@ -270,7 +293,10 @@ export default function BookingStatusFlow({
 
           {newStatus === "completed" && (
             <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-start gap-2">
-              <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+              <CheckCircleOutlined
+                style={{ fontSize: 20 }}
+                className="text-blue-600 mt-0.5"
+              />
               <div className="text-sm">
                 <p className="font-medium text-blue-900">Xác nhận hoàn thành</p>
                 <p className="text-blue-700 mt-1">
@@ -295,7 +321,7 @@ export default function BookingStatusFlow({
             disabled={loading || !newStatus || availableStatuses.length === 0}
             className="bg-primary"
           >
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {loading && <LoadingOutlined className="mr-2" spin />}
             Cập nhật trạng thái
           </Button>
         </DialogFooter>

@@ -6,18 +6,15 @@
 import { useState, useMemo, useEffect } from "react";
 import adminService from "@/services/admin.service";
 import type { VehicleResponse, PageInfo } from "@/services/admin.service";
-// Local minimal typings for this page to avoid external alias dependency
-type VehicleStatus =
-  | "AVAILABLE"
-  | "RENTED"
-  | "MAINTENANCE"
-  | "CHARGING"
-  | "UNAVAILABLE";
+import {
+  VehicleStatus,
+  VehicleStatusLabel,
+  FuelType,
+  FuelTypeLabel,
+} from "@/service/types/enums";
 
 // Use VehicleResponse from API directly
 type Vehicle = VehicleResponse & { status: VehicleStatus };
-
-type FuelType = "ELECTRICITY" | "GASOLINE";
 
 interface VehicleFilterParams {
   search?: string;
@@ -28,21 +25,21 @@ interface VehicleFilterParams {
   maxPrice?: number;
 }
 
-interface CreateVehicleDto {
-  station_id: string;
-  license_plate: string;
+// API request interface
+interface CreateVehicleRequest {
+  stationId: string;
+  licensePlate: string;
   name: string;
   brand: string;
   color: string;
-  type: string;
+  fuelType: FuelType;
   capacity: number;
-  hourly_rate: number;
-  daily_rate: number;
-  deposit_amount: number;
-  polices?: string;
+  photos: string[];
+  hourlyRate: number;
+  dailyRate: number;
+  depositAmount: number;
 }
 
-interface UpdateVehicleDto extends Partial<CreateVehicleDto> {}
 import {
   Card,
   CardContent,
@@ -71,16 +68,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Plus,
-  Download,
-  MoreVertical,
-  Car,
-  Activity,
-  Wrench,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+  PlusOutlined,
+  DownloadOutlined,
+  MoreOutlined,
+  CarOutlined,
+  ThunderboltOutlined,
+  ToolOutlined,
+  ExclamationCircleOutlined,
+  LeftOutlined,
+  RightOutlined,
+} from "@ant-design/icons";
 import VehicleTable from "../../components/admin/VehicleTable";
 import VehicleFilter from "../../components/admin/VehicleFilter";
 import VehicleForm from "../../components/admin/VehicleForm";
@@ -200,72 +197,70 @@ export default function Vehicles() {
   }, [vehicles, metricsData]);
 
   // Handlers với API integration
-  const handleCreate = async (data: CreateVehicleDto) => {
+  const handleCreate = async (data: CreateVehicleRequest) => {
     try {
       await adminService.vehicles.createVehicle({
-        stationId: data.station_id,
-        licensePlate: data.license_plate,
+        stationId: data.stationId,
+        licensePlate: data.licensePlate,
         name: data.name,
         brand: data.brand,
         color: data.color,
-        fuelType: data.type, // Map type -> fuelType
+        fuelType: data.fuelType,
         capacity: data.capacity,
-        hourlyRate: data.hourly_rate,
-        dailyRate: data.daily_rate,
-        depositAmount: data.deposit_amount,
-        polices: Array.isArray(data.polices)
-          ? data.polices
-          : data.polices
-            ? [data.polices]
-            : [],
+        photos: data.photos,
+        hourlyRate: data.hourlyRate,
+        dailyRate: data.dailyRate,
+        depositAmount: data.depositAmount,
       });
 
       await fetchVehicles(); // Refresh list
+      setShowForm(false);
       toast({
-        title: "Vehicle Created",
-        description: "New vehicle has been added successfully",
+        title: "Tạo xe thành công",
+        description: `Xe ${data.name} đã được thêm vào hệ thống.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create vehicle:", error);
+      const errorMessage =
+        error?.response?.data?.message || "Không thể tạo xe. Vui lòng thử lại.";
       toast({
-        title: "Error",
-        description: "Failed to create vehicle",
+        title: "Lỗi",
+        description: errorMessage,
         variant: "destructive",
       });
     }
   };
 
-  const handleUpdate = async (data: UpdateVehicleDto) => {
+  const handleUpdate = async (data: CreateVehicleRequest) => {
     if (!editingVehicle) return;
 
     try {
       await adminService.vehicles.updateVehicle(editingVehicle.id, {
-        licensePlate: data.license_plate,
+        licensePlate: data.licensePlate,
         name: data.name,
         brand: data.brand,
         color: data.color,
-        fuelType: data.type,
+        fuelType: data.fuelType,
         capacity: data.capacity,
-        hourlyRate: data.hourly_rate,
-        dailyRate: data.daily_rate,
-        depositAmount: data.deposit_amount,
-        polices: Array.isArray(data.polices)
-          ? data.polices
-          : data.polices
-            ? [data.polices]
-            : [],
+        hourlyRate: data.hourlyRate,
+        dailyRate: data.dailyRate,
+        depositAmount: data.depositAmount,
       });
 
       await fetchVehicles();
+      setShowForm(false);
       toast({
-        title: "Vehicle Updated",
-        description: "Vehicle information has been updated",
+        title: "Cập nhật thành công",
+        description: `Xe ${data.name} đã được cập nhật.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update vehicle:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        "Không thể cập nhật xe. Vui lòng thử lại.";
       toast({
-        title: "Error",
-        description: "Failed to update vehicle",
+        title: "Lỗi",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -281,14 +276,16 @@ export default function Vehicles() {
       setSelectedVehicles([]);
       setShowDeleteDialog(false);
       toast({
-        title: "Vehicles Deleted",
-        description: `${selectedVehicles.length} vehicle(s) deleted successfully`,
+        title: "Đã xóa xe",
+        description: `${selectedVehicles.length} xe đã được xóa khỏi hệ thống.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete vehicles:", error);
+      const errorMessage =
+        error?.response?.data?.message || "Không thể xóa xe. Vui lòng thử lại.";
       toast({
-        title: "Error",
-        description: "Failed to delete vehicles",
+        title: "Lỗi",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -305,14 +302,17 @@ export default function Vehicles() {
       await fetchVehicles();
       setSelectedVehicles([]);
       toast({
-        title: "Status Updated",
-        description: `Updated status for ${selectedVehicles.length} vehicle(s)`,
+        title: "Đã cập nhật trạng thái",
+        description: `Đã cập nhật trạng thái cho ${selectedVehicles.length} xe.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update status:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        "Không thể cập nhật trạng thái. Vui lòng thử lại.";
       toast({
-        title: "Error",
-        description: "Failed to update vehicle status",
+        title: "Lỗi",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -320,17 +320,17 @@ export default function Vehicles() {
 
   const handleExportCSV = () => {
     const csvData = filteredVehicles.map((v) => ({
-      Name: v.name,
-      Brand: v.brand,
-      "License Plate": v.licensePlate,
-      Type: v.fuelType,
-      Capacity: v.capacity,
-      Status: v.status,
-      Rating: v.rating,
-      "Rent Count": v.rentCount,
-      "Hourly Rate": v.hourlyRate,
-      "Daily Rate": v.dailyRate,
-      "Deposit Amount": v.depositAmount,
+      "Tên xe": v.name,
+      "Hãng xe": v.brand,
+      "Biển số": v.licensePlate,
+      "Loại nhiên liệu": FuelTypeLabel[v.fuelType as FuelType] || v.fuelType,
+      "Số ghế": v.capacity,
+      "Trạng thái": VehicleStatusLabel[v.status as VehicleStatus] || v.status,
+      "Đánh giá": v.rating,
+      "Số lần thuê": v.rentCount,
+      "Giá/giờ": v.hourlyRate,
+      "Giá/ngày": v.dailyRate,
+      "Tiền cọc": v.depositAmount,
     }));
     exportToCSV(csvData as any, "vehicles");
     toast({
@@ -365,8 +365,8 @@ export default function Vehicles() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Vehicle Management</h1>
-          <p className="text-gray-600">Manage your rental fleet</p>
+          <h1 className="text-3xl font-bold">Quản lý xe</h1>
+          <p className="text-gray-600">Quản lý đội xe cho thuê</p>
         </div>
         <Button
           onClick={() => {
@@ -375,8 +375,8 @@ export default function Vehicles() {
           }}
           className="bg-green-600 hover:bg-green-700"
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Vehicle
+          <PlusOutlined className="mr-2" />
+          Thêm xe mới
         </Button>
       </div>
 
@@ -384,55 +384,55 @@ export default function Vehicles() {
       <div className="grid grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Vehicles
-            </CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Tổng số xe</CardTitle>
+            <CarOutlined className="text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">
-              All vehicles in fleet
+              Tất cả xe trong hệ thống
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available</CardTitle>
-            <Activity className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium">Sẵn sàng</CardTitle>
+            <ThunderboltOutlined className="text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
               {stats.available}
             </div>
-            <p className="text-xs text-muted-foreground">Ready to rent</p>
+            <p className="text-xs text-muted-foreground">Có thể cho thuê</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Service</CardTitle>
-            <Activity className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium">
+              Đang hoạt động
+            </CardTitle>
+            <ThunderboltOutlined className="text-blue-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
               {stats.inService}
             </div>
-            <p className="text-xs text-muted-foreground">Active vehicles</p>
+            <p className="text-xs text-muted-foreground">Xe đang hoạt động</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Maintenance</CardTitle>
-            <Wrench className="h-4 w-4 text-orange-600" />
+            <CardTitle className="text-sm font-medium">Bảo trì</CardTitle>
+            <ToolOutlined className="text-orange-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
               {stats.maintenance}
             </div>
-            <p className="text-xs text-muted-foreground">Under maintenance</p>
+            <p className="text-xs text-muted-foreground">Đang bảo trì</p>
           </CardContent>
         </Card>
       </div>
@@ -442,11 +442,11 @@ export default function Vehicles() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Vehicles</CardTitle>
+              <CardTitle>Danh sách xe</CardTitle>
               <CardDescription>
                 {pageInfo
-                  ? `Showing ${filteredVehicles.length} of ${pageInfo.totalElements} vehicle(s) - Page ${pageInfo.number + 1} of ${pageInfo.totalPages}`
-                  : `${filteredVehicles.length} vehicle(s) found`}
+                  ? `Hiển thị ${filteredVehicles.length} trong ${pageInfo.totalElements} xe - Trang ${pageInfo.number + 1} / ${pageInfo.totalPages}`
+                  : `Tìm thấy ${filteredVehicles.length} xe`}
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -454,38 +454,44 @@ export default function Vehicles() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline">
-                      <MoreVertical className="h-4 w-4 mr-2" />
-                      Bulk Actions ({selectedVehicles.length})
+                      <MoreOutlined className="mr-2" />
+                      Thao tác hàng loạt ({selectedVehicles.length})
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                    <DropdownMenuLabel>Đổi trạng thái</DropdownMenuLabel>
                     <DropdownMenuItem
-                      onClick={() => handleStatusChange("AVAILABLE")}
+                      onClick={() =>
+                        handleStatusChange(VehicleStatus.AVAILABLE)
+                      }
                     >
-                      Set Available
+                      🟢 {VehicleStatusLabel[VehicleStatus.AVAILABLE]}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleStatusChange("MAINTENANCE")}
+                      onClick={() =>
+                        handleStatusChange(VehicleStatus.MAINTENANCE)
+                      }
                     >
-                      Set Maintenance
+                      🔴 {VehicleStatusLabel[VehicleStatus.MAINTENANCE]}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleStatusChange("CHARGING")}
+                      onClick={() => handleStatusChange(VehicleStatus.CHARGING)}
                     >
-                      Set Charging
+                      ⚡ {VehicleStatusLabel[VehicleStatus.CHARGING]}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleStatusChange("UNAVAILABLE")}
+                      onClick={() =>
+                        handleStatusChange(VehicleStatus.UNAVAILABLE)
+                      }
                     >
-                      Set Unavailable
+                      ⚫ {VehicleStatusLabel[VehicleStatus.UNAVAILABLE]}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => setShowDeleteDialog(true)}
                       className="text-red-600"
                     >
-                      Delete Selected
+                      Xóa đã chọn
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -493,16 +499,16 @@ export default function Vehicles() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
+                    <DownloadOutlined className="mr-2" />
+                    Xuất file
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem onClick={handleExportCSV}>
-                    Export as CSV
+                    Xuất CSV
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExportExcel}>
-                    Export as Excel
+                    Xuất Excel
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -557,9 +563,9 @@ export default function Vehicles() {
           {pageInfo && (
             <div className="flex items-center justify-between pt-4 border-t">
               <div className="text-sm text-gray-500">
-                Showing {currentPage * pageSize + 1} to{" "}
+                Hiển thị {currentPage * pageSize + 1} đến{" "}
                 {Math.min((currentPage + 1) * pageSize, pageInfo.totalElements)}{" "}
-                of {pageInfo.totalElements} vehicles
+                trong tổng số {pageInfo.totalElements} xe
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -570,8 +576,8 @@ export default function Vehicles() {
                   }
                   disabled={currentPage === 0}
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
+                  <LeftOutlined className="mr-1" />
+                  Trước
                 </Button>
                 <div className="flex items-center gap-1">
                   {Array.from(
@@ -613,12 +619,12 @@ export default function Vehicles() {
                   }
                   disabled={currentPage >= pageInfo.totalPages - 1}
                 >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
+                  Tiếp
+                  <RightOutlined className="ml-1" />
                 </Button>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Items per page:</span>
+                <span className="text-sm text-gray-500">Số xe/trang:</span>
                 <select
                   value={pageSize}
                   onChange={(e) => {
@@ -650,21 +656,24 @@ export default function Vehicles() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              Delete {selectedVehicles.length} vehicle(s)?
+              <ExclamationCircleOutlined
+                className="text-red-600"
+                style={{ fontSize: 20 }}
+              />
+              Xóa {selectedVehicles.length} xe?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              selected vehicle(s) and all related data.
+              Hành động này không thể hoàn tác. Điều này sẽ xóa vĩnh viễn các xe
+              đã chọn và tất cả dữ liệu liên quan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
