@@ -383,9 +383,50 @@ export const adminUserService = {
   },
 };
 
+// Paginated Response Types
+export interface PageInfo {
+  size: number;
+  number: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> {
+  content: T[];
+  page: PageInfo;
+}
+
+export interface VehiclePaginationParams {
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDirection?: 'ASC' | 'DESC';
+}
+
 // ==================== VEHICLE MANAGEMENT ENDPOINTS ====================
 
 export const adminVehicleService = {
+  /**
+   * GET /api/vehicles
+   * Lấy danh sách xe với phân trang
+   */
+  getVehicles: async (params: VehiclePaginationParams = {}): Promise<
+    ApiResponse<PaginatedResponse<VehicleResponse>>
+  > => {
+    const response = await apiClient.get<PaginatedResponse<VehicleResponse>>(
+      "/vehicles",
+      { 
+        params: {
+          page: params.page ?? 0,
+          size: params.size ?? 10,
+          sortBy: params.sortBy ?? 'createdAt',
+          sortDirection: params.sortDirection ?? 'DESC'
+        } 
+      },
+    );
+    return response;
+  },
+
   /**
    * GET /api/admin/vehicles/metrics
    * Lấy metrics quản lý xe
