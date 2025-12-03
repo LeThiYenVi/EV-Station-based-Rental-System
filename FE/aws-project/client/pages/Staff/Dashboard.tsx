@@ -264,17 +264,29 @@ export default function Dashboard() {
             {
               key: "orders",
               label: "Đơn xử lý",
-              children: <div className="p-4 text-gray-500">Biểu đồ/chi tiết đơn (đang phát triển)</div>,
+              children: (
+                <div className="p-4 text-gray-500">
+                  Biểu đồ/chi tiết đơn (đang phát triển)
+                </div>
+              ),
             },
             {
               key: "vehicles",
               label: "Xe kiểm tra",
-              children: <div className="p-4 text-gray-500">Biểu đồ/chi tiết xe (đang phát triển)</div>,
+              children: (
+                <div className="p-4 text-gray-500">
+                  Biểu đồ/chi tiết xe (đang phát triển)
+                </div>
+              ),
             },
             {
               key: "support",
               label: "Khách hỗ trợ",
-              children: <div className="p-4 text-gray-500">Biểu đồ/chi tiết hỗ trợ (đang phát triển)</div>,
+              children: (
+                <div className="p-4 text-gray-500">
+                  Biểu đồ/chi tiết hỗ trợ (đang phát triển)
+                </div>
+              ),
             },
           ]}
         />
