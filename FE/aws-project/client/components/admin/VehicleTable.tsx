@@ -1,31 +1,36 @@
 /**
- * VehicleTable Component - Theo ERD
- * Hiển thị bảng danh sách xe với các fields khớp database schema
+ * VehicleTable Component - Theo API Response
+ * Hiển thị bảng danh sách xe với các fields khớp API response
  */
 
 import { useState } from "react";
-// Minimal local types to avoid alias issues and normalize fields
+// Types matching API response
 type VehicleStatus =
-  | "available"
-  | "rented"
-  | "maintenance"
-  | "charging"
-  | "unavailable"
+  | "AVAILABLE"
+  | "RENTED"
+  | "MAINTENANCE"
+  | "CHARGING"
+  | "UNAVAILABLE"
   | string;
 interface Vehicle {
   id: string;
+  stationId: string;
   name: string;
   brand: string;
-  license_plate: string;
-  type: "electricity" | "gasoline" | string;
+  licensePlate: string;
+  color?: string;
+  fuelType: "ELECTRICITY" | "GASOLINE" | string;
   capacity: number;
   rating: number;
-  rent_count: number;
-  hourly_rate: number;
-  daily_rate: number;
-  deposit_amount: number;
+  rentCount: number;
+  hourlyRate: number;
+  dailyRate: number;
+  depositAmount: number;
   status: VehicleStatus;
-  photos?: string[];
+  photos?: string[] | null;
+  polices?: string[] | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -139,9 +144,10 @@ export default function VehicleTable({
     );
   };
 
-  // Type badge (ERD: gasoline/electricity)
-  const getTypeBadge = (type: Vehicle["type"]) => {
-    if (type === "electricity") {
+  // Type badge (API: ELECTRICITY/GASOLINE)
+  const getTypeBadge = (fuelType: Vehicle["fuelType"]) => {
+    const type = String(fuelType).toUpperCase();
+    if (type === "ELECTRICITY") {
       return (
         <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1 w-fit">
           <Zap className="h-3 w-3" />
@@ -218,7 +224,7 @@ export default function VehicleTable({
                   />
                 </TableCell>
 
-                {/* Vehicle Info (name, brand, license_plate, photos) */}
+                {/* Vehicle Info (name, brand, licensePlate, photos) */}
                 <TableCell>
                   <div className="flex items-center gap-3">
                     {vehicle.photos && vehicle.photos.length > 0 ? (
@@ -238,14 +244,14 @@ export default function VehicleTable({
                         {vehicle.brand}
                       </div>
                       <div className="text-xs text-gray-400 font-mono">
-                        {vehicle.license_plate}
+                        {vehicle.licensePlate}
                       </div>
                     </div>
                   </div>
                 </TableCell>
 
-                {/* Type (ERD field) */}
-                <TableCell>{getTypeBadge(vehicle.type)}</TableCell>
+                {/* Type (fuelType from API) */}
+                <TableCell>{getTypeBadge(vehicle.fuelType)}</TableCell>
 
                 {/* Capacity (ERD field, renamed from "seats") */}
                 <TableCell>
@@ -264,29 +270,29 @@ export default function VehicleTable({
                   </div>
                 </TableCell>
 
-                {/* Rent Count (ERD field) */}
+                {/* Rent Count (API field) */}
                 <TableCell>
                   <div className="text-sm font-medium">
-                    {vehicle.rent_count} times
+                    {vehicle.rentCount} times
                   </div>
                 </TableCell>
 
-                {/* Pricing (hourly_rate, daily_rate) */}
+                {/* Pricing (hourlyRate, dailyRate) */}
                 <TableCell>
                   <div className="text-sm">
                     <div className="font-medium">
-                      {formatCurrency(vehicle.daily_rate)}/day
+                      {formatCurrency(vehicle.dailyRate)}/day
                     </div>
                     <div className="text-xs text-gray-500">
-                      {formatCurrency(vehicle.hourly_rate)}/hour
+                      {formatCurrency(vehicle.hourlyRate)}/hour
                     </div>
                   </div>
                 </TableCell>
 
-                {/* Deposit Amount (ERD field) */}
+                {/* Deposit Amount (API field) */}
                 <TableCell>
                   <div className="text-sm font-medium">
-                    {formatCurrency(vehicle.deposit_amount)}
+                    {formatCurrency(vehicle.depositAmount)}
                   </div>
                 </TableCell>
 
@@ -315,39 +321,39 @@ export default function VehicleTable({
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel>Change Status</DropdownMenuLabel>
                       <DropdownMenuItem
-                        onClick={() => onChangeStatus(vehicle.id, "available")}
-                        disabled={vehicle.status === "available"}
+                        onClick={() => onChangeStatus(vehicle.id, "AVAILABLE")}
+                        disabled={vehicle.status === "AVAILABLE"}
                       >
                         🟢 Set Available
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => onChangeStatus(vehicle.id, "rented")}
-                        disabled={vehicle.status === "rented"}
+                        onClick={() => onChangeStatus(vehicle.id, "RENTED")}
+                        disabled={vehicle.status === "RENTED"}
                       >
                         🟡 Set Rented
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
-                          onChangeStatus(vehicle.id, "maintenance")
+                          onChangeStatus(vehicle.id, "MAINTENANCE")
                         }
-                        disabled={vehicle.status === "maintenance"}
+                        disabled={vehicle.status === "MAINTENANCE"}
                       >
                         🔴 Set Maintenance
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => onChangeStatus(vehicle.id, "charging")}
+                        onClick={() => onChangeStatus(vehicle.id, "CHARGING")}
                         disabled={
-                          vehicle.status === "charging" ||
-                          vehicle.type !== "electricity"
+                          vehicle.status === "CHARGING" ||
+                          vehicle.fuelType !== "ELECTRICITY"
                         }
                       >
                         ⚡ Set Charging
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
-                          onChangeStatus(vehicle.id, "unavailable")
+                          onChangeStatus(vehicle.id, "UNAVAILABLE")
                         }
-                        disabled={vehicle.status === "unavailable"}
+                        disabled={vehicle.status === "UNAVAILABLE"}
                       >
                         ⚫ Set Unavailable
                       </DropdownMenuItem>

@@ -1,5 +1,4 @@
-﻿import { VehicleFilterParams, VehicleStatus, FuelType } from "@shared/types";
-import { Button } from "@/components/ui/button";
+﻿import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -10,6 +9,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, X, Filter } from "lucide-react";
+
+// Local types matching API response
+type VehicleStatus =
+  | "AVAILABLE"
+  | "RENTED"
+  | "MAINTENANCE"
+  | "CHARGING"
+  | "UNAVAILABLE";
+
+type FuelType = "ELECTRICITY" | "GASOLINE";
+
+interface VehicleFilterParams {
+  search?: string;
+  status?: VehicleStatus;
+  fuelType?: FuelType;
+  capacity?: number;
+  minPrice?: number;
+  maxPrice?: number;
+}
 
 interface VehicleFilterProps {
   filters: VehicleFilterParams;
@@ -67,22 +85,22 @@ export default function VehicleFilter({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
-              <SelectItem value="available">Available</SelectItem>
-              <SelectItem value="rented">Rented</SelectItem>
-              <SelectItem value="maintenance">Maintenance</SelectItem>
-              <SelectItem value="charging">Charging</SelectItem>
-              <SelectItem value="unavailable">Unavailable</SelectItem>
+              <SelectItem value="AVAILABLE">Available</SelectItem>
+              <SelectItem value="RENTED">Rented</SelectItem>
+              <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
+              <SelectItem value="CHARGING">Charging</SelectItem>
+              <SelectItem value="UNAVAILABLE">Unavailable</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div>
           <Label>Type</Label>
           <Select
-            value={filters.type || "all"}
+            value={filters.fuelType || "all"}
             onValueChange={(v) =>
               onFilterChange({
                 ...filters,
-                type: v === "all" ? undefined : (v as FuelType),
+                fuelType: v === "all" ? undefined : (v as FuelType),
               })
             }
           >
@@ -91,8 +109,8 @@ export default function VehicleFilter({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
-              <SelectItem value="electricity">Electric</SelectItem>
-              <SelectItem value="gasoline">Gasoline</SelectItem>
+              <SelectItem value="ELECTRICITY">Electric</SelectItem>
+              <SelectItem value="GASOLINE">Gasoline</SelectItem>
             </SelectContent>
           </Select>
         </div>
