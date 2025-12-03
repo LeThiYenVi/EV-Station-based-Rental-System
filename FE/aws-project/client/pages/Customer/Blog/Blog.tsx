@@ -60,7 +60,7 @@ export default function Blog() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 mt-[20px]">
+    <div className="min-h-screen bg-gray-50 mt-[50px]">
       {/* Hero Section */}
       <div className="relative text-white py-16 overflow-hidden">
         {/* Background Image */}
@@ -243,7 +243,7 @@ export default function Blog() {
 
         {/* Pagination */}
         {pagination && pagination.totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-8">
+          <div className="flex justify-center gap-2 mt-8 text-black">
             <Button
               variant="outline"
               disabled={currentPage === 0}
