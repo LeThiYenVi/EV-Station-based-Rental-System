@@ -73,7 +73,7 @@ import type { ColumnsType } from "antd/es/table";
 import type { UploadFile } from "antd/es/upload/interface";
 import { BookingResponse } from "@/service/types/booking.types";
 import { BookingStatus } from "@/service/types/enums";
-import bookingService from "@/service/booking/bookingService";
+import { useBooking } from "@/hooks/useBooking";
 
 const { TextArea } = Input;
 const { TabPane } = Tabs;
@@ -260,17 +260,31 @@ const mockActiveBookings: ActiveBooking[] = [
 
 export default function ActiveBookings() {
   const [bookings, setBookings] = useState<ActiveBooking[]>([]);
+
+  // Use booking hook
+  const {
+    getAllBookings,
+    startBooking,
+    completeBooking,
+    cancelBooking,
+    loading: bookingLoading,
+  } = useBooking();
+
   useEffect(() => {
     const loadActive = async () => {
       try {
-        const confirmed = await bookingService.getBookingsByStatus(
-          BookingStatus.CONFIRMED,
+        const response = await getAllBookings();
+        // getAllBookings returns paginated response with content array
+        const all = response?.content || [];
+
+        // Filter only CONFIRMED and ONGOING bookings for active page
+        const activeBookings = all.filter(
+          (b: any) =>
+            b.status === BookingStatus.CONFIRMED ||
+            b.status === BookingStatus.ONGOING,
         );
-        const inProgress = await bookingService.getBookingsByStatus(
-          BookingStatus.ONGOING,
-        );
-        const all = [...confirmed, ...inProgress];
-        const mapped: ActiveBooking[] = all.map((b: any) => ({
+
+        const mapped: ActiveBooking[] = activeBookings.map((b: any) => ({
           id: b.id,
           bookingCode: b.bookingCode,
           vehicleId: b.vehicleId,
@@ -462,7 +476,7 @@ export default function ActiveBookings() {
 
     setLoading(true);
     try {
-      await bookingService.startBooking(selectedBooking.id);
+      await startBooking(selectedBooking.id);
       // Update booking status to ONGOING
       setBookings((prev) =>
         prev.map((b) =>
@@ -498,7 +512,7 @@ export default function ActiveBookings() {
 
     setLoading(true);
     try {
-      await bookingService.completeBooking(selectedBooking.id);
+      await completeBooking(selectedBooking.id);
       // Remove from active bookings (status becomes COMPLETED)
       setBookings((prev) => prev.filter((b) => b.id !== selectedBooking.id));
 
@@ -534,7 +548,7 @@ export default function ActiveBookings() {
   const handleCancelBooking = async (bookingId: string) => {
     setActionLoading((prev) => ({ ...prev, [bookingId]: true }));
     try {
-      await bookingService.cancelBooking(bookingId);
+      await cancelBooking(bookingId);
       setBookings((prev) => prev.filter((b) => b.id !== bookingId));
       message.success("Đã hủy đơn thuê thành công");
     } catch (error) {

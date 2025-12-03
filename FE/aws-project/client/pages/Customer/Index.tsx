@@ -248,7 +248,7 @@ export default function Index() {
           {/* Hero Content Container */}
           <div className="relative h-[500px] flex flex-col items-center justify-center">
             {/* Content Overlay */}
-            <div className="text-center text-white mb-8">
+            <div className="text-center text-white mb-8 pt-[50px]">
               <h1
                 ref={title1Ref}
                 className="text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg"

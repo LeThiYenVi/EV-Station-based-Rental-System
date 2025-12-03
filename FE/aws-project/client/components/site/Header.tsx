@@ -188,40 +188,74 @@ export function Header() {
                 <ChevronDown className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="dropdown-content">
-              <div className="services-grid">
+            <DropdownMenuContent
+              className="w-[600px] p-6 bg-white rounded-2xl shadow-2xl border-0"
+              align="start"
+              sideOffset={12}
+            >
+              <div className="grid grid-cols-2 gap-4">
                 {serviceItems.map((service, index) => (
-                  <DropdownMenuItem key={service.href} asChild className="p-0">
+                  <DropdownMenuItem
+                    key={service.href}
+                    asChild
+                    className="p-0 focus:bg-transparent"
+                  >
                     <div
                       onClick={(e) =>
                         handleProtectedNavigation(e, service.href)
                       }
-                      className="service-card cursor-pointer"
+                      className={`relative group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                        service.comingSoon ? "opacity-70" : ""
+                      }`}
                     >
+                      {/* Background Image */}
                       <div
-                        className={`service-image ${
+                        className={`h-32 bg-cover bg-center ${
                           index === 0
-                            ? "service-self-drive"
+                            ? "bg-[url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=400&h=200&fit=crop')]"
                             : index === 1
-                              ? "service-chauffeur"
+                              ? "bg-[url('https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=400&h=200&fit=crop')]"
                               : index === 2
-                                ? "service-events"
-                                : "service-flexible"
+                                ? "bg-[url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=200&fit=crop')]"
+                                : "bg-[url('https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=400&h=200&fit=crop')]"
                         }`}
                       >
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                        {/* Coming Soon Badge */}
                         {service.comingSoon && (
-                          <div className="coming-soon">COMING SOON</div>
+                          <div className="absolute top-2 right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                            SẮP RA MẮT
+                          </div>
                         )}
+
+                        {/* Content */}
+                        <div className="absolute bottom-0 left-0 right-0 p-4">
+                          <h3
+                            className={`font-bold text-white text-sm mb-1 ${
+                              index === 1 ? "text-green-400" : ""
+                            }`}
+                          >
+                            {service.title}
+                          </h3>
+                          <p className="text-white/80 text-xs">
+                            {service.subtitle}
+                          </p>
+                        </div>
                       </div>
-                      <h3
-                        className={`service-title ${index === 1 ? "service-title-green" : ""}`}
-                      >
-                        {service.title}
-                      </h3>
-                      <p className="service-subtitle">{service.subtitle}</p>
+
+                      {/* Hover effect overlay */}
+                      <div className="absolute inset-0 bg-green-500/0 group-hover:bg-green-500/10 transition-all duration-300" />
                     </div>
                   </DropdownMenuItem>
                 ))}
+              </div>
+
+              {/* Footer */}
+              <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+                <p className="text-xs text-gray-500">
+                  🚗 Đa dạng dịch vụ thuê xe cho mọi nhu cầu
+                </p>
               </div>
             </DropdownMenuContent>
           </DropdownMenu>

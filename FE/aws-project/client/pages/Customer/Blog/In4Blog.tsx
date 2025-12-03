@@ -94,7 +94,7 @@ export default function In4Blog() {
   const blog = currentBlog;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-16 text-black">
       {/* Back Button */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-6 py-4">
@@ -172,8 +172,10 @@ export default function In4Blog() {
                 <Separator className="mb-8" />
 
                 {/* Article Content */}
-                <article className="prose prose-lg max-w-none">
-                  <p>{blog.content}</p>
+                <article className="prose prose-lg max-w-none break-words overflow-hidden">
+                  <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                    {blog.content}
+                  </p>
                 </article>
 
                 <Separator className="my-8" />
@@ -243,17 +245,17 @@ export default function In4Blog() {
                               related.thumbnailUrl || "/mocks/city/hanoi.webp"
                             }
                             alt={related.title}
-                            className="w-20 h-20 object-cover rounded group-hover:opacity-80 transition"
+                            className="w-20 h-20 object-cover rounded flex-shrink-0 group-hover:opacity-80 transition"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src =
                                 "/mocks/city/hanoi.webp";
                             }}
                           />
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900 group-hover:text-green-600 transition line-clamp-2">
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <p className="text-sm font-semibold text-gray-900 group-hover:text-green-600 transition line-clamp-2 break-words">
                               {related.title}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 mt-1 truncate">
                               {related.authorName}
                             </p>
                           </div>

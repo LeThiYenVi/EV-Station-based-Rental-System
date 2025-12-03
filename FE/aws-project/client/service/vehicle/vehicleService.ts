@@ -390,9 +390,27 @@ class VehicleService {
 
   /**
    * Get vehicle full name
+   * Handles multiple API response formats
    */
-  getVehicleName(vehicle: VehicleResponse): string {
-    return `${vehicle.brand} ${vehicle.model} ${vehicle.year}`;
+  getVehicleName(vehicle: any): string {
+    // If vehicle has direct name field, use it
+    if (vehicle.name && vehicle.name !== 'undefined') {
+      return vehicle.name;
+    }
+    
+    // Build name from brand + model + year
+    const parts = [];
+    if (vehicle.brand) parts.push(vehicle.brand);
+    if (vehicle.model) parts.push(vehicle.model);
+    if (vehicle.year) parts.push(vehicle.year);
+    
+    // If we have parts, join them
+    if (parts.length > 0) {
+      return parts.join(' ');
+    }
+    
+    // Fallback to licensePlate or "Xe"
+    return vehicle.licensePlate || 'Xe';
   }
 
   /**
