@@ -1,10 +1,12 @@
 /**
  * Dashboard Page - Trang tổng quan hệ thống EV Station
  * Hiển thị các thống kê, biểu đồ, và hoạt động gần đây
+ *
+ * TODO: Tích hợp API khi backend cung cấp endpoint analytics tổng hợp
+ * Hiện tại sử dụng mock data để demo UI
  */
 
-import { useState, useEffect } from "react";
-import adminService from "@/services/admin.service";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -44,146 +46,88 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+// Import hooks để sẵn sàng tích hợp API
+// import { useReport } from "@/hooks/useReport";
+// import { useVehicle } from "@/hooks/useVehicle";
+// import { useBooking } from "@/hooks/useBooking";
+
 export default function Dashboard() {
-  const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState<any>(null);
-  const [revenueChartData, setRevenueChartData] = useState<any[]>([]);
-  const [vehicleStatusData, setVehicleStatusData] = useState<any[]>([]);
-  const [bookingByTypeData, setBookingByTypeData] = useState<any[]>([]);
-  const [newBookings, setNewBookings] = useState<any[]>([]);
-  const [bookingPerformance, setBookingPerformance] = useState<any>(null);
-  const [maintenanceOverview, setMaintenanceOverview] = useState<any>(null);
+  // TODO: Kích hoạt khi backend cung cấp API analytics
+  // const { getRevenueByStation, getUtilization } = useReport();
+  // const { getAllVehicles, getVehicleStats } = useVehicle();
+  // const { getAllBookings } = useBooking();
 
-  // Fetch dashboard data từ API
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
+  // Mock data - Thay thế bằng API calls
+  const stats = {
+    users: {
+      total: 1234,
+      admin: 5,
+      staff: 23,
+      customer: 1206,
+      growth: 12.5,
+    },
+    vehicles: {
+      total: 567,
+      available: 342,
+      rented: 189,
+      maintenance: 28,
+      outOfService: 8,
+      electric: 423,
+      gasoline: 89,
+      hybrid: 55,
+      growth: 8.3,
+    },
+    bookings: {
+      total: 890,
+      today: 24,
+      thisMonth: 342,
+      completed: 756,
+      active: 89,
+      cancelled: 45,
+      growth: 23.1,
+    },
+    revenue: {
+      today: 12500000,
+      thisMonth: 234000000,
+      total: 5600000000,
+      growth: 15.7,
+      avgPerBooking: 2650000,
+    },
+  };
 
-        // Gọi song song tất cả các API
-        const [
-          summaryRes,
-          revenueChartRes,
-          vehicleStatusRes,
-          bookingByTypeRes,
-          newBookingsRes,
-          bookingPerfRes,
-          maintenanceRes,
-        ] = await Promise.all([
-          adminService.dashboard.getDashboardSummary(),
-          adminService.dashboard.getRevenueChart(),
-          adminService.dashboard.getVehicleStatusDistribution(),
-          adminService.dashboard.getBookingByType(),
-          adminService.dashboard.getNewBookings(),
-          adminService.dashboard.getBookingPerformance(),
-          adminService.dashboard.getMaintenanceOverview(),
-        ]);
+  // Monthly revenue data (6 months)
+  const revenueData = [
+    { month: "Apr", revenue: 180000000, bookings: 280 },
+    { month: "May", revenue: 210000000, bookings: 315 },
+    { month: "Jun", revenue: 195000000, bookings: 900 },
+    { month: "Jul", revenue: 234000000, bookings: 342 },
+    { month: "Aug", revenue: 220000000, bookings: 328 },
+    { month: "Sep", revenue: 245000000, bookings: 365 },
+  ];
 
-        setDashboardData(summaryRes.data);
-        setRevenueChartData(revenueChartRes.data);
+  // Vehicle status distribution
+  const vehicleStatusData = [
+    { name: "Available", value: stats.vehicles.available, color: "#10b981" },
+    { name: "Rented", value: stats.vehicles.rented, color: "#f59e0b" },
+    {
+      name: "Maintenance",
+      value: stats.vehicles.maintenance,
+      color: "#ef4444",
+    },
+    {
+      name: "Out of Service",
+      value: stats.vehicles.outOfService,
+      color: "#6b7280",
+    },
+  ];
 
-        // Map vehicle status data cho Pie Chart
-        const statusDist = vehicleStatusRes.data;
-        setVehicleStatusData([
-          {
-            name: "Available",
-            value: statusDist.availableCount,
-            color: "#10b981",
-          },
-          {
-            name: "On Going",
-            value: statusDist.onGoingCount,
-            color: "#f59e0b",
-          },
-          {
-            name: "Maintenance",
-            value: statusDist.maintenanceCount,
-            color: "#ef4444",
-          },
-        ]);
+  // Booking by vehicle type
+  const bookingByTypeData = [
+    { type: "Electric", bookings: 612, revenue: 1650000000 },
+    { type: "Gasoline", bookings: 189, revenue: 485000000 },
+  ];
 
-        setBookingByTypeData(bookingByTypeRes.data);
-        setNewBookings(newBookingsRes.data);
-        setBookingPerformance(bookingPerfRes.data);
-        setMaintenanceOverview(maintenanceRes.data);
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
-        // Show error toast instead of mock data
-        // toast notification can be added here
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
-
-  // Compute stats from API data
-  const stats = dashboardData
-    ? {
-        users: {
-          total: dashboardData.userReport.totalUser,
-          verified: dashboardData.userReport.totalVerifiedUser,
-          blocked: dashboardData.userReport.totalBlockedUser,
-          growth: dashboardData.revenueReport.growthPercentage || 12.5,
-        },
-        vehicles: {
-          total: dashboardData.vehicleReport.totalVehicles,
-          available: dashboardData.vehicleReport.totalAvailable,
-          rented: dashboardData.vehicleReport.totalOnGoing,
-          maintenance: dashboardData.vehicleReport.totalMaintenance,
-          electric: 0,
-          outOfService: 0,
-          growth: 8.3,
-        },
-        bookings: {
-          total: dashboardData.bookingReport.totalBooking,
-          confirmed: dashboardData.bookingReport.totalConfirmBooking,
-          active: dashboardData.bookingReport.totalOnGoingBooking,
-          completed: 0,
-          cancelled: 0,
-          growth: 23.1,
-        },
-        revenue: {
-          today: dashboardData.revenueReport.todayRevenue,
-          total: dashboardData.bookingReport.totalRevenueFromCompletedBooking,
-          growth: dashboardData.revenueReport.growthPercentage,
-        },
-      }
-    : {
-        users: { total: 0, verified: 0, blocked: 0, growth: 0 },
-        vehicles: {
-          total: 0,
-          available: 0,
-          rented: 0,
-          maintenance: 0,
-          electric: 0,
-          outOfService: 0,
-          growth: 0,
-        },
-        bookings: {
-          total: 0,
-          confirmed: 0,
-          active: 0,
-          completed: 0,
-          cancelled: 0,
-          growth: 0,
-        },
-        revenue: { today: 0, total: 0, growth: 0 },
-      };
-
-  // Vehicle status distribution for pie chart
-  const statusChartData = vehicleStatusData.length > 0 ? vehicleStatusData : [];
-
-  // Booking by type for bar chart
-  const bookingTypeChartData = Array.isArray(bookingByTypeData)
-    ? bookingByTypeData.map((item: any) => ({
-        type: item.type ?? item.fuelType ?? "Unknown",
-        bookings: item.count ?? item.bookings ?? 0,
-      }))
-    : [];
-
-  // Recent activities - Mock data (API chưa có endpoint này)
+  // Recent activities
   const recentActivities = [
     {
       id: 1,
@@ -267,7 +211,8 @@ export default function Dashboard() {
               {formatNumber(stats.users.total)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {stats.users.verified} Verified • {stats.users.blocked} Blocked
+              {stats.users.admin} Admin • {stats.users.staff} Staff •{" "}
+              {stats.users.customer} Customers
             </p>
             <div className="flex items-center gap-1 mt-2">
               <TrendingUp className="h-3 w-3 text-green-600" />
@@ -318,8 +263,8 @@ export default function Dashboard() {
               {formatNumber(stats.bookings.total)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {stats.bookings.confirmed} Confirmed • {stats.bookings.active}{" "}
-              Active
+              {stats.bookings.today} Today • {stats.bookings.thisMonth} This
+              Month
             </p>
             <div className="flex items-center gap-1 mt-2">
               <TrendingUp className="h-3 w-3 text-green-600" />
@@ -342,7 +287,8 @@ export default function Dashboard() {
               {formatCurrency(stats.revenue.total)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {formatCurrency(stats.revenue.today)} Today
+              {formatCurrency(stats.revenue.today)} Today •{" "}
+              {formatCurrency(stats.revenue.thisMonth)} This Month
             </p>
             <div className="flex items-center gap-1 mt-2">
               <TrendingUp className="h-3 w-3 text-green-600" />
@@ -370,14 +316,14 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={revenueChartData}>
+              <LineChart data={revenueData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="timeLabel" />
+                <XAxis dataKey="month" />
                 <YAxis yAxisId="left" />
                 <YAxis yAxisId="right" orientation="right" />
                 <Tooltip
                   formatter={(value: any, name: string) => {
-                    if (name === "totalRevenue") return formatCurrency(value);
+                    if (name === "revenue") return formatCurrency(value);
                     return value;
                   }}
                 />
@@ -385,7 +331,7 @@ export default function Dashboard() {
                 <Line
                   yAxisId="left"
                   type="monotone"
-                  dataKey="totalRevenue"
+                  dataKey="revenue"
                   stroke="#10b981"
                   strokeWidth={2}
                   name="Revenue (VND)"
@@ -393,7 +339,7 @@ export default function Dashboard() {
                 <Line
                   yAxisId="right"
                   type="monotone"
-                  dataKey="totalBookings"
+                  dataKey="bookings"
                   stroke="#3b82f6"
                   strokeWidth={2}
                   name="Bookings"
@@ -416,7 +362,7 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={statusChartData}
+                  data={vehicleStatusData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -427,7 +373,7 @@ export default function Dashboard() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {statusChartData.map((entry, index) => (
+                  {vehicleStatusData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -435,7 +381,7 @@ export default function Dashboard() {
               </PieChart>
             </ResponsiveContainer>
             <div className="grid grid-cols-2 gap-2 mt-4">
-              {statusChartData.map((item) => (
+              {vehicleStatusData.map((item) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div
                     className="w-3 h-3 rounded-full"
@@ -462,13 +408,30 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={bookingTypeChartData}>
+              <BarChart data={bookingByTypeData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="type" />
-                <YAxis />
-                <Tooltip />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" />
+                <Tooltip
+                  formatter={(value: any, name: string) => {
+                    if (name === "revenue") return formatCurrency(value);
+                    return value;
+                  }}
+                />
                 <Legend />
-                <Bar dataKey="bookings" fill="#3b82f6" name="Bookings" />
+                <Bar
+                  yAxisId="left"
+                  dataKey="bookings"
+                  fill="#3b82f6"
+                  name="Bookings"
+                />
+                <Bar
+                  yAxisId="right"
+                  dataKey="revenue"
+                  fill="#10b981"
+                  name="Revenue (VND)"
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -523,16 +486,13 @@ export default function Dashboard() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Total EVs</span>
-                <span className="font-semibold">
-                  {stats.vehicles?.electric ?? 0}
-                </span>
+                <span className="font-semibold">{stats.vehicles.electric}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">% of Fleet</span>
                 <span className="font-semibold">
                   {(
-                    ((stats.vehicles?.electric ?? 0) /
-                      (stats.vehicles.total || 1)) *
+                    (stats.vehicles.electric / stats.vehicles.total) *
                     100
                   ).toFixed(1)}
                   %
@@ -541,7 +501,7 @@ export default function Dashboard() {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">EV Bookings</span>
                 <span className="font-semibold">
-                  {bookingTypeChartData[0]?.bookings ?? 0}
+                  {bookingByTypeData[0].bookings}
                 </span>
               </div>
               <Badge className="w-full justify-center bg-blue-100 text-blue-800 hover:bg-blue-100">
@@ -564,27 +524,26 @@ export default function Dashboard() {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Completed</span>
                 <span className="font-semibold text-green-600">
-                  {stats.bookings?.completed ?? 0}
+                  {stats.bookings.completed}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Active</span>
                 <span className="font-semibold text-blue-600">
-                  {stats.bookings?.active ?? 0}
+                  {stats.bookings.active}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Cancelled</span>
                 <span className="font-semibold text-red-600">
-                  {stats.bookings?.cancelled ?? 0}
+                  {stats.bookings.cancelled}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Success Rate</span>
                 <span className="font-semibold">
                   {(
-                    ((stats.bookings?.completed ?? 0) /
-                      (stats.bookings.total || 1)) *
+                    (stats.bookings.completed / stats.bookings.total) *
                     100
                   ).toFixed(1)}
                   %
@@ -613,7 +572,7 @@ export default function Dashboard() {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Out of Service</span>
                 <span className="font-semibold text-red-600">
-                  {stats.vehicles?.outOfService ?? 0}
+                  {stats.vehicles.outOfService}
                 </span>
               </div>
               <div className="flex justify-between items-center">

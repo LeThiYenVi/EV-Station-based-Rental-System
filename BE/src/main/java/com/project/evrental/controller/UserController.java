@@ -49,6 +49,22 @@ public class UserController {
                         .build());
     }
 
+    @GetMapping("/me/stats")
+    @PreAuthorize("hasRole('RENTER') or hasRole('STAFF') or hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserResponse>> getMyInfoWithStats(
+            @RequestHeader("Authorization") String authorization
+    ) {
+        String accessToken = extractToken(authorization);
+        UserResponse basicUserInfo = cognitoService.getUserInfo(accessToken);
+        
+        log.info("Request to get current user info with booking statistics: {}", basicUserInfo.getId());
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<UserResponse>builder()
+                        .statusCode(200)
+                        .data(userService.getUserByIdWithStats(basicUserInfo.getId()))
+                        .build());
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Page<UserResponse>>> getAllUsers(
@@ -78,6 +94,19 @@ public class UserController {
                 .body(ApiResponse.<UserResponse>builder()
                         .statusCode(200)
                         .data(userService.getUserById(userId))
+                        .build());
+    }
+
+    @GetMapping("/{userId}/stats")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    public ResponseEntity<ApiResponse<UserResponse>> getUserByIdWithStats(
+            @PathVariable UUID userId
+    ) {
+        log.info("Request to get user with booking statistics: {}", userId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<UserResponse>builder()
+                        .statusCode(200)
+                        .data(userService.getUserByIdWithStats(userId))
                         .build());
     }
 

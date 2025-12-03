@@ -172,4 +172,16 @@ public class StationController {
                         .data(stationService.uploadStationPhoto(stationId, file))
                         .build());
     }
+
+    @GetMapping("/featured")
+    public ResponseEntity<ApiResponse<List<StationResponse>>> getFeaturedStations(
+            @RequestParam(defaultValue = "5") int limit
+    ) {
+        log.info("Request to get {} featured stations", limit);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<List<StationResponse>>builder()
+                        .statusCode(200)
+                        .data(stationService.getFeaturedStations(limit))
+                        .build());
+    }
 }

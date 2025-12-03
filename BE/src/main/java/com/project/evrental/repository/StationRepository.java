@@ -113,4 +113,10 @@ public interface StationRepository extends JpaRepository<Station, UUID> {
             """, nativeQuery = true)
     Integer countAvailableVehicles(@Param("stationId") UUID stationId);
 
+    @Query("""
+            SELECT s FROM Station s
+            WHERE s.status = 'ACTIVE'
+            ORDER BY s.rating DESC, s.createdAt DESC
+            """)
+    List<Station> findFeaturedStations(org.springframework.data.domain.Pageable pageable);
 }

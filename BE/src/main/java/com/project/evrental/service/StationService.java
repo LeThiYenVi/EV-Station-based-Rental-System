@@ -39,6 +39,7 @@ public class StationService {
     StationRepository stationRepository;
     VehicleRepository vehicleRepository;
     StationMapper stationMapper;
+    VehicleMapper vehicleMapper;
     S3Service s3Service;
     GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -126,9 +127,8 @@ public class StationService {
 
         Integer totalVehicles = vehicles.size();
         Integer availableVehicles = stationRepository.countAvailableVehicles(stationId);
-
         List<VehicleResponse> vehicleResponses = vehicles.stream()
-                .map(VehicleMapper::toResponse)
+                .map(x -> VehicleMapper.toResponse(x))
                 .collect(Collectors.toList());
 
         StationDetailResponse response = stationMapper.toDetailResponse(station, totalVehicles, availableVehicles);
@@ -215,5 +215,15 @@ public class StationService {
         Station updatedStation = stationRepository.save(station);
         log.info("Station photo uploaded successfully for ID: {}", stationId);
         return stationMapper.toResponse(updatedStation);
+    }
+
+    @Transactional(readOnly = true)
+    public List<StationResponse> getFeaturedStations(int limit) {
+        log.info("Fetching {} featured stations", limit);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        List<Station> stations = stationRepository.findFeaturedStations(pageable);
+        return stations.stream()
+                .map(stationMapper::toResponse)
+                .collect(Collectors.toList());
     }
 }
