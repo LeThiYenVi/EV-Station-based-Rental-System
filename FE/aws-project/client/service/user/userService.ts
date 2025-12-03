@@ -26,6 +26,15 @@ class UserService {
   }
 
   /**
+   * Get current user information with stats (bookings count, etc.)
+   * Requires Authorization header with Bearer token
+   */
+  async getMyStats(): Promise<UserResponse> {
+    const response = await apiClient.get(API_ENDPOINTS.USERS.GET_MY_STATS);
+    return response.data;
+  }
+
+  /**
    * Get all users with pagination (ADMIN only)
    * @param page - Page number (0-indexed)
    * @param size - Page size
@@ -129,6 +138,44 @@ class UserService {
    */
   async uploadLicenseCard(userId: string, file: File): Promise<UserResponse> {
     const url = API_ENDPOINTS.USERS.UPLOAD_LICENSE_CARD.replace(':userId', userId);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await apiClient.post(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
+  /**
+   * Upload user license card front image
+   * @param userId - User UUID
+   * @param file - License card front image
+   */
+  async uploadLicenseCardFront(userId: string, file: File): Promise<UserResponse> {
+    const url = API_ENDPOINTS.USERS.UPLOAD_LICENSE_CARD_FRONT.replace(':userId', userId);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await apiClient.post(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
+  /**
+   * Upload user license card back image
+   * @param userId - User UUID
+   * @param file - License card back image
+   */
+  async uploadLicenseCardBack(userId: string, file: File): Promise<UserResponse> {
+    const url = API_ENDPOINTS.USERS.UPLOAD_LICENSE_CARD_BACK.replace(':userId', userId);
     
     const formData = new FormData();
     formData.append('file', file);

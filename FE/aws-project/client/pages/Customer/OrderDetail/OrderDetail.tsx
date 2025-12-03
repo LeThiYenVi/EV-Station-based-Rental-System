@@ -22,71 +22,176 @@ import {
   Download,
   Printer,
   MessageSquare,
+  Loader2,
 } from "lucide-react";
-
-interface BookingOrder {
-  bookingId: string;
-  carName: string;
-  carImage: string;
-  renterName: string;
-  phone: string;
-  email: string;
-  pickupDate: string;
-  pickupTime: string;
-  returnDate: string;
-  returnTime: string;
-  pickupLocation: string;
-  duration: string;
-  rentalType: string;
-  driverService: boolean;
-  carPrice: number;
-  driverFee: number;
-  insurance: number;
-  additionalInsurance: number;
-  serviceFee: number;
-  deposit: number;
-  discount: number;
-  total: number;
-  totalDeposit: number;
-  status: "completed" | "pending" | "cancelled" | "confirmed";
-  createdAt: string;
-  paymentMethod: string;
-  transmission?: string;
-  seats?: number;
-  fuel?: string;
-}
+import { useBooking } from "@/hooks/useBooking";
+import type { BookingDetailResponse } from "@/service";
 
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [order, setOrder] = useState<BookingOrder | null>(null);
+  const [order, setOrder] = useState<BookingDetailResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { getBookingByCode } = useBooking();
 
   useEffect(() => {
-    // Load order from localStorage
-    const savedOrders = localStorage.getItem("bookingOrders");
-    console.log("🔍 Tìm đơn hàng với ID:", id);
-    console.log("📦 localStorage:", savedOrders ? "có dữ liệu" : "trống");
-
-    if (savedOrders && id) {
-      const parsedOrders = JSON.parse(savedOrders);
-      console.log(
-        "📋 Tất cả đơn hàng:",
-        parsedOrders.map((o: BookingOrder) => o.bookingId),
-      );
-
-      const foundOrder = parsedOrders.find(
-        (order: BookingOrder) => order.bookingId === id,
-      );
-
-      if (foundOrder) {
-        console.log("✅ Tìm thấy đơn hàng:", foundOrder.bookingId);
-      } else {
-        console.log("❌ KHÔNG tìm thấy đơn hàng với ID:", id);
+    const loadBookingDetail = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
       }
 
-      setOrder(foundOrder || null);
-    }
-  }, [id]);
+      console.log("🔍 Loading booking detail for code:", id);
+      setLoading(true);
+
+      // Call API to get booking by code
+      const booking = await getBookingByCode(id);
+
+      console.log("📦 API Response (booking detail):", booking);
+
+      if (booking) {
+        console.log("✅ Booking loaded:", booking);
+
+        // Cast to any to handle field name variations from API
+        const bookingData = booking as any;
+
+        // Handle field name variations from API
+        const processedBooking = {
+          ...booking,
+          // Ensure pickupTime/returnTime are set from various possible field names
+          pickupTime: bookingData.pickupTime || bookingData.startTime || "",
+          returnTime:
+            bookingData.returnTime ||
+            bookingData.endTime ||
+            bookingData.expectedEndTime ||
+            "",
+          // Ensure station names are set
+          pickupStationName:
+            bookingData.pickupStationName ||
+            bookingData.pickupStation?.name ||
+            bookingData.station?.name ||
+            bookingData.stationName ||
+            "N/A",
+          returnStationName:
+            bookingData.returnStationName ||
+            bookingData.returnStation?.name ||
+            bookingData.station?.name ||
+            bookingData.stationName ||
+            "N/A",
+          // Ensure price is set
+          totalPrice: bookingData.totalPrice || bookingData.totalAmount || 0,
+        };
+
+        console.log("✅ Processed booking:", processedBooking);
+        setOrder(processedBooking as any);
+      } else {
+        console.log("❌ Booking not found for code:", id);
+        // Fallback: try loading from localStorage for backward compatibility
+        const savedOrders = localStorage.getItem("bookingOrders");
+        if (savedOrders) {
+          const parsedOrders = JSON.parse(savedOrders);
+          const foundOrder = parsedOrders.find(
+            (order: any) => order.bookingId === id || order.bookingCode === id,
+          );
+          if (foundOrder) {
+            console.log("✅ Found in localStorage:", foundOrder);
+            // Convert localStorage format to BookingDetailResponse format
+            setOrder({
+              id: foundOrder.bookingId || foundOrder.id,
+              bookingCode: foundOrder.bookingCode || foundOrder.bookingId,
+              vehicleId: foundOrder.vehicleId || "",
+              vehicleName: foundOrder.carName || foundOrder.vehicleName,
+              renterId: "",
+              renterName: foundOrder.renterName,
+              pickupStationId: "",
+              pickupStationName: foundOrder.pickupLocation,
+              returnStationId: "",
+              returnStationName: foundOrder.pickupLocation,
+              pickupTime:
+                foundOrder.pickupDate +
+                "T" +
+                (foundOrder.pickupTime || "00:00:00"),
+              returnTime:
+                foundOrder.returnDate +
+                "T" +
+                (foundOrder.returnTime || "00:00:00"),
+              status: foundOrder.status?.toUpperCase() || "PENDING",
+              totalPrice: foundOrder.total || 0,
+              createdAt: foundOrder.createdAt,
+              updatedAt: foundOrder.createdAt,
+              vehicle: {
+                id: foundOrder.vehicleId || "",
+                name: foundOrder.carName || foundOrder.vehicleName,
+                model: "",
+                plateNumber: "",
+                imageUrl: foundOrder.carImage,
+                pricePerDay: foundOrder.carPrice || 0,
+              },
+              renter: {
+                id: "",
+                fullName: foundOrder.renterName,
+                email: foundOrder.email,
+                phoneNumber: foundOrder.phone,
+              },
+              pickupStation: {
+                id: "",
+                name: foundOrder.pickupLocation,
+                address: foundOrder.pickupLocation,
+                city: "",
+              },
+              payment: {
+                id: "",
+                amount: foundOrder.total || 0,
+                status: "COMPLETED",
+                method: foundOrder.paymentMethod || "qr",
+              },
+            } as any);
+          }
+        }
+      }
+
+      setLoading(false);
+    };
+
+    loadBookingDetail();
+  }, [id, getBookingByCode]);
+
+  // Helper functions
+  const formatDateTime = (dateTimeStr: string) => {
+    if (!dateTimeStr) return { date: "", time: "" };
+    const dt = new Date(dateTimeStr);
+    return {
+      date: dt.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }),
+      time: dt.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+  };
+
+  const calculateDuration = (startTime: string, endTime: string) => {
+    if (!startTime || !endTime) return "N/A";
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const diffMs = end.getTime() - start.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? `${diffDays} ngày` : "Dưới 1 ngày";
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-green-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Đang tải thông tin đơn hàng...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
@@ -113,33 +218,46 @@ export default function OrderDetail() {
   }
 
   const getStatusConfig = (status: string) => {
-    const configs = {
-      completed: {
+    const statusUpper = status?.toUpperCase() || "PENDING";
+    const configs: Record<string, any> = {
+      COMPLETED: {
         label: "Hoàn thành",
         className: "bg-green-100 text-green-700",
         icon: CheckCircle2,
         description: "Chuyến đi đã hoàn thành thành công",
       },
-      pending: {
+      PENDING: {
         label: "Chờ xác nhận",
         className: "bg-yellow-100 text-yellow-700",
         icon: AlertCircle,
-        description: "Đơn hàng đang chờ chủ xe xác nhận",
+        description: "Đơn hàng đang chờ xác nhận",
       },
-      confirmed: {
+      CONFIRMED: {
         label: "Đã xác nhận",
         className: "bg-blue-100 text-blue-700",
         icon: CheckCircle2,
-        description: "Chủ xe đã xác nhận đơn hàng",
+        description: "Đơn hàng đã được xác nhận",
       },
-      cancelled: {
+      IN_PROGRESS: {
+        label: "Đang thực hiện",
+        className: "bg-purple-100 text-purple-700",
+        icon: AlertCircle,
+        description: "Chuyến đi đang được thực hiện",
+      },
+      ONGOING: {
+        label: "Đang thực hiện",
+        className: "bg-purple-100 text-purple-700",
+        icon: AlertCircle,
+        description: "Chuyến đi đang được thực hiện",
+      },
+      CANCELLED: {
         label: "Đã hủy",
         className: "bg-red-100 text-red-700",
         icon: XCircle,
         description: "Đơn hàng đã bị hủy",
       },
     };
-    return configs[status as keyof typeof configs];
+    return configs[statusUpper] || configs.PENDING;
   };
 
   const statusConfig = getStatusConfig(order.status);
@@ -176,11 +294,16 @@ export default function OrderDetail() {
                 Chi tiết đơn hàng
               </h1>
               <p className="text-gray-600">
-                Mã đơn: <span className="font-semibold">{order.bookingId}</span>
+                Mã đơn:{" "}
+                <span className="font-semibold">{order.bookingCode}</span>
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handlePrint} className="text-gray-600">
+              <Button
+                variant="outline"
+                onClick={handlePrint}
+                className="text-gray-600"
+              >
                 <Printer className="w-4 h-4 mr-2 text-gray-600" />
                 In
               </Button>
@@ -225,39 +348,81 @@ export default function OrderDetail() {
 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <img
-                    src={order.carImage}
-                    alt={order.carName}
+                    src={
+                      (order as any).vehicle?.photos?.[0] ||
+                      order.vehicle?.imageUrl ||
+                      "/placeholder-car.png"
+                    }
+                    alt={order.vehicleName || order.vehicle?.name || "Vehicle"}
                     className="w-full sm:w-48 h-32 object-cover rounded-lg"
                   />
                   <div className="flex-1 space-y-2">
                     <h4 className="text-lg font-bold text-gray-900">
-                      {order.carName}
+                      {order.vehicleName || order.vehicle?.name || "Xe thuê"}
                     </h4>
                     <div className="grid grid-cols-2 gap-2 text-sm">
-                      {order.transmission && (
+                      {/* Hãng xe */}
+                      {(order as any).vehicle?.brand && (
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-500">Truyền động:</span>
+                          <span className="text-gray-500">Hãng:</span>
                           <span className="font-medium">
-                            {order.transmission}
+                            {(order as any).vehicle.brand}
                           </span>
                         </div>
                       )}
-                      {order.seats && (
+                      {/* Biển số */}
+                      {((order as any).vehicle?.licensePlate ||
+                        order.vehicle?.plateNumber) && (
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-500">Số chỗ:</span>
-                          <span className="font-medium">{order.seats} chỗ</span>
+                          <span className="text-gray-500">Biển số:</span>
+                          <span className="font-medium">
+                            {(order as any).vehicle?.licensePlate ||
+                              order.vehicle?.plateNumber}
+                          </span>
                         </div>
                       )}
-                      {order.fuel && (
+                      {/* Màu sắc */}
+                      {(order as any).vehicle?.color && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500">Màu:</span>
+                          <span className="font-medium">
+                            {(order as any).vehicle.color}
+                          </span>
+                        </div>
+                      )}
+                      {/* Nhiên liệu */}
+                      {(order as any).vehicle?.fuelType && (
                         <div className="flex items-center gap-2">
                           <span className="text-gray-500">Nhiên liệu:</span>
-                          <span className="font-medium">{order.fuel}</span>
+                          <span className="font-medium">
+                            {(order as any).vehicle.fuelType === "ELECTRICITY"
+                              ? "Điện"
+                              : (order as any).vehicle.fuelType}
+                          </span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-500">Loại thuê:</span>
-                        <span className="font-medium">{order.rentalType}</span>
-                      </div>
+                      {/* Số chỗ */}
+                      {(order as any).vehicle?.capacity && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500">Số chỗ:</span>
+                          <span className="font-medium">
+                            {(order as any).vehicle.capacity} chỗ
+                          </span>
+                        </div>
+                      )}
+                      {/* Giá/ngày */}
+                      {((order as any).vehicle?.dailyRate ||
+                        order.vehicle?.pricePerDay) && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500">Giá/ngày:</span>
+                          <span className="font-medium">
+                            {formatCurrency(
+                              (order as any).vehicle?.dailyRate ||
+                                order.vehicle?.pricePerDay,
+                            )}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -283,56 +448,125 @@ export default function OrderDetail() {
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-green-600" />
                           <span className="font-medium">
-                            {order.pickupDate}
+                            {
+                              formatDateTime(
+                                (order as any).startTime || order.pickupTime,
+                              ).date
+                            }
                           </span>
                           <Clock className="w-4 h-4 text-green-600 ml-2" />
                           <span className="font-medium">
-                            {order.pickupTime}
+                            {
+                              formatDateTime(
+                                (order as any).startTime || order.pickupTime,
+                              ).time
+                            }
                           </span>
                         </div>
                       </div>
 
                       <div>
                         <p className="text-sm text-gray-500 mb-1">
-                          Thời gian trả xe
+                          Thời gian trả xe (dự kiến)
                         </p>
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-green-600" />
                           <span className="font-medium">
-                            {order.returnDate}
+                            {
+                              formatDateTime(
+                                (order as any).expectedEndTime ||
+                                  order.returnTime,
+                              ).date
+                            }
                           </span>
                           <Clock className="w-4 h-4 text-green-600 ml-2" />
                           <span className="font-medium">
-                            {order.returnTime}
+                            {
+                              formatDateTime(
+                                (order as any).expectedEndTime ||
+                                  order.returnTime,
+                              ).time
+                            }
                           </span>
                         </div>
                       </div>
+
+                      {/* Thời gian trả thực tế */}
+                      {(order as any).actualEndTime && (
+                        <div>
+                          <p className="text-sm text-gray-500 mb-1">
+                            Thời gian trả xe (thực tế)
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-blue-600" />
+                            <span className="font-medium">
+                              {
+                                formatDateTime((order as any).actualEndTime)
+                                  .date
+                              }
+                            </span>
+                            <Clock className="w-4 h-4 text-blue-600 ml-2" />
+                            <span className="font-medium">
+                              {
+                                formatDateTime((order as any).actualEndTime)
+                                  .time
+                              }
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-3">
                       <div>
-                        <p className="text-sm text-gray-500 mb-1">Địa điểm</p>
+                        <p className="text-sm text-gray-500 mb-1">
+                          Địa điểm nhận/trả xe
+                        </p>
                         <div className="flex items-start gap-2">
                           <MapPin className="w-4 h-4 text-green-600 mt-0.5" />
                           <span className="font-medium">
-                            {order.pickupLocation}
+                            {(order as any).station?.name ||
+                              order.pickupStation?.name ||
+                              order.pickupStationName ||
+                              "N/A"}
                           </span>
                         </div>
+                        {((order as any).station?.address ||
+                          order.pickupStation?.address) && (
+                          <p className="text-xs text-gray-500 ml-6">
+                            {(order as any).station?.address ||
+                              order.pickupStation?.address}
+                          </p>
+                        )}
+                        {(order as any).station?.hotline && (
+                          <p className="text-xs text-gray-500 ml-6">
+                            Hotline: {(order as any).station.hotline}
+                          </p>
+                        )}
                       </div>
 
                       <div>
                         <p className="text-sm text-gray-500 mb-1">
                           Thời gian thuê
                         </p>
-                        <span className="font-medium">{order.duration}</span>
+                        <span className="font-medium">
+                          {(order as any).durationHours
+                            ? `${(order as any).durationHours} giờ (${Math.ceil((order as any).durationHours / 24)} ngày)`
+                            : calculateDuration(
+                                (order as any).startTime || order.pickupTime,
+                                (order as any).expectedEndTime ||
+                                  order.returnTime,
+                              )}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  {order.driverService && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-sm text-blue-800">
-                        ✓ Dịch vụ thuê xe có tài xế
+                  {(order.notes || (order as any).pickupNote) && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <p className="text-sm text-gray-700">
+                        <strong>Ghi chú:</strong>{" "}
+                        {order.notes || (order as any).pickupNote}
                       </p>
                     </div>
                   )}
@@ -357,7 +591,7 @@ export default function OrderDetail() {
                     <div>
                       <p className="text-sm text-gray-500">Họ và tên</p>
                       <p className="font-medium text-gray-900">
-                        {order.renterName}
+                        {order.renter?.fullName || order.renterName || "N/A"}
                       </p>
                     </div>
                   </div>
@@ -368,7 +602,11 @@ export default function OrderDetail() {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Số điện thoại</p>
-                      <p className="font-medium text-gray-900">{order.phone}</p>
+                      <p className="font-medium text-gray-900">
+                        {(order.renter as any)?.phone ||
+                          order.renter?.phoneNumber ||
+                          "N/A"}
+                      </p>
                     </div>
                   </div>
 
@@ -378,7 +616,9 @@ export default function OrderDetail() {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Email</p>
-                      <p className="font-medium text-gray-900">{order.email}</p>
+                      <p className="font-medium text-gray-900">
+                        {order.renter?.email || "N/A"}
+                      </p>
                     </div>
                   </div>
 
@@ -387,13 +627,19 @@ export default function OrderDetail() {
                       <CreditCard className="w-5 h-5 text-gray-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">
-                        Phương thức thanh toán
-                      </p>
-                      <p className="font-medium text-gray-900">
-                        {order.paymentMethod === "qr"
-                          ? "Quét mã QR"
-                          : "Chuyển khoản ngân hàng"}
+                      <p className="text-sm text-gray-500">Thanh toán</p>
+                      <p
+                        className={`font-medium ${
+                          (order as any).paymentStatus === "PAID" ||
+                          (order as any).paymentStatus === "COMPLETED"
+                            ? "text-green-600"
+                            : "text-orange-600"
+                        }`}
+                      >
+                        {(order as any).paymentStatus === "PAID" ||
+                        (order as any).paymentStatus === "COMPLETED"
+                          ? "Đã thanh toán"
+                          : "Chờ thanh toán"}
                       </p>
                     </div>
                   </div>
@@ -415,77 +661,124 @@ export default function OrderDetail() {
                   <Separator className="mb-4" />
 
                   <div className="space-y-3">
+                    {/* Giá xe theo ngày/giờ */}
+                    {(order as any).vehicle?.dailyRate && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Giá thuê xe/ngày</span>
+                        <span className="font-medium">
+                          {formatCurrency((order as any).vehicle.dailyRate)}
+                        </span>
+                      </div>
+                    )}
+
+                    {(order as any).vehicle?.hourlyRate && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Giá thuê xe/giờ</span>
+                        <span className="font-medium">
+                          {formatCurrency((order as any).vehicle.hourlyRate)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Thời gian thuê */}
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Đơn giá thuê xe</span>
+                      <span className="text-gray-600">Thời gian thuê</span>
                       <span className="font-medium">
-                        {formatCurrency(order.carPrice)}
+                        {(order as any).durationHours
+                          ? `${(order as any).durationHours} giờ (${Math.ceil((order as any).durationHours / 24)} ngày)`
+                          : calculateDuration(
+                              order.pickupTime,
+                              order.returnTime,
+                            )}
                       </span>
                     </div>
 
-                    {order.driverFee > 0 && (
+                    <Separator />
+
+                    {/* Chi phí cơ bản */}
+                    {(order as any).basePrice > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Phí tài xế</span>
+                        <span className="text-gray-600">Phí thuê xe</span>
                         <span className="font-medium">
-                          {formatCurrency(order.driverFee)}
+                          {formatCurrency((order as any).basePrice)}
                         </span>
                       </div>
                     )}
 
-                    {order.insurance > 0 && (
+                    {/* Tiền cọc */}
+                    {(order as any).depositPaid > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Bảo hiểm thuê xe</span>
-                        <span className="font-medium">
-                          {formatCurrency(order.insurance)}
+                        <span className="text-gray-600">Tiền đặt cọc</span>
+                        <span className="font-medium text-orange-600">
+                          {formatCurrency((order as any).depositPaid)}
                         </span>
                       </div>
                     )}
 
-                    {order.additionalInsurance > 0 && (
+                    {/* Phí phụ thu */}
+                    {(order as any).extraFee > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Bảo hiểm bổ sung</span>
+                        <span className="text-gray-600">Phí phụ thu</span>
                         <span className="font-medium">
-                          {formatCurrency(order.additionalInsurance)}
-                        </span>
-                      </div>
-                    )}
-
-                    {order.serviceFee > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Phí dịch vụ</span>
-                        <span className="font-medium">
-                          {formatCurrency(order.serviceFee)}
-                        </span>
-                      </div>
-                    )}
-
-                    {order.discount > 0 && (
-                      <div className="flex justify-between text-sm text-green-600">
-                        <span>Giảm giá</span>
-                        <span className="font-medium">
-                          -{formatCurrency(order.discount)}
+                          {formatCurrency((order as any).extraFee)}
                         </span>
                       </div>
                     )}
 
                     <Separator />
 
+                    {/* Tổng cộng */}
                     <div className="flex justify-between text-base font-bold">
                       <span>Tổng cộng</span>
                       <span className="text-green-600">
-                        {formatCurrency(order.total)}
+                        {formatCurrency(
+                          (order as any).totalAmount || order.totalPrice || 0,
+                        )}
                       </span>
                     </div>
 
-                    {order.totalDeposit > 0 && (
-                      <>
-                        <Separator />
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Tiền cọc</span>
-                          <span className="font-medium text-orange-600">
-                            {formatCurrency(order.totalDeposit)}
-                          </span>
-                        </div>
-                      </>
+                    <Separator />
+
+                    {/* Trạng thái thanh toán */}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">
+                        Trạng thái thanh toán
+                      </span>
+                      <span
+                        className={`font-medium ${
+                          (order as any).paymentStatus === "PAID" ||
+                          (order as any).paymentStatus === "COMPLETED"
+                            ? "text-green-600"
+                            : "text-orange-600"
+                        }`}
+                      >
+                        {(order as any).paymentStatus === "PAID" ||
+                        (order as any).paymentStatus === "COMPLETED"
+                          ? "Đã thanh toán"
+                          : (order as any).paymentStatus === "PENDING"
+                            ? "Chờ thanh toán"
+                            : (order as any).paymentStatus || "Chưa xác định"}
+                      </span>
+                    </div>
+
+                    {/* Ghi chú nhận xe */}
+                    {(order as any).pickupNote && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                        <p className="text-sm text-blue-800">
+                          <strong>Ghi chú nhận xe:</strong>{" "}
+                          {(order as any).pickupNote}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Ghi chú trả xe */}
+                    {(order as any).returnNote && (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2">
+                        <p className="text-sm text-gray-700">
+                          <strong>Ghi chú trả xe:</strong>{" "}
+                          {(order as any).returnNote}
+                        </p>
+                      </div>
                     )}
                   </div>
                 </CardContent>
@@ -512,43 +805,63 @@ export default function OrderDetail() {
                           Đặt xe thành công
                         </p>
                         <p className="text-sm text-gray-500">
-                          {order.createdAt}
+                          {formatDateTime(order.createdAt).date}{" "}
+                          {formatDateTime(order.createdAt).time}
                         </p>
                       </div>
                     </div>
 
-                    {order.status !== "cancelled" && (
+                    {order.status?.toUpperCase() !== "CANCELLED" && (
                       <>
                         <div className="flex gap-3">
                           <div className="flex flex-col items-center">
                             <div
-                              className={`w-8 h-8 rounded-full ${order.status === "pending" ? "bg-yellow-100" : "bg-green-100"} flex items-center justify-center`}
+                              className={`w-8 h-8 rounded-full ${order.status?.toUpperCase() === "PENDING" ? "bg-yellow-100" : "bg-green-100"} flex items-center justify-center`}
                             >
-                              {order.status === "pending" ? (
+                              {order.status?.toUpperCase() === "PENDING" ? (
                                 <AlertCircle className="w-4 h-4 text-yellow-600" />
                               ) : (
                                 <CheckCircle2 className="w-4 h-4 text-green-600" />
                               )}
                             </div>
-                            {order.status !== "pending" && (
+                            {order.status?.toUpperCase() !== "PENDING" && (
                               <div className="w-0.5 h-12 bg-gray-200"></div>
                             )}
                           </div>
                           <div className="flex-1 pb-4">
                             <p className="font-medium text-gray-900">
-                              {order.status === "pending"
+                              {order.status?.toUpperCase() === "PENDING"
                                 ? "Chờ xác nhận"
                                 : "Đã xác nhận"}
                             </p>
                             <p className="text-sm text-gray-500">
-                              {order.status === "pending"
-                                ? "Chủ xe đang xem xét"
-                                : "Chủ xe đã xác nhận"}
+                              {order.status?.toUpperCase() === "PENDING"
+                                ? "Đang chờ xác nhận"
+                                : "Đơn hàng đã được xác nhận"}
                             </p>
                           </div>
                         </div>
 
-                        {order.status === "completed" && (
+                        {(order.status?.toUpperCase() === "IN_PROGRESS" ||
+                          order.status?.toUpperCase() === "ONGOING") && (
+                          <div className="flex gap-3">
+                            <div className="flex flex-col items-center">
+                              <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                                <AlertCircle className="w-4 h-4 text-purple-600" />
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">
+                                Đang thực hiện
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                Chuyến đi đang diễn ra
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {order.status?.toUpperCase() === "COMPLETED" && (
                           <div className="flex gap-3">
                             <div className="flex flex-col items-center">
                               <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
@@ -568,7 +881,7 @@ export default function OrderDetail() {
                       </>
                     )}
 
-                    {order.status === "cancelled" && (
+                    {order.status?.toUpperCase() === "CANCELLED" && (
                       <div className="flex gap-3">
                         <div className="flex flex-col items-center">
                           <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">

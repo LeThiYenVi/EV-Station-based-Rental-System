@@ -60,7 +60,7 @@ export default function Blog() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 mt-[20px]">
       {/* Hero Section */}
       <div className="relative text-white py-16 overflow-hidden">
         {/* Background Image */}

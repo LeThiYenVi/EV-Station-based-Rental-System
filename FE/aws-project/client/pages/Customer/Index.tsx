@@ -221,49 +221,64 @@ export default function Index() {
   return (
     <div>
       {contextHolder}
-      {/* Hero */}
-      <section className="relative bg-white overflow-visible pb-32 md:pb-10">
-        <div className="container py-8">
-          {/* Hero Image Container */}
-          <div className="relative rounded-3xl overflow-hidden">
-            <div
-              className="w-full h-[500px] bg-cover bg-center bg-no-repeat"
-              style={{
-                backgroundImage: "url('/mocks/tour1.png')",
-              }}
-            >
-              <div className="absolute inset-0 bg-black/30" />
-            </div>
+      {/* Hero with Video Background */}
+      <section className="relative bg-black overflow-visible pb-32 md:pb-10 -mt-16 pt-16">
+        {/* Video Background - Full width */}
+        <div className="absolute inset-0 w-full h-[810px] overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute top-0 left-0 w-full h-full object-cover"
+          >
+            <source src="/video.mp4" type="video/mp4" />
+            {/* Fallback image if video doesn't load */}
+            <img
+              src="/mocks/tour1.png"
+              alt="Hero background"
+              className="w-full h-full object-cover"
+            />
+          </video>
+          {/* Dark overlay for better text readability */}
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
 
-            {/* Content Overlay on Image */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              {/* Main Title */}
-              <div className="text-center text-white mb-8">
-                <h1
-                  ref={title1Ref}
-                  className="text-4xl md:text-5xl font-bold mb-2"
-                >
-                  BF Car Rental - Cùng Bạn
-                </h1>
-                <h2
-                  ref={title2Ref}
-                  className="text-4xl md:text-5xl font-bold mb-4"
-                >
-                  Trên Mọi Hành Trình
-                </h2>
-                <div className="w-20 h-0.5 bg-white mx-auto mb-4"></div>
-                <p ref={subtitleRef} className="text-lg md:text-xl">
-                  Trải nghiệm sự khác biệt từ{" "}
-                  <span className="text-green-400 font-semibold">
-                    hơn 10.000
-                  </span>{" "}
-                  xe gia đình đời mới khắp Việt Nam
-                </p>
-              </div>
+        <div className="container py-8 relative z-10">
+          {/* Hero Content Container */}
+          <div className="relative h-[500px] flex flex-col items-center justify-center">
+            {/* Content Overlay */}
+            <div className="text-center text-white mb-8">
+              <h1
+                ref={title1Ref}
+                className="text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg"
+              >
+                BF Car Rental - Cùng Bạn
+              </h1>
+              <h2
+                ref={title2Ref}
+                className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg"
+              >
+                Trên Mọi Hành Trình
+              </h2>
+              <div className="w-20 h-0.5 bg-white mx-auto mb-4"></div>
+              <p
+                ref={subtitleRef}
+                className="text-lg md:text-xl drop-shadow-md"
+              >
+                Trải nghiệm sự khác biệt từ{" "}
+                <span className="text-green-400 font-semibold">hơn 10.000</span>{" "}
+                xe gia đình đời mới khắp Việt Nam
+              </p>
             </div>
           </div>
 
-          {/* Booking Form positioned outside and overlapping */}
+          
+        </div>
+      </section>
+
+{/* Booking Form positioned outside and overlapping */}
+          {/* <div>
           <div className="relative -mt-24 mx-auto w-full max-w-5xl px-4 z-40">
             <Tabs
               value={activeTab}
@@ -271,7 +286,7 @@ export default function Index() {
               className="w-full"
             >
               {/* Tab Navigation */}
-              <div className="flex justify-center mb-0">
+              {/* <div className="flex justify-center mb-0">
                 <TabsList className="inline-flex w-auto bg-white rounded-lg h-12 p-1 shadow-lg">
                   <TabsTrigger
                     value="xe-tu-lai"
@@ -301,10 +316,10 @@ export default function Index() {
                     Thuê xe dài hạn
                   </TabsTrigger>
                 </TabsList>
-              </div>
+              </div> */}
 
               {/* Tab Content */}
-              <TabsContent value="xe-tu-lai" className="mt-1">
+              {/* <TabsContent value="xe-tu-lai" className="mt-1">
                 <Card className="bg-white shadow-xl rounded-2xl border-0">
                   <CardContent className="p-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
@@ -336,9 +351,9 @@ export default function Index() {
                             <SelectItem value="phu-yen">Phú Yên</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
+                      </div> */}
 
-                      <div className="space-y-3">
+                      {/* <div className="space-y-3">
                         <Label
                           htmlFor="datetime"
                           className="flex items-center gap-2 text-sm font-medium text-gray-700"
@@ -377,9 +392,9 @@ export default function Index() {
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
+              </TabsContent> */}
 
-              <TabsContent value="xe-co-tai-xe" className="mt-1">
+              {/* <TabsContent value="xe-co-tai-xe" className="mt-1">
                 <Card className="bg-white shadow-xl rounded-2xl border-0">
                   <CardContent className="p-8">
                     <div className="text-center py-12">
@@ -452,12 +467,12 @@ export default function Index() {
                 </Card>
               </TabsContent>
             </Tabs>
-          </div>
-        </div>
-      </section>
+          </div> 
+
+          </div> */}
 
       {/* Xe Dành Cho Bạn */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-gray-50 mt-[210px]">
         <div className="container max-w-[75%] mx-auto">
           <div className="flex items-center justify-between mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-black">

@@ -43,6 +43,9 @@ import {
   Zap,
 } from "lucide-react";
 import { useVehicle } from "@/hooks/useVehicle";
+import { useBooking } from "@/hooks/useBooking";
+import { useUser } from "@/hooks/useUser";
+import type { BookingWithPaymentResponse } from "@/service/types/booking.types";
 
 // Default images when API returns null photos
 const defaultImages = [
@@ -68,11 +71,21 @@ export default function CarIn4() {
   const { contextHolder, showSuccess, showError, showWarning, showInfo } =
     useMessage();
 
-  // API hook
+  // API hooks
   const { getVehicleById, loading: vehicleLoading } = useVehicle();
+  const { createBooking, loading: bookingLoading } = useBooking();
+  const { getMyStats } = useUser();
 
   // Vehicle data from API
   const [vehicleData, setVehicleData] = useState<any>(null);
+
+  // Current user data from API
+  const [currentUserData, setCurrentUserData] = useState<any>(null);
+
+  // Booking API response
+  const [bookingResponse, setBookingResponse] =
+    useState<BookingWithPaymentResponse | null>(null);
+  const [pickupNote, setPickupNote] = useState<string>("");
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -80,7 +93,7 @@ export default function CarIn4() {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState("qr");
+  const [paymentMethod, setPaymentMethod] = useState("momo");
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -208,17 +221,46 @@ export default function CarIn4() {
 
   // Check login status from localStorage on component mount
   useEffect(() => {
-    const checkLoginStatus = () => {
+    const checkLoginStatus = async () => {
       const loggedIn = localStorage.getItem("isLoggedIn") === "true";
       const username = localStorage.getItem("username");
+      const token = localStorage.getItem("accessToken");
 
       if (loggedIn && username) {
         setIsLoggedIn(true);
         setCurrentUser(username);
 
-        // Check if user is verified
-        const hasVerified = verifiedUsers.includes(username);
-        setIsVerified(hasVerified);
+        // If user has token, fetch user data from API to check GPLX
+        if (token) {
+          try {
+            const result = await getMyStats();
+            if (result.success && result.data) {
+              setCurrentUserData(result.data);
+
+              // Check if user has uploaded GPLX (both front and back)
+              const hasGPLX = !!(
+                result.data.licenseCardFrontImageUrl &&
+                result.data.licenseCardBackImageUrl
+              );
+              console.log("📄 GPLX Check:", {
+                front: result.data.licenseCardFrontImageUrl,
+                back: result.data.licenseCardBackImageUrl,
+                hasGPLX,
+              });
+
+              setIsVerified(hasGPLX);
+            }
+          } catch (error) {
+            console.error("Error fetching user data for GPLX check:", error);
+            // Fallback to mock check if API fails
+            const hasVerified = verifiedUsers.includes(username);
+            setIsVerified(hasVerified);
+          }
+        } else {
+          // No token, use mock verification
+          const hasVerified = verifiedUsers.includes(username);
+          setIsVerified(hasVerified);
+        }
       }
     };
 
@@ -236,9 +278,9 @@ export default function CarIn4() {
   const rentalCalc = calculateRentalDetails();
   const bookingDetails = {
     bookingId: currentBookingId || "BK" + Date.now(),
-    renterName: currentUser || "Khách hàng",
-    phone: "09xxxxx",
-    email: "customer@gmail.com",
+    renterName: currentUserData?.fullName || currentUser || "Khách hàng",
+    phone: currentUserData?.phone || currentUserData?.phoneNumber || "09xxxxx",
+    email: currentUserData?.email || "customer@gmail.com",
     pickupLocation:
       deliveryOption === "pickup"
         ? vehicleData?.stationName || "Trạm xe"
@@ -390,76 +432,70 @@ export default function CarIn4() {
     }, 2000);
   };
 
-  const handlePayment = () => {
+  // Create booking via API
+  const handleCreateBooking = async () => {
+    if (!vehicleData?.id || !vehicleData?.stationId) {
+      showError("Không tìm thấy thông tin xe hoặc trạm. Vui lòng thử lại.");
+      return;
+    }
+
     setIsProcessing(true);
 
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false);
-      setPaymentSuccess(true);
+    try {
+      // Build ISO datetime strings
+      const startTime = new Date(
+        `${pickupDate}T${pickupTime}:00`,
+      ).toISOString();
+      const expectedEndTime = new Date(
+        `${returnDate}T${returnTime}:00`,
+      ).toISOString();
 
-      // Save order to localStorage
-      const vehicleImages = getVehicleImages();
-      const newOrder = {
-        bookingId: bookingDetails.bookingId,
-        carName: vehicleData?.name || "Unknown",
-        carImage: vehicleImages[0],
-        renterName: bookingDetails.renterName,
-        phone: bookingDetails.phone,
-        email: bookingDetails.email,
-        pickupDate: bookingDetails.pickupDate,
-        pickupTime: bookingDetails.pickupTime,
-        returnDate: bookingDetails.returnDate,
-        returnTime: bookingDetails.returnTime,
-        pickupLocation: bookingDetails.pickupLocation,
-        duration: bookingDetails.duration,
-        rentalType: bookingDetails.rentalType,
-        driverService: bookingDetails.driverService,
-        carPrice: bookingDetails.carPrice,
-        driverFee: bookingDetails.driverFee,
-        insurance: bookingDetails.insurance,
-        additionalInsurance: bookingDetails.additionalInsurance,
-        serviceFee: bookingDetails.serviceFee,
-        deposit: bookingDetails.deposit,
-        discount: bookingDetails.discount,
-        total: bookingDetails.total,
-        totalDeposit: bookingDetails.totalDeposit,
-        status: "pending" as const,
-        createdAt: new Date().toLocaleString("vi-VN"),
-        paymentMethod: paymentMethod,
-        transmission: "Tự động",
-        seats: vehicleData?.capacity || 5,
-        fuel: vehicleData?.fuelType || "ELECTRICITY",
+      const bookingRequest = {
+        vehicleId: vehicleData.id,
+        stationId: vehicleData.stationId,
+        startTime,
+        expectedEndTime,
+        pickupNote: pickupNote || undefined,
       };
 
-      // Get existing orders from localStorage
-      const savedOrders = localStorage.getItem("bookingOrders");
-      const orders = savedOrders ? JSON.parse(savedOrders) : [];
+      console.log("📤 Creating booking with:", bookingRequest);
 
-      // Add new order to the beginning of the array
-      orders.unshift(newOrder);
+      const result = await createBooking(bookingRequest);
 
-      // Save back to localStorage
-      localStorage.setItem("bookingOrders", JSON.stringify(orders));
+      if (result) {
+        console.log("✅ Booking created successfully:", result);
+        setBookingResponse(result);
 
-      // Debug log
-      console.log("✅ Đã lưu đơn hàng:", newOrder.bookingId);
-      console.log(
-        "📦 Tất cả đơn hàng:",
-        orders.map((o) => o.bookingId),
-      );
+        // Update currentBookingId with actual booking code from API
+        setCurrentBookingId(result.bookingCode);
 
-      toast({
-        title: "Thanh toán thành công!",
-        description: "Đặt xe của bạn đã được xác nhận.",
-      });
+        // Show success message - user still needs to complete payment
+        if (result.momoPayment?.payUrl) {
+          showSuccess(
+            "Tạo đơn hàng thành công! Vui lòng hoàn tất thanh toán MoMo.",
+          );
+        } else {
+          showSuccess("Tạo đơn hàng thành công! Vui lòng hoàn tất thanh toán.");
+        }
 
-      setTimeout(() => {
-        setShowPaymentDialog(false);
-        setPaymentSuccess(false);
-        setCurrentStep(1);
-      }, 3000);
-    }, 2000);
+        toast({
+          title: "Tạo đơn hàng thành công!",
+          description: `Mã đơn hàng: ${result.bookingCode}. Vui lòng hoàn tất thanh toán.`,
+        });
+      } else {
+        showError("Đặt xe thất bại. Vui lòng thử lại.");
+      }
+    } catch (error: any) {
+      console.error("❌ Error creating booking:", error);
+      showError(error?.message || "Đặt xe thất bại. Vui lòng thử lại.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePayment = () => {
+    // Call API to create booking
+    handleCreateBooking();
   };
 
   const copyToClipboard = (text: string) => {
@@ -1715,10 +1751,10 @@ export default function CarIn4() {
                           value={bookingDetails.phone}
                           placeholder="Nhập 09xxxxx"
                         />
-                        <p className="text-xs text-red-500 mt-1">
+                        {/* <p className="text-xs text-red-500 mt-1">
                           Vui lòng xác thực số điện thoại để sử dụng các dịch vụ
                           của Green Future
-                        </p>
+                        </p> */}
                       </div>
                       <div>
                         <h3 className="text-base font-bold mb-3">
@@ -1731,7 +1767,7 @@ export default function CarIn4() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    {/* <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
                         id="vingroup"
@@ -1740,7 +1776,7 @@ export default function CarIn4() {
                       <label htmlFor="vingroup" className="text-sm">
                         Tôi là CBNV tập đoàn Vingroup
                       </label>
-                    </div>
+                    </div> */}
 
                     {/* Nơi nhận xe */}
                     <div>
@@ -1771,7 +1807,7 @@ export default function CarIn4() {
                     </div>
 
                     {/* Thêm dịch vụ */}
-                    <div>
+                    {/* <div>
                       <h3 className="text-base font-bold mb-3">Thêm dịch vụ</h3>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -1783,7 +1819,7 @@ export default function CarIn4() {
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                         </label>
                       </div>
-                    </div>
+                    </div> */}
 
                     {/* Bảng kê chi tiết */}
                     <div>
@@ -1845,7 +1881,7 @@ export default function CarIn4() {
                             </span>
                           </div>
                           <Separator className="my-2" />
-                          <div className="flex items-center justify-between">
+                          {/* <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <span className="w-5 h-5 rounded-full bg-orange-400 text-white text-xs flex items-center justify-center">
                                 ★
@@ -1859,10 +1895,10 @@ export default function CarIn4() {
                               <input type="checkbox" className="sr-only peer" />
                               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                             </label>
-                          </div>
-                          <p className="text-xs text-gray-500">
+                          </div> */}
+                          {/* <p className="text-xs text-gray-500">
                             Bạn không có Vpoints để sử dụng
-                          </p>
+                          </p> */}
                         </CardContent>
                       </Card>
                     </div>
@@ -1874,7 +1910,7 @@ export default function CarIn4() {
                           Thanh toán<span className="text-red-500">*</span>
                         </span>
                         <span className="font-bold text-2xl text-green-600">
-                          {bookingDetails.total.toLocaleString()}đ
+                          {bookingDetails.deposit.toLocaleString()}đ
                         </span>
                       </div>
                       <p className="text-xs text-gray-600">
@@ -1882,19 +1918,17 @@ export default function CarIn4() {
                       </p>
                     </div>
 
-                    {/* Mã giới thiệu và Voucher */}
+                    {/* Mã giới thiệu và Ghi chú nhận xe */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-sm font-semibold mb-2 block">
-                          Mã giới thiệu
+                          Ghi chú nhận xe
                         </Label>
-                        <Input placeholder="Nhập mã" />
-                      </div>
-                      <div>
-                        <Label className="text-sm font-semibold mb-2 block">
-                          Ghi chú
-                        </Label>
-                        <Input placeholder="Nhập ghi chú" />
+                        <Input
+                          placeholder="Nhập ghi chú khi nhận xe"
+                          value={pickupNote}
+                          onChange={(e) => setPickupNote(e.target.value)}
+                        />
                       </div>
                     </div>
 
@@ -1905,24 +1939,26 @@ export default function CarIn4() {
                       </Label>
                       <div className="grid grid-cols-2 gap-3">
                         <button
-                          onClick={() => setPaymentMethod("qr")}
+                          onClick={() => setPaymentMethod("momo")}
                           className={`border-2 rounded-lg p-4 text-left flex items-center gap-3 transition-all ${
-                            paymentMethod === "qr"
-                              ? "border-green-500 bg-green-50"
-                              : "border-gray-200 hover:border-green-300"
+                            paymentMethod === "momo"
+                              ? "border-pink-500 bg-pink-50"
+                              : "border-gray-200 hover:border-pink-300"
                           }`}
                         >
-                          <QrCode
-                            className={`w-6 h-6 ${paymentMethod === "qr" ? "text-green-600" : "text-gray-500"}`}
-                          />
+                          <div className="w-8 h-8 bg-pink-500 rounded-lg flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">
+                              M
+                            </span>
+                          </div>
                           <div>
-                            <p className="font-semibold text-sm">Quét mã QR</p>
+                            <p className="font-semibold text-sm">Ví MoMo</p>
                             <p className="text-xs text-gray-500">
                               Thanh toán nhanh
                             </p>
                           </div>
-                          {paymentMethod === "qr" && (
-                            <Check className="w-5 h-5 text-green-600 ml-auto" />
+                          {paymentMethod === "momo" && (
+                            <Check className="w-5 h-5 text-pink-600 ml-auto" />
                           )}
                         </button>
                         <button
@@ -1947,25 +1983,6 @@ export default function CarIn4() {
                           )}
                         </button>
                       </div>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-semibold mb-2 block">
-                        Chương trình khuyến mãi
-                      </Label>
-                      <button className="w-full border rounded-lg p-3 text-left flex justify-between items-center hover:border-green-500">
-                        <span className="text-gray-500">
-                          Chọn Chương trình khuyến mãi
-                        </span>
-                        <span className="text-gray-400">›</span>
-                      </button>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-semibold mb-2 block">
-                        Voucher
-                      </Label>
-                      <Input placeholder="Nhập mã voucher" />
                     </div>
 
                     {/* Điều khoản */}
@@ -2011,7 +2028,7 @@ export default function CarIn4() {
                     </div>
 
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
                         if (!termsAccepted || !policyAccepted) {
                           showWarning(
                             "Vui lòng đồng ý với các điều khoản để tiếp tục",
@@ -2022,18 +2039,29 @@ export default function CarIn4() {
                           showWarning("Vui lòng chọn phương thức thanh toán");
                           return;
                         }
+
+                        // Create booking first to get booking code and payment info
+                        await handleCreateBooking();
                         setCurrentStep(2);
                       }}
+                      disabled={
+                        isProcessing ||
+                        !paymentMethod ||
+                        !termsAccepted ||
+                        !policyAccepted
+                      }
                       className={`w-full h-12 font-semibold ${
-                        paymentMethod && termsAccepted && policyAccepted
+                        paymentMethod &&
+                        termsAccepted &&
+                        policyAccepted &&
+                        !isProcessing
                           ? "bg-green-600 hover:bg-green-700 text-white"
                           : "bg-gray-300 text-gray-500 cursor-not-allowed"
                       }`}
-                      disabled={
-                        !paymentMethod || !termsAccepted || !policyAccepted
-                      }
                     >
-                      Thanh toán {bookingDetails.total.toLocaleString()}đ
+                      {isProcessing
+                        ? "Đang tạo đơn..."
+                        : `Tiếp tục thanh toán ${bookingDetails.deposit.toLocaleString()}đ`}
                     </Button>
                   </div>
                 )}
@@ -2043,8 +2071,8 @@ export default function CarIn4() {
                   <div className="space-y-6 py-4">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-bold">
-                        {paymentMethod === "qr"
-                          ? "Thanh toán bằng mã QR"
+                        {paymentMethod === "momo"
+                          ? "Thanh toán qua MoMo"
                           : "Chuyển khoản ngân hàng"}
                       </h3>
                       <Button
@@ -2052,180 +2080,327 @@ export default function CarIn4() {
                         size="sm"
                         onClick={() => {
                           setCurrentStep(1);
+                          // Reset booking response if going back
+                          if (paymentMethod === "momo") {
+                            setBookingResponse(null);
+                          }
                         }}
                       >
                         Đổi phương thức
                       </Button>
                     </div>
 
-                    {/* Credit Card Display */}
-                    <div className="flex justify-center mb-6">
-                      <CardCredit />
-                    </div>
-
-                    {/* QR Payment */}
-                    {paymentMethod === "qr" && (
+                    {/* MoMo Payment */}
+                    {paymentMethod === "momo" && (
                       <div className="space-y-4">
-                        <div className="bg-white border-2 border-gray-200 rounded-lg p-6 flex flex-col items-center">
-                          <div className="bg-white p-4 rounded-lg shadow-lg mb-4">
-                            <div className="w-64 h-64 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center rounded-lg">
-                              <div className="text-center">
-                                <QrCode className="w-32 h-32 mx-auto text-gray-600 mb-2" />
-                                <p className="text-sm text-gray-600">
-                                  Mã QR thanh toán
+                        {bookingResponse?.momoPayment?.payUrl ? (
+                          <>
+                            {/* MoMo Payment iframe/link */}
+                            <div className="bg-pink-50 border-2 border-pink-200 rounded-lg p-6">
+                              <div className="text-center mb-4">
+                                <div className="w-16 h-16 bg-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                  <span className="text-white font-bold text-2xl">
+                                    M
+                                  </span>
+                                </div>
+                                <h4 className="text-lg font-bold text-gray-900">
+                                  Thanh toán MoMo
+                                </h4>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  Mã đơn: {bookingResponse.bookingCode}
                                 </p>
                               </div>
-                            </div>
-                          </div>
-                          <p className="text-center font-semibold text-lg mb-2">
-                            Số tiền: {bookingDetails.total.toLocaleString()}đ
-                          </p>
-                          <p className="text-center text-sm text-gray-600">
-                            Mã đặt xe: {bookingDetails.bookingId}
-                          </p>
-                        </div>
 
-                        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                          <div className="flex items-start gap-2">
-                            <Smartphone className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <div className="text-sm text-blue-700">
-                              <p className="font-semibold mb-1">
-                                Hướng dẫn thanh toán:
+                              <div className="bg-white rounded-lg p-4 mb-4">
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="text-gray-600">
+                                    Số tiền thanh toán:
+                                  </span>
+                                  <span className="text-xl font-bold text-pink-600">
+                                    {bookingResponse.totalAmount?.toLocaleString() ||
+                                      bookingDetails.deposit.toLocaleString()}
+                                    đ
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="text-gray-500">
+                                    Trạng thái:
+                                  </span>
+                                  <span className="text-orange-600 font-medium">
+                                    Chờ thanh toán
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* QR Code from MoMo */}
+                              {bookingResponse.momoPayment.qrCodeUrl && (
+                                <div className="bg-white p-4 rounded-lg mb-4 flex flex-col items-center">
+                                  <p className="text-sm text-gray-600 mb-3">
+                                    Quét mã QR bằng ứng dụng MoMo
+                                  </p>
+                                  <div className="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+                                    <img
+                                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(bookingResponse.momoPayment.qrCodeUrl)}`}
+                                      alt="MoMo QR Code"
+                                      className="w-44 h-44"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              <Button
+                                onClick={() =>
+                                  window.open(
+                                    bookingResponse.momoPayment!.payUrl,
+                                    "_blank",
+                                  )
+                                }
+                                className="w-full h-12 bg-pink-500 hover:bg-pink-600 text-white font-semibold"
+                              >
+                                Mở ứng dụng MoMo để thanh toán
+                              </Button>
+
+                              <p className="text-xs text-center text-gray-500 mt-3">
+                                Hoặc nhấn vào nút trên để mở trang thanh toán
+                                MoMo
                               </p>
-                              <p>1. Mở ứng dụng ngân hàng của bạn</p>
-                              <p>2. Quét mã QR trên màn hình</p>
-                              <p>3. Xác nhận thanh toán</p>
                             </div>
+
+                            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                              <div className="flex items-start gap-2">
+                                <Smartphone className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                                <div className="text-sm text-blue-700">
+                                  <p className="font-semibold mb-1">
+                                    Hướng dẫn thanh toán:
+                                  </p>
+                                  <p>1. Mở ứng dụng MoMo trên điện thoại</p>
+                                  <p>
+                                    2. Quét mã QR hoặc nhấn nút "Mở ứng dụng
+                                    MoMo"
+                                  </p>
+                                  <p>3. Xác nhận thanh toán trong ứng dụng</p>
+                                  <p>4. Quay lại trang này để hoàn tất</p>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
+                            <p className="text-gray-600">
+                              Đang tạo đơn thanh toán MoMo...
+                            </p>
                           </div>
-                        </div>
+                        )}
                       </div>
                     )}
-
-                    {/* Bank Transfer */}
+                    {/* Bank Transfer with VietQR */}
                     {paymentMethod === "bank" && (
                       <div className="space-y-4">
-                        <Card>
-                          <CardContent className="p-4 space-y-3">
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <Label className="text-sm text-gray-600">
-                                  Ngân hàng
-                                </Label>
-                                <p className="font-semibold">
-                                  {bookingDetails.bankAccount.bank}
-                                </p>
+                        {bookingResponse ? (
+                          <>
+                            {/* VietQR Code */}
+                            <div className="bg-white border-2 border-gray-200 rounded-lg p-6 flex flex-col items-center">
+                              <h4 className="font-semibold text-lg mb-4">
+                                Quét mã QR để chuyển khoản
+                              </h4>
+                              <div className="bg-white p-2 rounded-lg shadow-lg mb-4">
+                                {/* VietQR API - Tạo QR code chuyển khoản */}
+                                <img
+                                  src={`https://img.vietqr.io/image/MB-${bookingDetails.bankAccount.number}-compact2.png?amount=${bookingResponse.depositPaid || bookingDetails.deposit}&addInfo=${encodeURIComponent(bookingResponse.bookingCode)}&accountName=${encodeURIComponent(bookingDetails.bankAccount.name)}`}
+                                  alt="VietQR Code"
+                                  className="w-64 h-64 object-contain"
+                                  onError={(e) => {
+                                    // Fallback nếu VietQR không load được
+                                    (e.target as HTMLImageElement).src =
+                                      `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(`Chuyen khoan: ${bookingDetails.bankAccount.number} - ${bookingDetails.bankAccount.name} - ${bookingResponse.depositPaid || bookingDetails.deposit}d - ${bookingResponse.bookingCode}`)}`;
+                                  }}
+                                />
                               </div>
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between items-center">
-                              <div className="flex-1">
-                                <Label className="text-sm text-gray-600">
-                                  Số tài khoản
-                                </Label>
-                                <p className="font-semibold">
-                                  {bookingDetails.bankAccount.number}
-                                </p>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  copyToClipboard(
-                                    bookingDetails.bankAccount.number,
-                                  )
-                                }
-                              >
-                                <Copy className="w-4 h-4" />
-                              </Button>
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between items-center">
-                              <div className="flex-1">
-                                <Label className="text-sm text-gray-600">
-                                  Chủ tài khoản
-                                </Label>
-                                <p className="font-semibold">
-                                  {bookingDetails.bankAccount.name}
-                                </p>
-                              </div>
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between items-center">
-                              <div className="flex-1">
-                                <Label className="text-sm text-gray-600">
-                                  Số tiền
-                                </Label>
-                                <p className="font-semibold text-green-600">
-                                  {bookingDetails.total.toLocaleString()}đ
-                                </p>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  copyToClipboard(
-                                    bookingDetails.total.toString(),
-                                  )
-                                }
-                              >
-                                <Copy className="w-4 h-4" />
-                              </Button>
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between items-center">
-                              <div className="flex-1">
-                                <Label className="text-sm text-gray-600">
-                                  Nội dung chuyển khoản
-                                </Label>
-                                <p className="font-semibold text-orange-600">
-                                  {bookingDetails.bankAccount.content}
-                                </p>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  copyToClipboard(
-                                    bookingDetails.bankAccount.content,
-                                  )
-                                }
-                              >
-                                <Copy className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
-                          <div className="flex items-start gap-2">
-                            <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                            <div className="text-sm text-orange-700">
-                              <p className="font-semibold mb-1">Quan trọng:</p>
-                              <p>
-                                Vui lòng chuyển khoản ĐÚNG nội dung để hệ thống
-                                tự động xác nhận thanh toán
+                              <p className="text-center font-semibold text-lg mb-2">
+                                Số tiền:{" "}
+                                <span className="text-green-600">
+                                  {(
+                                    bookingResponse.depositPaid ||
+                                    bookingDetails.deposit
+                                  ).toLocaleString()}
+                                  đ
+                                </span>
+                              </p>
+                              <p className="text-center text-sm text-gray-600">
+                                Nội dung:{" "}
+                                <span className="font-medium text-orange-600">
+                                  {bookingResponse.bookingCode}
+                                </span>
                               </p>
                             </div>
+
+                            {/* Bank info details */}
+                            <Card>
+                              <CardContent className="p-4 space-y-3">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <Label className="text-sm text-gray-600">
+                                      Ngân hàng
+                                    </Label>
+                                    <p className="font-semibold">
+                                      {bookingDetails.bankAccount.bank}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between items-center">
+                                  <div className="flex-1">
+                                    <Label className="text-sm text-gray-600">
+                                      Số tài khoản
+                                    </Label>
+                                    <p className="font-semibold">
+                                      {bookingDetails.bankAccount.number}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      copyToClipboard(
+                                        bookingDetails.bankAccount.number,
+                                      )
+                                    }
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between items-center">
+                                  <div className="flex-1">
+                                    <Label className="text-sm text-gray-600">
+                                      Chủ tài khoản
+                                    </Label>
+                                    <p className="font-semibold">
+                                      {bookingDetails.bankAccount.name}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between items-center">
+                                  <div className="flex-1">
+                                    <Label className="text-sm text-gray-600">
+                                      Số tiền
+                                    </Label>
+                                    <p className="font-semibold text-green-600">
+                                      {(
+                                        bookingResponse.depositPaid ||
+                                        bookingDetails.deposit
+                                      ).toLocaleString()}
+                                      đ
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      copyToClipboard(
+                                        (
+                                          bookingResponse.depositPaid ||
+                                          bookingDetails.deposit
+                                        ).toString(),
+                                      )
+                                    }
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between items-center">
+                                  <div className="flex-1">
+                                    <Label className="text-sm text-gray-600">
+                                      Nội dung chuyển khoản
+                                    </Label>
+                                    <p className="font-semibold text-orange-600">
+                                      {bookingResponse.bookingCode}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      copyToClipboard(
+                                        bookingResponse.bookingCode,
+                                      )
+                                    }
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
+                              <div className="flex items-start gap-2">
+                                <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                                <div className="text-sm text-orange-700">
+                                  <p className="font-semibold mb-1">
+                                    Quan trọng:
+                                  </p>
+                                  <p>
+                                    Vui lòng chuyển khoản ĐÚNG nội dung để hệ
+                                    thống tự động xác nhận thanh toán
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+                            <p className="text-gray-600">
+                              Đang tạo đơn hàng...
+                            </p>
                           </div>
-                        </div>
+                        )}
                       </div>
                     )}
 
                     <div className="flex gap-3">
                       <Button
                         variant="outline"
-                        onClick={() => setCurrentStep(1)}
+                        onClick={() => {
+                          setCurrentStep(1);
+                          // Reset booking response when going back - user needs to create new booking
+                          setBookingResponse(null);
+                        }}
                         className="flex-1"
                       >
                         Quay lại
                       </Button>
-                      <Button
-                        onClick={handlePayment}
-                        disabled={isProcessing}
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                      >
-                        {isProcessing ? "Đang xử lý..." : "Xác nhận thanh toán"}
-                      </Button>
+                      {paymentMethod === "bank" && bookingResponse && (
+                        <Button
+                          onClick={() => {
+                            setPaymentSuccess(true);
+                            showSuccess(
+                              "Cảm ơn bạn! Đơn hàng đang chờ xác nhận thanh toán. Hệ thống sẽ tự động cập nhật khi nhận được chuyển khoản.",
+                            );
+                          }}
+                          disabled={isProcessing}
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                        >
+                          Tôi đã chuyển khoản
+                        </Button>
+                      )}
+                      {paymentMethod === "momo" &&
+                        bookingResponse?.momoPayment && (
+                          <Button
+                            onClick={() => {
+                              setPaymentSuccess(true);
+                              showSuccess(
+                                "Cảm ơn bạn! Đơn hàng đang chờ xác nhận thanh toán.",
+                              );
+                            }}
+                            className="flex-1 bg-pink-500 hover:bg-pink-600"
+                          >
+                            Tôi đã thanh toán MoMo
+                          </Button>
+                        )}
                     </div>
                   </div>
                 )}
@@ -2234,15 +2409,21 @@ export default function CarIn4() {
               // Payment Success
               <SuccessResult
                 title="Đặt xe thành công!"
-                subTitle={`Mã đơn hàng: ${bookingDetails.bookingId}. Chúng tôi đã gửi xác nhận qua email và tin nhắn. Chủ xe sẽ liên hệ với bạn trong thời gian sớm nhất.`}
+                subTitle={`Mã đơn hàng: ${bookingResponse?.bookingCode || currentBookingId}. ${bookingResponse?.momoPayment ? "Vui lòng hoàn tất thanh toán qua MoMo." : "Chúng tôi đã gửi xác nhận qua email và tin nhắn."} Chủ xe sẽ liên hệ với bạn trong thời gian sớm nhất.`}
                 onGoConsole={() => {
                   setShowPaymentDialog(false);
                   setPaymentSuccess(false);
-                  navigate(`/order/${bookingDetails.bookingId}`);
+                  setBookingResponse(null);
+                  navigate(
+                    `/order/${bookingResponse?.bookingCode || currentBookingId}`,
+                  );
                 }}
                 onBuyAgain={() => {
                   setShowPaymentDialog(false);
                   setPaymentSuccess(false);
+                  setBookingResponse(null);
+                  setCurrentBookingId("");
+                  setPickupNote("");
                   navigate("/");
                 }}
               />

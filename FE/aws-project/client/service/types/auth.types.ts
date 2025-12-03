@@ -60,13 +60,20 @@ export interface User {
   identityNumber?: string; // ID card number
   licenseIssueDate?: string;
   licenseExpiryDate?: string;
-  licenseCardImageUrl?: string; // API returns this field name
+  licenseCardImageUrl?: string; // Keep for backward compatibility
   licenseCardUrl?: string; // Keep for backward compatibility
+  licenseCardFrontImageUrl?: string; // API returns this for front image
+  licenseCardBackImageUrl?: string; // API returns this for back image
   isLicenseVerified?: boolean; // API returns this field name
   licenseVerified?: boolean; // Keep for backward compatibility
   verifiedAt?: string;
   stationId?: string;
   stationName?: string;
+  // Booking statistics from API
+  totalBookings?: number;
+  completedBookings?: number;
+  activeBookings?: number;
+  cancelledBookings?: number;
 }
 
 export interface AuthResponse {
