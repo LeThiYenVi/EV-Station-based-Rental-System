@@ -203,7 +203,7 @@ export default function TopPerformersChart({
         <div className="mt-6 grid grid-cols-3 gap-4">
           {data.slice(0, 3).map((item, index) => (
             <div
-              key={item.id}
+              key={`${item.id ?? item.name}-${index}`}
               className={`p-4 rounded-lg border-2 ${
                 index === 0
                   ? "border-yellow-400 bg-yellow-50"
@@ -262,7 +262,7 @@ export default function TopPerformersChart({
           </p>
           {data.map((item) => (
             <div
-              key={item.id}
+              key={`${item.id ?? item.name}-${item.rank}`}
               className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-3">
