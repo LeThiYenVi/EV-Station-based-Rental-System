@@ -305,9 +305,9 @@ export default function CarIn4() {
     qrCode:
       "00020101021238570010A00000072701270006970454011399961234560208QRIBFTTA53037045802VN62150811Thanh toan6304",
     bankAccount: {
-      name: "Le Thi Yen Vi",
-      bank: "Mb bank",
-      number: "7980104151939",
+      name: "LE DUY KHANG",
+      bank: "Sacombank bank",
+      number: "050106092004",
       content: "BK" + Date.now(),
     },
   };
@@ -2207,7 +2207,7 @@ export default function CarIn4() {
                               <div className="bg-white p-2 rounded-lg shadow-lg mb-4">
                                 {/* VietQR API - Tạo QR code chuyển khoản */}
                                 <img
-                                  src={`https://img.vietqr.io/image/MB-${bookingDetails.bankAccount.number}-compact2.png?amount=${bookingResponse.depositPaid || bookingDetails.deposit}&addInfo=${encodeURIComponent(bookingResponse.bookingCode)}&accountName=${encodeURIComponent(bookingDetails.bankAccount.name)}`}
+                                  src={`https://img.vietqr.io/image/STB-${bookingDetails.bankAccount.number}-compact2.png?amount=${bookingResponse.depositPaid || bookingDetails.deposit}&addInfo=${encodeURIComponent(bookingResponse.bookingCode)}&accountName=${encodeURIComponent(bookingDetails.bankAccount.name)}`}
                                   alt="VietQR Code"
                                   className="w-64 h-64 object-contain"
                                   onError={(e) => {

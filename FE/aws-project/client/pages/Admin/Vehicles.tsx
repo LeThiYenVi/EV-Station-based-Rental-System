@@ -5,36 +5,27 @@
 
 import { useState, useMemo, useEffect } from "react";
 import adminService from "@/services/admin.service";
+import type { VehicleResponse, PageInfo } from "@/services/admin.service";
 // Local minimal typings for this page to avoid external alias dependency
 type VehicleStatus =
-  | "available"
-  | "rented"
-  | "maintenance"
-  | "charging"
-  | "unavailable";
+  | "AVAILABLE"
+  | "RENTED"
+  | "MAINTENANCE"
+  | "CHARGING"
+  | "UNAVAILABLE";
 
-interface Vehicle {
-  id: string;
-  name: string;
-  brand: string;
-  license_plate: string;
-  type: string;
-  capacity: number;
-  status: VehicleStatus;
-  rating: number;
-  rent_count: number;
-  hourly_rate: number;
-  daily_rate: number;
-  deposit_amount: number;
-}
+// Use VehicleResponse from API directly
+type Vehicle = VehicleResponse & { status: VehicleStatus };
+
+type FuelType = "ELECTRICITY" | "GASOLINE";
 
 interface VehicleFilterParams {
   search?: string;
   status?: VehicleStatus;
-  type?: string;
+  fuelType?: FuelType;
   capacity?: number;
-  min_price?: number;
-  max_price?: number;
+  minPrice?: number;
+  maxPrice?: number;
 }
 
 interface CreateVehicleDto {
@@ -87,6 +78,8 @@ import {
   Activity,
   Wrench,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import VehicleTable from "../../components/admin/VehicleTable";
 import VehicleFilter from "../../components/admin/VehicleFilter";
@@ -101,11 +94,19 @@ export default function Vehicles() {
   const [loading, setLoading] = useState(true);
   const [metricsData, setMetricsData] = useState<any>(null);
 
-  // Fetch data on mount
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
+
+  // Fetch data on mount and when pagination changes
   useEffect(() => {
     fetchMetrics();
-    fetchVehicles();
   }, []);
+
+  useEffect(() => {
+    fetchVehicles();
+  }, [currentPage, pageSize]);
 
   const fetchMetrics = async () => {
     try {
@@ -119,8 +120,14 @@ export default function Vehicles() {
   const fetchVehicles = async () => {
     try {
       setLoading(true);
-      const response = await adminService.vehicles.filterVehicles({});
-      setVehicles(response.data as any);
+      const response = await adminService.vehicles.getVehicles({
+        page: currentPage,
+        size: pageSize,
+        sortBy: "createdAt",
+        sortDirection: "DESC",
+      });
+      setVehicles(response.data.content as Vehicle[]);
+      setPageInfo(response.data.page);
     } catch (error) {
       console.error("Failed to fetch vehicles:", error);
       toast({
@@ -139,7 +146,7 @@ export default function Vehicles() {
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Filtered vehicles - Theo ERD fields
+  // Filtered vehicles - Client-side filtering for search
   const filteredVehicles = useMemo(() => {
     return vehicles.filter((vehicle) => {
       if (filters.search) {
@@ -147,18 +154,19 @@ export default function Vehicles() {
         if (
           !vehicle.name.toLowerCase().includes(search) &&
           !vehicle.brand.toLowerCase().includes(search) &&
-          !vehicle.license_plate.toLowerCase().includes(search)
+          !vehicle.licensePlate.toLowerCase().includes(search)
         ) {
           return false;
         }
       }
       if (filters.status && vehicle.status !== filters.status) return false;
-      if (filters.type && vehicle.type !== filters.type) return false; // type thay vì fuel_type
-      if (filters.capacity && vehicle.capacity !== filters.capacity)
-        return false; // capacity thay vì seats
-      if (filters.min_price && vehicle.daily_rate < filters.min_price)
+      if (filters.fuelType && vehicle.fuelType !== filters.fuelType)
         return false;
-      if (filters.max_price && vehicle.daily_rate > filters.max_price)
+      if (filters.capacity && vehicle.capacity !== filters.capacity)
+        return false;
+      if (filters.minPrice && vehicle.dailyRate < filters.minPrice)
+        return false;
+      if (filters.maxPrice && vehicle.dailyRate > filters.maxPrice)
         return false;
       return true;
     });
@@ -176,10 +184,10 @@ export default function Vehicles() {
     }
 
     // Fallback calculation (based on current vehicles list)
-    const available = vehicles.filter((v) => v.status === "available").length;
-    const rented = vehicles.filter((v) => v.status === "rented").length;
+    const available = vehicles.filter((v) => v.status === "AVAILABLE").length;
+    const rented = vehicles.filter((v) => v.status === "RENTED").length;
     const maintenance = vehicles.filter(
-      (v) => v.status === "maintenance",
+      (v) => v.status === "MAINTENANCE",
     ).length;
     const inService = available + rented;
 
@@ -314,15 +322,15 @@ export default function Vehicles() {
     const csvData = filteredVehicles.map((v) => ({
       Name: v.name,
       Brand: v.brand,
-      "License Plate": v.license_plate,
-      Type: v.type,
+      "License Plate": v.licensePlate,
+      Type: v.fuelType,
       Capacity: v.capacity,
       Status: v.status,
       Rating: v.rating,
-      "Rent Count": v.rent_count,
-      "Hourly Rate": v.hourly_rate,
-      "Daily Rate": v.daily_rate,
-      "Deposit Amount": v.deposit_amount,
+      "Rent Count": v.rentCount,
+      "Hourly Rate": v.hourlyRate,
+      "Daily Rate": v.dailyRate,
+      "Deposit Amount": v.depositAmount,
     }));
     exportToCSV(csvData as any, "vehicles");
     toast({
@@ -335,15 +343,15 @@ export default function Vehicles() {
     const excelData = filteredVehicles.map((v) => ({
       Name: v.name,
       Brand: v.brand,
-      "License Plate": v.license_plate,
-      Type: v.type,
+      "License Plate": v.licensePlate,
+      Type: v.fuelType,
       Capacity: v.capacity,
       Status: v.status,
       Rating: v.rating,
-      "Rent Count": v.rent_count,
-      "Hourly Rate": v.hourly_rate,
-      "Daily Rate": v.daily_rate,
-      "Deposit Amount": v.deposit_amount,
+      "Rent Count": v.rentCount,
+      "Hourly Rate": v.hourlyRate,
+      "Daily Rate": v.dailyRate,
+      "Deposit Amount": v.depositAmount,
     }));
     exportToExcel(excelData as any, "vehicles");
     toast({
@@ -436,7 +444,9 @@ export default function Vehicles() {
             <div>
               <CardTitle>Vehicles</CardTitle>
               <CardDescription>
-                {filteredVehicles.length} vehicle(s) found
+                {pageInfo
+                  ? `Showing ${filteredVehicles.length} of ${pageInfo.totalElements} vehicle(s) - Page ${pageInfo.number + 1} of ${pageInfo.totalPages}`
+                  : `${filteredVehicles.length} vehicle(s) found`}
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -451,22 +461,22 @@ export default function Vehicles() {
                   <DropdownMenuContent>
                     <DropdownMenuLabel>Change Status</DropdownMenuLabel>
                     <DropdownMenuItem
-                      onClick={() => handleStatusChange("available")}
+                      onClick={() => handleStatusChange("AVAILABLE")}
                     >
                       Set Available
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleStatusChange("maintenance")}
+                      onClick={() => handleStatusChange("MAINTENANCE")}
                     >
                       Set Maintenance
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleStatusChange("charging")}
+                      onClick={() => handleStatusChange("CHARGING")}
                     >
                       Set Charging
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleStatusChange("unavailable")}
+                      onClick={() => handleStatusChange("UNAVAILABLE")}
                     >
                       Set Unavailable
                     </DropdownMenuItem>
@@ -542,6 +552,89 @@ export default function Vehicles() {
               });
             }}
           />
+
+          {/* Pagination */}
+          {pageInfo && (
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="text-sm text-gray-500">
+                Showing {currentPage * pageSize + 1} to{" "}
+                {Math.min((currentPage + 1) * pageSize, pageInfo.totalElements)}{" "}
+                of {pageInfo.totalElements} vehicles
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(0, prev - 1))
+                  }
+                  disabled={currentPage === 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from(
+                    { length: Math.min(5, pageInfo.totalPages) },
+                    (_, i) => {
+                      let pageNum;
+                      if (pageInfo.totalPages <= 5) {
+                        pageNum = i;
+                      } else if (currentPage < 3) {
+                        pageNum = i;
+                      } else if (currentPage > pageInfo.totalPages - 4) {
+                        pageNum = pageInfo.totalPages - 5 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={
+                            currentPage === pageNum ? "default" : "outline"
+                          }
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum + 1}
+                        </Button>
+                      );
+                    },
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((prev) =>
+                      Math.min(pageInfo.totalPages - 1, prev + 1),
+                    )
+                  }
+                  disabled={currentPage >= pageInfo.totalPages - 1}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Items per page:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(0);
+                  }}
+                  className="border rounded px-2 py-1 text-sm"
+                >
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

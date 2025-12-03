@@ -1,5 +1,5 @@
-import { apiClient } from '../api/apiClient';
-import { API_ENDPOINTS } from '../config/apiConfig';
+import { apiClient } from "../api/apiClient";
+import { API_ENDPOINTS } from "../config/apiConfig";
 import type {
   CreateBookingRequest,
   UpdateBookingRequest,
@@ -8,18 +8,20 @@ import type {
   BookingWithPaymentResponse,
   PageResponse,
   BookingQueryParams,
-  BookingStatus,
-} from '../types/booking.types';
+} from "../types/booking.types";
+import { BookingStatus } from "../types/enums";
 
 class BookingService {
   /**
    * Create a new booking
    * Requires: RENTER role
    */
-  async createBooking(data: CreateBookingRequest): Promise<BookingWithPaymentResponse> {
+  async createBooking(
+    data: CreateBookingRequest,
+  ): Promise<BookingWithPaymentResponse> {
     const response = await apiClient.post<BookingWithPaymentResponse>(
       API_ENDPOINTS.BOOKINGS.CREATE,
-      data
+      data,
     );
     return response.data!;
   }
@@ -29,7 +31,7 @@ class BookingService {
    * Requires: RENTER, STAFF, or ADMIN role
    */
   async getBookingById(bookingId: string): Promise<BookingDetailResponse> {
-    const url = API_ENDPOINTS.BOOKINGS.GET_BY_ID.replace(':id', bookingId);
+    const url = API_ENDPOINTS.BOOKINGS.GET_BY_ID.replace(":id", bookingId);
     const response = await apiClient.get<BookingDetailResponse>(url);
     return response.data!;
   }
@@ -39,7 +41,10 @@ class BookingService {
    * Requires: RENTER, STAFF, or ADMIN role
    */
   async getBookingByCode(bookingCode: string): Promise<BookingDetailResponse> {
-    const url = API_ENDPOINTS.BOOKINGS.GET_BY_CODE.replace(':code', bookingCode);
+    const url = API_ENDPOINTS.BOOKINGS.GET_BY_CODE.replace(
+      ":code",
+      bookingCode,
+    );
     const response = await apiClient.get<BookingDetailResponse>(url);
     return response.data!;
   }
@@ -48,13 +53,18 @@ class BookingService {
    * Get all bookings (paginated)
    * Requires: STAFF or ADMIN role
    */
-  async getAllBookings(params?: BookingQueryParams): Promise<PageResponse<BookingResponse>> {
+  async getAllBookings(
+    params?: BookingQueryParams,
+  ): Promise<PageResponse<BookingResponse>> {
     const queryParams = new URLSearchParams();
-    
-    if (params?.page !== undefined) queryParams.append('page', params.page.toString());
-    if (params?.size !== undefined) queryParams.append('size', params.size.toString());
-    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
-    if (params?.sortDirection) queryParams.append('sortDirection', params.sortDirection);
+
+    if (params?.page !== undefined)
+      queryParams.append("page", params.page.toString());
+    if (params?.size !== undefined)
+      queryParams.append("size", params.size.toString());
+    if (params?.sortBy) queryParams.append("sortBy", params.sortBy);
+    if (params?.sortDirection)
+      queryParams.append("sortDirection", params.sortDirection);
 
     const url = `${API_ENDPOINTS.BOOKINGS.GET_ALL}?${queryParams.toString()}`;
     const response = await apiClient.get<PageResponse<BookingResponse>>(url);
@@ -67,7 +77,7 @@ class BookingService {
    */
   async getMyBookings(): Promise<BookingResponse[]> {
     const response = await apiClient.get<BookingResponse[]>(
-      API_ENDPOINTS.BOOKINGS.GET_MY_BOOKINGS
+      API_ENDPOINTS.BOOKINGS.GET_MY_BOOKINGS,
     );
     return response.data!;
   }
@@ -77,7 +87,7 @@ class BookingService {
    * Requires: STAFF or ADMIN role
    */
   async getBookingsByStatus(status: BookingStatus): Promise<BookingResponse[]> {
-    const url = API_ENDPOINTS.BOOKINGS.GET_BY_STATUS.replace(':status', status);
+    const url = API_ENDPOINTS.BOOKINGS.GET_BY_STATUS.replace(":status", status);
     const response = await apiClient.get<BookingResponse[]>(url);
     return response.data!;
   }
@@ -87,7 +97,10 @@ class BookingService {
    * Requires: STAFF or ADMIN role
    */
   async getBookingsByVehicleId(vehicleId: string): Promise<BookingResponse[]> {
-    const url = API_ENDPOINTS.BOOKINGS.GET_BY_VEHICLE.replace(':vehicleId', vehicleId);
+    const url = API_ENDPOINTS.BOOKINGS.GET_BY_VEHICLE.replace(
+      ":vehicleId",
+      vehicleId,
+    );
     const response = await apiClient.get<BookingResponse[]>(url);
     return response.data!;
   }
@@ -97,7 +110,10 @@ class BookingService {
    * Requires: STAFF or ADMIN role
    */
   async getBookingsByStationId(stationId: string): Promise<BookingResponse[]> {
-    const url = API_ENDPOINTS.BOOKINGS.GET_BY_STATION.replace(':stationId', stationId);
+    const url = API_ENDPOINTS.BOOKINGS.GET_BY_STATION.replace(
+      ":stationId",
+      stationId,
+    );
     const response = await apiClient.get<BookingResponse[]>(url);
     return response.data!;
   }
@@ -108,9 +124,9 @@ class BookingService {
    */
   async updateBooking(
     bookingId: string,
-    data: UpdateBookingRequest
+    data: UpdateBookingRequest,
   ): Promise<BookingResponse> {
-    const url = API_ENDPOINTS.BOOKINGS.UPDATE.replace(':id', bookingId);
+    const url = API_ENDPOINTS.BOOKINGS.UPDATE.replace(":id", bookingId);
     const response = await apiClient.put<BookingResponse>(url, data);
     return response.data!;
   }
@@ -120,7 +136,7 @@ class BookingService {
    * Requires: STAFF or ADMIN role
    */
   async confirmBooking(bookingId: string): Promise<BookingResponse> {
-    const url = API_ENDPOINTS.BOOKINGS.CONFIRM.replace(':id', bookingId);
+    const url = API_ENDPOINTS.BOOKINGS.CONFIRM.replace(":id", bookingId);
     const response = await apiClient.patch<BookingResponse>(url);
     return response.data!;
   }
@@ -130,7 +146,7 @@ class BookingService {
    * Requires: STAFF or ADMIN role
    */
   async startBooking(bookingId: string): Promise<BookingResponse> {
-    const url = API_ENDPOINTS.BOOKINGS.START.replace(':id', bookingId);
+    const url = API_ENDPOINTS.BOOKINGS.START.replace(":id", bookingId);
     const response = await apiClient.patch<BookingResponse>(url);
     return response.data!;
   }
@@ -140,7 +156,7 @@ class BookingService {
    * Requires: STAFF or ADMIN role
    */
   async completeBooking(bookingId: string): Promise<BookingResponse> {
-    const url = API_ENDPOINTS.BOOKINGS.COMPLETE.replace(':id', bookingId);
+    const url = API_ENDPOINTS.BOOKINGS.COMPLETE.replace(":id", bookingId);
     const response = await apiClient.patch<BookingResponse>(url);
     return response.data!;
   }
@@ -150,7 +166,7 @@ class BookingService {
    * Requires: RENTER, STAFF, or ADMIN role
    */
   async cancelBooking(bookingId: string): Promise<BookingResponse> {
-    const url = API_ENDPOINTS.BOOKINGS.CANCEL.replace(':id', bookingId);
+    const url = API_ENDPOINTS.BOOKINGS.CANCEL.replace(":id", bookingId);
     const response = await apiClient.patch<BookingResponse>(url);
     return response.data!;
   }
@@ -160,7 +176,7 @@ class BookingService {
    * Requires: ADMIN role
    */
   async deleteBooking(bookingId: string): Promise<void> {
-    const url = API_ENDPOINTS.BOOKINGS.DELETE.replace(':id', bookingId);
+    const url = API_ENDPOINTS.BOOKINGS.DELETE.replace(":id", bookingId);
     await apiClient.delete(url);
   }
 
@@ -168,7 +184,10 @@ class BookingService {
    * Check if booking can be cancelled
    */
   canCancelBooking(booking: BookingResponse): boolean {
-    return booking.status === 'PENDING' || booking.status === 'CONFIRMED';
+    return (
+      booking.status === BookingStatus.PENDING ||
+      booking.status === BookingStatus.CONFIRMED
+    );
   }
 
   /**
@@ -176,13 +195,13 @@ class BookingService {
    */
   getStatusText(status: BookingStatus): string {
     const statusMap: Record<BookingStatus, string> = {
-      PENDING: 'Chờ xác nhận',
-      CONFIRMED: 'Đã xác nhận',
-      IN_PROGRESS: 'Đang diễn ra',
-      COMPLETED: 'Hoàn thành',
-      CANCELLED: 'Đã hủy',
+      [BookingStatus.PENDING]: "Chờ xác nhận",
+      [BookingStatus.CONFIRMED]: "Đã xác nhận",
+      [BookingStatus.ONGOING]: "Đang diễn ra",
+      [BookingStatus.COMPLETED]: "Hoàn thành",
+      [BookingStatus.CANCELLED]: "Đã hủy",
     };
-    return statusMap[status] || status;
+    return statusMap[status] || String(status);
   }
 
   /**
@@ -190,13 +209,13 @@ class BookingService {
    */
   getStatusColor(status: BookingStatus): string {
     const colorMap: Record<BookingStatus, string> = {
-      PENDING: 'yellow',
-      CONFIRMED: 'blue',
-      IN_PROGRESS: 'green',
-      COMPLETED: 'gray',
-      CANCELLED: 'red',
+      [BookingStatus.PENDING]: "yellow",
+      [BookingStatus.CONFIRMED]: "blue",
+      [BookingStatus.ONGOING]: "green",
+      [BookingStatus.COMPLETED]: "gray",
+      [BookingStatus.CANCELLED]: "red",
     };
-    return colorMap[status] || 'gray';
+    return colorMap[status] || "gray";
   }
 
   /**
@@ -215,12 +234,12 @@ class BookingService {
    */
   formatBookingDate(dateString: string): string {
     const date = new Date(dateString);
-    return date.toLocaleString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleString("vi-VN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   }
 }

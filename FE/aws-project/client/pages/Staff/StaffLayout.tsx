@@ -14,6 +14,9 @@ import { useNavigate, Routes, Route, useLocation } from "react-router-dom";
 import Confirmations from "./Confirmations";
 import ActiveBookings from "./ActiveBookings";
 import VehicleInspection from "./VehicleInspection";
+import Customers from "./Customers";
+import Schedule from "./Schedule";
+import StaffReports from "./StaffReports";
 
 const { Header, Sider, Content } = Layout;
 
@@ -107,6 +110,18 @@ export default function StaffLayout() {
               icon: <UserOutlined />,
               label: "Khách hàng",
               onClick: () => navigate("/staff/customers"),
+            },
+            {
+              key: "6",
+              icon: <DashboardOutlined />,
+              label: "Lịch công việc",
+              onClick: () => navigate("/staff/schedule"),
+            },
+            {
+              key: "7",
+              icon: <DashboardOutlined />,
+              label: "Báo cáo",
+              onClick: () => navigate("/staff/reports"),
             },
           ]}
         />
@@ -244,15 +259,9 @@ export default function StaffLayout() {
             <Route path="/confirmations" element={<Confirmations />} />
             <Route path="/bookings" element={<ActiveBookings />} />
             <Route path="/vehicles" element={<VehicleInspection />} />
-            <Route
-              path="/customers"
-              element={
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold">Khách hàng</h1>
-                  <p className="text-gray-600 mt-2">Đang phát triển...</p>
-                </div>
-              }
-            />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/schedule" element={<Schedule />} />
+            <Route path="/reports" element={<StaffReports />} />
           </Routes>
         </Content>
       </Layout>

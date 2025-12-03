@@ -21,7 +21,7 @@
  *    - Đơn vị sửa chữa
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -79,13 +79,20 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import type { UploadFile } from "antd/es/upload/interface";
 import dayjs from "dayjs";
+import vehicleService from "@/service/vehicle/vehicleService";
 
 const { TextArea } = Input;
 const { TabPane } = Tabs;
 const { Option } = Select;
 
 // Vehicle status enum
-type VehicleStatus = "available" | "rented" | "maintenance" | "out_of_service";
+type VehicleStatus =
+  | "available"
+  | "rented"
+  | "maintenance"
+  | "charging"
+  | "unavailable"
+  | "out_of_service";
 
 // Inspection status enum
 type InspectionStatus = "good" | "minor_issue" | "major_issue";
@@ -282,6 +289,8 @@ export default function VehicleInspection() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [stationId, setStationId] = useState<string>("");
+  const [listLoading, setListLoading] = useState<boolean>(false);
 
   // Inspection checklist
   const [checklist, setChecklist] = useState<ChecklistItem[]>([
@@ -312,6 +321,57 @@ export default function VehicleInspection() {
     maintenance: vehicles.filter((v) => v.status === "maintenance").length,
     outOfService: vehicles.filter((v) => v.status === "out_of_service").length,
   };
+
+  useEffect(() => {
+    const loadVehicles = async () => {
+      if (!stationId) return;
+      setListLoading(true);
+      try {
+        const data = await vehicleService.getVehiclesByStation(stationId);
+        // Map to local Vehicle shape if needed
+        const mapped: Vehicle[] = data.map((v: any) => ({
+          id: v.id,
+          name: v.name || `${v.brand} ${v.model}`,
+          brand: v.brand,
+          plateNumber: v.licensePlate,
+          type:
+            v.fuelType === "ELECTRICITY"
+              ? "Điện"
+              : v.fuelType === "HYBRID"
+                ? "Hybrid"
+                : "Xăng",
+          status:
+            v.status === "AVAILABLE"
+              ? "available"
+              : v.status === "RENTED"
+                ? "rented"
+                : v.status === "MAINTENANCE"
+                  ? "maintenance"
+                  : v.status === "CHARGING"
+                    ? "charging"
+                    : v.status === "UNAVAILABLE"
+                      ? "unavailable"
+                      : "out_of_service",
+          imageUrl: v.imageUrl,
+          currentKm: v.currentKm || 0,
+          lastInspection: v.lastInspection || new Date().toISOString(),
+          nextInspection:
+            v.nextInspection ||
+            new Date(Date.now() + 30 * 86400000).toISOString(),
+          daysSinceInspection: v.daysSinceInspection || 0,
+          batteryHealth: v.batteryHealth,
+          fuelLevel: v.fuelLevel,
+          stationName: v.stationName || "",
+        }));
+        setVehicles(mapped);
+      } catch (e) {
+        message.error("Không thể tải danh sách xe theo trạm");
+      } finally {
+        setListLoading(false);
+      }
+    };
+    loadVehicles();
+  }, [stationId]);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -346,6 +406,16 @@ export default function VehicleInspection() {
         label: "Bảo trì",
         color: "orange",
         icon: <ToolOutlined />,
+      },
+      charging: {
+        label: "Đang sạc",
+        color: "cyan",
+        icon: <ThunderboltOutlined />,
+      },
+      unavailable: {
+        label: "Không khả dụng",
+        color: "default",
+        icon: <ExclamationCircleOutlined />,
       },
       out_of_service: {
         label: "Ngừng hoạt động",
@@ -414,16 +484,34 @@ export default function VehicleInspection() {
 
     setLoading(true);
     try {
-      // TODO: Call API to submit inspection
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Update vehicle status based on inspection result
       let newStatus: VehicleStatus = "available";
       if (hasMajorIssues) {
         newStatus = "out_of_service";
       } else if (hasIssues) {
         newStatus = "maintenance";
       }
+
+      // Map to service enum (UPPERCASE)
+      const statusMap: Record<VehicleStatus, any> = {
+        available: "AVAILABLE",
+        rented: "RENTED",
+        maintenance: "MAINTENANCE",
+        out_of_service: "OUT_OF_SERVICE",
+      };
+
+      // Upload photos if any
+      const files: File[] = fileList
+        .map((f) => f.originFileObj as File)
+        .filter(Boolean);
+      if (files.length > 0) {
+        await vehicleService.uploadVehiclePhotos(selectedVehicle.id, files);
+      }
+
+      // Change status via service
+      await vehicleService.changeVehicleStatus(
+        selectedVehicle.id,
+        statusMap[newStatus],
+      );
 
       setVehicles((prev) =>
         prev.map((v) =>
@@ -688,6 +776,16 @@ export default function VehicleInspection() {
 
       {/* Table */}
       <Card>
+        <div className="mb-4 flex items-center gap-3">
+          <span>Chọn trạm:</span>
+          <Input
+            placeholder="Nhập Station ID"
+            value={stationId}
+            onChange={(e) => setStationId(e.target.value)}
+            style={{ width: 280 }}
+          />
+          {listLoading && <span className="text-gray-500">Đang tải...</span>}
+        </div>
         <Table
           columns={columns}
           dataSource={vehicles}

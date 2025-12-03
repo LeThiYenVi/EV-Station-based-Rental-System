@@ -19,6 +19,7 @@ import UserProfile from "./pages/Customer/User/in4";
 import Login from "./pages/Login/Login";
 import AdminLayout from "./pages/Admin/AdminLayout";
 import StaffLayout from "./pages/Staff/StaffLayout";
+import Unauthorized from "./pages/Unauthorized";
 import NotificationDemo from "./pages/NotificationDemo";
 import ResultDemo from "./pages/ResultDemo";
 import ComponentsDemo from "./pages/ComponentsDemo";
@@ -126,6 +127,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/admin/*" element={<AdminLayout />} />
           <Route path="/staff/*" element={<StaffLayout />} />
+          <Route path="/401" element={<Unauthorized />} />
           <Route
             path="/demo/notifications"
             element={

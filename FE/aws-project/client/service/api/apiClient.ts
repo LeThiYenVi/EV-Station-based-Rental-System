@@ -124,7 +124,7 @@ class ApiClient {
       return Promise.reject(error);
     };
 
-    // Error interceptor for AUTHENTICATED instance - with token refresh
+    // Error interceptor for AUTHENTICATED instance - handle 401 without refresh loop
     const authErrorInterceptor = async (error: AxiosError<ApiError>) => {
       console.error("Authenticated request failed:", {
         url: error.config?.url,
@@ -133,36 +133,19 @@ class ApiClient {
         data: error.response?.data,
       });
 
-      const originalRequest = error.config as AxiosRequestConfig & {
-        _retry?: boolean;
-      };
-
-      // Handle 401 errors (unauthorized) - try to refresh token
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true;
-
+      // Handle 401 errors (unauthorized) - redirect to 401 page without refresh
+      if (error.response?.status === 401) {
+        // Clear tokens and state
         try {
-          console.log("Attempting token refresh...");
-          // Try to refresh the token
-          const refreshResponse = await this.instance.post("/auth/refresh");
-          const { accessToken, idToken } = refreshResponse.data.data;
-
-          // Update tokens in localStorage
-          localStorage.setItem("accessToken", accessToken);
-          localStorage.setItem("idToken", idToken);
-
-          // Retry the original request
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          }
-          return this.instance(originalRequest);
-        } catch (refreshError) {
-          console.error("Token refresh failed, logging out...");
-          // Refresh token failed, logout user
-          localStorage.clear();
-          window.location.href = "/login";
-          return Promise.reject(refreshError);
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("idToken");
+        } catch {}
+        // Avoid redirect loops: only navigate if not already on 401 or login
+        const currentPath = window.location.pathname;
+        if (currentPath !== "/401" && currentPath !== "/login") {
+          window.location.href = "/401";
         }
+        return Promise.reject(error);
       }
 
       return Promise.reject(error);

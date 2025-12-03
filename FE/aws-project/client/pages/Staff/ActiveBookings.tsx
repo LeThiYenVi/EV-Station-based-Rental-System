@@ -2,7 +2,7 @@
  * Staff Active Bookings Page - Quản lý Đơn đang thuê
  *
  * Chức năng:
- * ✅ Danh sách đơn đang trong quá trình thuê (CONFIRMED, IN_PROGRESS)
+ * ✅ Danh sách đơn đang trong quá trình thuê (CONFIRMED, ONGOING)
  * ✅ Theo dõi thời gian còn lại
  * ✅ Bàn giao xe:
  *    - Checklist trước khi giao (nhiên liệu, vệ sinh, vết xước)
@@ -19,7 +19,7 @@
  *    - Thay xe khác (nếu cần)
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   Button,
@@ -71,7 +71,9 @@ import {
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { UploadFile } from "antd/es/upload/interface";
-import { BookingResponse, BookingStatus } from "@/service/types/booking.types";
+import { BookingResponse } from "@/service/types/booking.types";
+import { BookingStatus } from "@/service/types/enums";
+import bookingService from "@/service/booking/bookingService";
 
 const { TextArea } = Input;
 const { TabPane } = Tabs;
@@ -173,7 +175,7 @@ const mockActiveBookings: ActiveBooking[] = [
     returnStationId: "s2",
     pickupTime: "2025-11-30T10:00:00Z",
     returnTime: "2025-12-03T18:00:00Z",
-    status: BookingStatus.IN_PROGRESS,
+    status: BookingStatus.ONGOING,
     totalPrice: 2850000,
     notes: "",
     createdAt: "2025-11-28T14:00:00Z",
@@ -218,7 +220,7 @@ const mockActiveBookings: ActiveBooking[] = [
     returnStationId: "s1",
     pickupTime: "2025-11-28T09:00:00Z",
     returnTime: "2025-12-01T18:00:00Z",
-    status: BookingStatus.IN_PROGRESS,
+    status: BookingStatus.ONGOING,
     totalPrice: 2400000,
     notes: "",
     createdAt: "2025-11-26T11:00:00Z",
@@ -257,7 +259,70 @@ const mockActiveBookings: ActiveBooking[] = [
 ];
 
 export default function ActiveBookings() {
-  const [bookings, setBookings] = useState<ActiveBooking[]>(mockActiveBookings);
+  const [bookings, setBookings] = useState<ActiveBooking[]>([]);
+  useEffect(() => {
+    const loadActive = async () => {
+      try {
+        const confirmed = await bookingService.getBookingsByStatus(
+          BookingStatus.CONFIRMED,
+        );
+        const inProgress = await bookingService.getBookingsByStatus(
+          BookingStatus.ONGOING,
+        );
+        const all = [...confirmed, ...inProgress];
+        const mapped: ActiveBooking[] = all.map((b: any) => ({
+          id: b.id,
+          bookingCode: b.bookingCode,
+          vehicleId: b.vehicleId,
+          renterId: b.renterId,
+          pickupStationId: b.pickupStationId,
+          returnStationId: b.returnStationId,
+          pickupTime: b.pickupTime,
+          returnTime: b.returnTime,
+          status: b.status,
+          totalPrice: b.totalPrice,
+          notes: b.notes,
+          createdAt: b.createdAt,
+          updatedAt: b.updatedAt,
+          renter: {
+            id: b.renter?.id || b.renterId,
+            fullName: b.renter?.fullName || "Khách hàng",
+            email: b.renter?.email || "",
+            phoneNumber: b.renter?.phoneNumber || "",
+            identityNumber: b.renter?.identityNumber || "",
+          },
+          vehicle: {
+            id: b.vehicle?.id || b.vehicleId,
+            name: b.vehicle?.name || "Xe",
+            brand: b.vehicle?.brand || "",
+            plateNumber: b.vehicle?.licensePlate || "",
+            type: b.vehicle?.fuelType || "",
+            imageUrl: b.vehicle?.imageUrl,
+            currentKm: b.vehicle?.currentKm || 0,
+            fuelLevel: b.vehicle?.fuelLevel || 0,
+          },
+          pickupStation: {
+            id: b.station?.id || b.pickupStationId,
+            name: b.station?.name || "Trạm",
+            address: b.station?.address || "",
+          },
+          returnStation: {
+            id: b.returnStation?.id || b.returnStationId,
+            name: b.returnStation?.name || "Trạm",
+            address: b.returnStation?.address || "",
+          },
+          timeRemaining: Math.round(
+            (new Date(b.returnTime).getTime() - Date.now()) / (1000 * 60 * 60),
+          ),
+          isOverdue: new Date(b.returnTime).getTime() - Date.now() < 0,
+        }));
+        setBookings(mapped);
+      } catch (e) {
+        setBookings(mockActiveBookings);
+      }
+    };
+    loadActive();
+  }, []);
   const [selectedBooking, setSelectedBooking] = useState<ActiveBooking | null>(
     null,
   );
@@ -269,6 +334,9 @@ export default function ActiveBookings() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [actionLoading, setActionLoading] = useState<{ [id: string]: boolean }>(
+    {},
+  );
 
   // Checklist templates
   const [handoverChecklist, setHandoverChecklist] = useState<ChecklistItem[]>([
@@ -300,11 +368,11 @@ export default function ActiveBookings() {
     readyToHandover: bookings.filter(
       (b) => b.status === BookingStatus.CONFIRMED,
     ).length,
-    inProgress: bookings.filter((b) => b.status === BookingStatus.IN_PROGRESS)
+    inProgress: bookings.filter((b) => b.status === BookingStatus.ONGOING)
       .length,
     overdue: bookings.filter((b) => b.isOverdue).length,
     needReturn: bookings.filter(
-      (b) => b.status === BookingStatus.IN_PROGRESS && b.timeRemaining < 24,
+      (b) => b.status === BookingStatus.ONGOING && b.timeRemaining < 24,
     ).length,
   };
 
@@ -394,14 +462,12 @@ export default function ActiveBookings() {
 
     setLoading(true);
     try {
-      // TODO: Call API to submit handover
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Update booking status to IN_PROGRESS
+      await bookingService.startBooking(selectedBooking.id);
+      // Update booking status to ONGOING
       setBookings((prev) =>
         prev.map((b) =>
           b.id === selectedBooking.id
-            ? { ...b, status: BookingStatus.IN_PROGRESS }
+            ? { ...b, status: BookingStatus.ONGOING }
             : b,
         ),
       );
@@ -432,9 +498,7 @@ export default function ActiveBookings() {
 
     setLoading(true);
     try {
-      // TODO: Call API to submit return
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
+      await bookingService.completeBooking(selectedBooking.id);
       // Remove from active bookings (status becomes COMPLETED)
       setBookings((prev) => prev.filter((b) => b.id !== selectedBooking.id));
 
@@ -464,6 +528,19 @@ export default function ActiveBookings() {
       message.error("Có lỗi xảy ra, vui lòng thử lại!");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelBooking = async (bookingId: string) => {
+    setActionLoading((prev) => ({ ...prev, [bookingId]: true }));
+    try {
+      await bookingService.cancelBooking(bookingId);
+      setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+      message.success("Đã hủy đơn thuê thành công");
+    } catch (error) {
+      message.error("Hủy đơn thất bại, vui lòng thử lại!");
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [bookingId]: false }));
     }
   };
 
@@ -682,7 +759,7 @@ export default function ActiveBookings() {
               Bàn giao xe
             </Button>
           )}
-          {record.status === BookingStatus.IN_PROGRESS && (
+          {record.status === BookingStatus.ONGOING && (
             <>
               <Button
                 type="primary"
@@ -693,6 +770,16 @@ export default function ActiveBookings() {
                 style={{ backgroundColor: "#52c41a" }}
               >
                 Nhận xe trả
+              </Button>
+              <Button
+                danger
+                size="small"
+                icon={<DeleteOutlined />}
+                onClick={() => handleCancelBooking(record.id)}
+                className="w-full"
+                loading={actionLoading[record.id]}
+              >
+                Hủy đơn
               </Button>
               <Button
                 danger
@@ -931,7 +1018,7 @@ export default function ActiveBookings() {
                     <Form.Item
                       name="fuelLevel"
                       label={
-                        selectedBooking.vehicle.type === "Điện"
+                        selectedBooking.vehicle.type === "ELECTRICITY"
                           ? "Mức pin"
                           : "Mức nhiên liệu"
                       }
@@ -1144,7 +1231,7 @@ export default function ActiveBookings() {
                     <Form.Item
                       name="returnFuelLevel"
                       label={
-                        selectedBooking.vehicle.type === "Điện"
+                        selectedBooking.vehicle.type === "ELECTRICITY"
                           ? "Mức pin"
                           : "Mức nhiên liệu"
                       }
