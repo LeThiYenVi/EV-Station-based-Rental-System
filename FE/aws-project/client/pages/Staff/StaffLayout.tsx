@@ -12,12 +12,12 @@ import {
   FileTextOutlined,
 } from "@ant-design/icons";
 import { useNavigate, Routes, Route, useLocation } from "react-router-dom";
+import Dashboard from "./Dashboard";
 import Confirmations from "./Confirmations";
 import ActiveBookings from "./ActiveBookings";
 import VehicleInspection from "./VehicleInspection";
 import Customers from "./Customers";
 import Blog from "./Blog";
-import StaffReports from "./StaffReports";
 
 const { Header, Sider, Content } = Layout;
 
@@ -37,7 +37,6 @@ export default function StaffLayout() {
     if (path.includes("/vehicles")) return "4";
     if (path.includes("/customers")) return "5";
     if (path.includes("/blog")) return "6";
-    if (path.includes("/reports")) return "7";
     return "1"; // dashboard
   };
 
@@ -133,12 +132,6 @@ export default function StaffLayout() {
               label: "Quản lý Blog",
               onClick: () => navigate("/staff/blog"),
             },
-            {
-              key: "7",
-              icon: <DashboardOutlined />,
-              label: "Báo cáo",
-              onClick: () => navigate("/staff/reports"),
-            },
           ]}
         />
 
@@ -195,93 +188,13 @@ export default function StaffLayout() {
           }}
         >
           <Routes>
-            <Route
-              path="/"
-              element={
-                <div className="space-y-6 p-6">
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-800">
-                      Staff Dashboard
-                    </h1>
-                    <p className="text-gray-600 mt-2">
-                      Chào mừng đến với trang quản lý vận hành
-                    </p>
-                  </div>
-
-                  {/* Stats Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-blue-100 text-sm">
-                            Đơn chờ xác nhận
-                          </p>
-                          <h3 className="text-3xl font-bold mt-2">12</h3>
-                        </div>
-                        <ShoppingOutlined className="text-4xl text-blue-200" />
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-green-100 text-sm">
-                            Đơn đang thuê
-                          </p>
-                          <h3 className="text-3xl font-bold mt-2">34</h3>
-                        </div>
-                        <CheckCircleOutlined className="text-4xl text-green-200" />
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-purple-100 text-sm">
-                            Xe cần kiểm tra
-                          </p>
-                          <h3 className="text-3xl font-bold mt-2">8</h3>
-                        </div>
-                        <CarOutlined className="text-4xl text-purple-200" />
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-6 text-white shadow-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-orange-100 text-sm">
-                            Khách hàng mới
-                          </p>
-                          <h3 className="text-3xl font-bold mt-2">56</h3>
-                        </div>
-                        <UserOutlined className="text-4xl text-orange-200" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <div className="space-y-6 p-6">
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-800">
-                      Staff Dashboard
-                    </h1>
-                    <p className="text-gray-600 mt-2">
-                      Chào mừng đến với trang quản lý vận hành
-                    </p>
-                  </div>
-                </div>
-              }
-            />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/confirmations" element={<Confirmations />} />
             <Route path="/bookings" element={<ActiveBookings />} />
             <Route path="/vehicles" element={<VehicleInspection />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/blog" element={<Blog />} />
-            <Route path="/reports" element={<StaffReports />} />
           </Routes>
         </Content>
       </Layout>

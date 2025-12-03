@@ -104,11 +104,21 @@ export default function Blog() {
     try {
       const values = await form.validateFields();
 
+      // Get username (email) from localStorage
+      const username = localStorage.getItem("username");
+      if (!username) {
+        message.error("Không tìm thấy thông tin user. Vui lòng đăng nhập lại.");
+        return;
+      }
+
       // Ensure published is boolean (default false if not set)
       const payload = {
         ...values,
+        email: username, // Add email from username
         published: values.published ?? false,
       };
+
+      console.log("📝 Creating blog with payload:", payload);
 
       if (editingBlog) {
         // Update existing blog
@@ -125,7 +135,10 @@ export default function Blog() {
       loadBlogs();
     } catch (error: any) {
       console.error("Submit blog error:", error);
-      const errorMsg = error?.response?.data?.message || "Có lỗi xảy ra";
+      const errorMsg =
+        error?.response?.data?.errors ||
+        error?.response?.data?.message ||
+        "Có lỗi xảy ra";
       message.error(errorMsg);
     }
   };
