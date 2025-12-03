@@ -156,7 +156,7 @@ public class BlogController {
     }
 
     @DeleteMapping("/{blogId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     public ResponseEntity<ApiResponse<Void>> deleteBlog(
             @PathVariable UUID blogId
     ) {

@@ -59,10 +59,10 @@ class VehicleService {
   }
 
   /**
-   * Get all vehicles with pagination
+   * Get all vehicles with pagination (legacy endpoint using API_ENDPOINTS)
    * @param filters - Pagination and sorting options
    */
-  async getAllVehicles(
+  async getAllVehiclesLegacy(
     filters?: VehicleFilters,
   ): Promise<PageResponse<VehicleResponse>> {
     const params = new URLSearchParams();
@@ -94,6 +94,45 @@ class VehicleService {
     return response.data;
   }
 
+  /**
+   * Get all vehicles with pagination
+   * @param params - Pagination and sorting options
+   */
+  async getAllVehicles(params: {
+    page: number;
+    size: number;
+    sortBy?: string;
+    sortDirection?: "asc" | "desc";
+  }): Promise<PageResponse<VehicleResponse>> {
+    const { page, size, sortBy, sortDirection } = params;
+    const res = await apiClient.get("/vehicles", {
+      params: {
+        page,
+        size,
+        sortBy,
+        sortDirection: sortDirection?.toUpperCase(),
+      },
+    });
+
+    // apiClient.get already returns unwrapped data
+    // Response is directly { content, page }
+    const payload = res.data;
+    const pageInfo = payload?.page || {};
+
+    console.log("✅ Fixed - Payload:", payload);
+    console.log("✅ Fixed - Content:", payload?.content);
+
+    return {
+      content: payload?.content || [],
+      totalElements: pageInfo.totalElements || 0,
+      totalPages: pageInfo.totalPages || 0,
+      size: pageInfo.size || size,
+      number: pageInfo.number || page,
+      first: pageInfo.number === 0,
+      last: pageInfo.number >= pageInfo.totalPages - 1,
+      empty: !payload?.content?.length,
+    };
+  }
   /**
    * Get available vehicles
    * @param filters - Station, fuel type, brand filters

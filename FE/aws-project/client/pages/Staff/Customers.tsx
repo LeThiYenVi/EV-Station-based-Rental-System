@@ -40,7 +40,20 @@ export default function Customers() {
   const [note, setNote] = useState("");
   const [rating, setRating] = useState<number>(0);
   const [verifying, setVerifying] = useState(false);
-  const staffId = "staff-uuid-placeholder"; // TODO: replace with authenticated staff id
+
+  // Get logged-in staff ID from localStorage
+  const getStaffId = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.id || user.userId;
+      }
+    } catch (e) {
+      console.error("Failed to get staff ID:", e);
+    }
+    return null;
+  };
 
   useEffect(() => {
     const fetch = async () => {
@@ -61,6 +74,13 @@ export default function Customers() {
   const verifyLicense = async (u: UserResponse, approved: boolean) => {
     try {
       setVerifying(true);
+      const staffId = getStaffId();
+      if (!staffId) {
+        message.error(
+          "Không tìm thấy thông tin staff. Vui lòng đăng nhập lại.",
+        );
+        return;
+      }
       await staffService.verifyUserLicense(u.id!, staffId, approved);
       message.success(approved ? "Đã duyệt GPLX" : "Đã từ chối GPLX");
       setUsers((prev) =>

@@ -9,9 +9,11 @@ import {
   CustomerServiceOutlined,
   CarOutlined,
   LineChartOutlined,
+  ShoppingOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 
-export default function StaffReports() {
+export default function Dashboard() {
   const [stats, setStats] = useState({
     todayProcessed: 0,
     weekProcessed: 0,
@@ -20,6 +22,10 @@ export default function StaffReports() {
     customersSupported: 0,
     customerRating: 0,
     selfAssessment: 0,
+    pendingCount: 0,
+    ongoingCount: 0,
+    maintenanceCount: 0,
+    newCustomers: 0,
   });
   const [stations, setStations] = useState<any[]>([]);
   const [stationId, setStationId] = useState<string>("");
@@ -78,7 +84,6 @@ export default function StaffReports() {
           (v: any) => v.status === "MAINTENANCE" || v.status === "maintenance",
         ).length;
 
-        // Customers supported: approximate by license verifications from pending bookings renter set (placeholder)
         const customersSupported = (pending || []).length;
 
         setStats({
@@ -89,6 +94,10 @@ export default function StaffReports() {
           customersSupported,
           customerRating: 4.5,
           selfAssessment: Math.min(100, Math.round((weekProcessed / 50) * 100)),
+          pendingCount: (pending || []).length,
+          ongoingCount: (inProgress || []).length,
+          maintenanceCount: vehiclesInspected,
+          newCustomers: customersSupported,
         });
       } catch (e) {
         // Keep defaults
@@ -99,11 +108,16 @@ export default function StaffReports() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-green-700">Báo cáo của Staff</h1>
+      <div>
+        <h1 className="text-3xl font-bold text-green-700">Staff Dashboard</h1>
+        <p className="text-gray-600 mt-2">
+          Chào mừng đến với trang quản lý vận hành
+        </p>
+      </div>
 
       <div className="mb-4">
         <Space>
-          <span>Trạm:</span>
+          <span className="font-medium">Trạm:</span>
           <Select
             value={stationId}
             onChange={setStationId}
@@ -119,11 +133,57 @@ export default function StaffReports() {
         </Space>
       </div>
 
+      {/* Quick Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-100 text-sm">Đơn chờ xác nhận</p>
+              <h3 className="text-3xl font-bold mt-2">{stats.pendingCount}</h3>
+            </div>
+            <ShoppingOutlined className="text-4xl text-blue-200" />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-100 text-sm">Đơn đang thuê</p>
+              <h3 className="text-3xl font-bold mt-2">{stats.ongoingCount}</h3>
+            </div>
+            <CheckCircleOutlined className="text-4xl text-green-200" />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-purple-100 text-sm">Xe cần kiểm tra</p>
+              <h3 className="text-3xl font-bold mt-2">
+                {stats.maintenanceCount}
+              </h3>
+            </div>
+            <CarOutlined className="text-4xl text-purple-200" />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-orange-100 text-sm">Khách hàng mới</p>
+              <h3 className="text-3xl font-bold mt-2">{stats.newCustomers}</h3>
+            </div>
+            <UserOutlined className="text-4xl text-orange-200" />
+          </div>
+        </div>
+      </div>
+
+      {/* Performance Stats */}
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>
           <Card className="border-green-100">
             <Space>
-              <CheckCircleOutlined className="text-green-600" />
+              <CheckCircleOutlined className="text-green-600 text-2xl" />
               <Statistic
                 title="Đơn đã xử lý hôm nay"
                 value={stats.todayProcessed}
@@ -154,7 +214,7 @@ export default function StaffReports() {
         <Col xs={24} md={8}>
           <Card className="border-green-100">
             <Space>
-              <CarOutlined className="text-purple-600" />
+              <CarOutlined className="text-purple-600 text-2xl" />
               <Statistic
                 title="Số xe đã kiểm tra"
                 value={stats.vehiclesInspected}
@@ -165,7 +225,7 @@ export default function StaffReports() {
         <Col xs={24} md={8}>
           <Card className="border-green-100">
             <Space>
-              <CustomerServiceOutlined className="text-green-600" />
+              <CustomerServiceOutlined className="text-green-600 text-2xl" />
               <Statistic
                 title="Khách hàng đã hỗ trợ"
                 value={stats.customersSupported}
@@ -196,7 +256,7 @@ export default function StaffReports() {
       </Card>
 
       <Card
-        title={<span className="text-green-700">Chi tiết</span>}
+        title={<span className="text-green-700">Chi tiết báo cáo</span>}
         className="border-green-100"
       >
         <Tabs
@@ -204,17 +264,29 @@ export default function StaffReports() {
             {
               key: "orders",
               label: "Đơn xử lý",
-              children: <div>Biểu đồ/chi tiết đơn (đang phát triển)</div>,
+              children: (
+                <div className="p-4 text-gray-500">
+                  Biểu đồ/chi tiết đơn (đang phát triển)
+                </div>
+              ),
             },
             {
               key: "vehicles",
               label: "Xe kiểm tra",
-              children: <div>Biểu đồ/chi tiết xe (đang phát triển)</div>,
+              children: (
+                <div className="p-4 text-gray-500">
+                  Biểu đồ/chi tiết xe (đang phát triển)
+                </div>
+              ),
             },
             {
               key: "support",
               label: "Khách hỗ trợ",
-              children: <div>Biểu đồ/chi tiết hỗ trợ (đang phát triển)</div>,
+              children: (
+                <div className="p-4 text-gray-500">
+                  Biểu đồ/chi tiết hỗ trợ (đang phát triển)
+                </div>
+              ),
             },
           ]}
         />
