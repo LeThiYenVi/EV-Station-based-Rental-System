@@ -77,7 +77,6 @@ class BlogService {
   async createBlog(data: {
     title: string;
     content: string;
-    email: string;
     thumbnailUrl?: string;
     published?: boolean;
   }): Promise<BlogResponse> {

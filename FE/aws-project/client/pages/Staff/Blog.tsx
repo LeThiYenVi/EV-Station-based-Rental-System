@@ -104,17 +104,11 @@ export default function Blog() {
     try {
       const values = await form.validateFields();
 
-      // Get username (email) from localStorage
-      const username = localStorage.getItem("username");
-      if (!username) {
-        message.error("Không tìm thấy thông tin user. Vui lòng đăng nhập lại.");
-        return;
-      }
-
       // Ensure published is boolean (default false if not set)
       const payload = {
-        ...values,
-        email: username, // Add email from username
+        title: values.title,
+        content: values.content,
+        thumbnailUrl: values.thumbnailUrl || "",
         published: values.published ?? false,
       };
 
