@@ -15,7 +15,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { Trophy, TrendingUp } from "lucide-react";
+import { TrophyOutlined, RiseOutlined } from "@ant-design/icons";
 
 interface PerformerData {
   id: string;
@@ -135,7 +135,10 @@ export default function TopPerformersChart({
         </CardHeader>
         <CardContent className="flex items-center justify-center h-96">
           <div className="text-center text-muted-foreground">
-            <Trophy className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <TrophyOutlined
+              style={{ fontSize: 48 }}
+              className="mx-auto mb-2 opacity-50"
+            />
             <p>Chưa có dữ liệu</p>
           </div>
         </CardContent>
@@ -149,7 +152,10 @@ export default function TopPerformersChart({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-xl flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
+              <TrophyOutlined
+                className="text-yellow-500"
+                style={{ fontSize: 20 }}
+              />
               {title}
             </CardTitle>
             {subtitle && (
@@ -157,7 +163,7 @@ export default function TopPerformersChart({
             )}
           </div>
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <TrendingUp className="h-4 w-4" />
+            <RiseOutlined />
             <span>Top {data.length}</span>
           </div>
         </div>
@@ -224,14 +230,15 @@ export default function TopPerformersChart({
                 >
                   {index + 1}
                 </div>
-                <Trophy
-                  className={`h-5 w-5 ${
+                <TrophyOutlined
+                  className={
                     index === 0
                       ? "text-yellow-600"
                       : index === 1
                         ? "text-gray-600"
                         : "text-orange-600"
-                  }`}
+                  }
+                  style={{ fontSize: 20 }}
                 />
               </div>
               <p className="font-semibold text-sm truncate">{item.name}</p>

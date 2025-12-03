@@ -8,17 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, X, Filter } from "lucide-react";
-
-// Local types matching API response
-type VehicleStatus =
-  | "AVAILABLE"
-  | "RENTED"
-  | "MAINTENANCE"
-  | "CHARGING"
-  | "UNAVAILABLE";
-
-type FuelType = "ELECTRICITY" | "GASOLINE";
+import { CloseOutlined, FilterOutlined } from "@ant-design/icons";
+import {
+  VehicleStatus,
+  VehicleStatusLabel,
+  FuelType,
+  FuelTypeLabel,
+} from "@/service/types/enums";
 
 interface VehicleFilterParams {
   search?: string;
@@ -48,21 +44,21 @@ export default function VehicleFilter({
     <div className="bg-white rounded-lg border shadow-sm p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5" />
-          <h3 className="text-lg font-semibold">Filters</h3>
+          <FilterOutlined style={{ fontSize: 20 }} />
+          <h3 className="text-lg font-semibold">Bộ lọc</h3>
         </div>
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={onReset}>
-            <X className="h-4 w-4 mr-1" />
-            Clear
+            <CloseOutlined className="mr-1" />
+            Xóa bộ lọc
           </Button>
         )}
       </div>
       <div className="grid grid-cols-5 gap-4">
         <div className="col-span-2">
-          <Label>Search</Label>
+          <Label>Tìm kiếm</Label>
           <Input
-            placeholder="Search..."
+            placeholder="Tên xe, biển số, hãng xe..."
             value={filters.search || ""}
             onChange={(e) =>
               onFilterChange({ ...filters, search: e.target.value })
@@ -70,7 +66,7 @@ export default function VehicleFilter({
           />
         </div>
         <div>
-          <Label>Status</Label>
+          <Label>Trạng thái</Label>
           <Select
             value={filters.status || "all"}
             onValueChange={(v) =>
@@ -81,20 +77,30 @@ export default function VehicleFilter({
             }
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Tất cả" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="AVAILABLE">Available</SelectItem>
-              <SelectItem value="RENTED">Rented</SelectItem>
-              <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-              <SelectItem value="CHARGING">Charging</SelectItem>
-              <SelectItem value="UNAVAILABLE">Unavailable</SelectItem>
+              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value={VehicleStatus.AVAILABLE}>
+                {VehicleStatusLabel[VehicleStatus.AVAILABLE]}
+              </SelectItem>
+              <SelectItem value={VehicleStatus.RENTED}>
+                {VehicleStatusLabel[VehicleStatus.RENTED]}
+              </SelectItem>
+              <SelectItem value={VehicleStatus.MAINTENANCE}>
+                {VehicleStatusLabel[VehicleStatus.MAINTENANCE]}
+              </SelectItem>
+              <SelectItem value={VehicleStatus.CHARGING}>
+                {VehicleStatusLabel[VehicleStatus.CHARGING]}
+              </SelectItem>
+              <SelectItem value={VehicleStatus.UNAVAILABLE}>
+                {VehicleStatusLabel[VehicleStatus.UNAVAILABLE]}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div>
-          <Label>Type</Label>
+          <Label>Loại nhiên liệu</Label>
           <Select
             value={filters.fuelType || "all"}
             onValueChange={(v) =>
@@ -105,17 +111,21 @@ export default function VehicleFilter({
             }
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Tất cả" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="ELECTRICITY">Electric</SelectItem>
-              <SelectItem value="GASOLINE">Gasoline</SelectItem>
+              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value={FuelType.ELECTRICITY}>
+                {FuelTypeLabel[FuelType.ELECTRICITY]}
+              </SelectItem>
+              <SelectItem value={FuelType.GASOLINE}>
+                {FuelTypeLabel[FuelType.GASOLINE]}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div>
-          <Label>Capacity</Label>
+          <Label>Số ghế</Label>
           <Select
             value={filters.capacity?.toString() || "all"}
             onValueChange={(v) =>
@@ -126,14 +136,14 @@ export default function VehicleFilter({
             }
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Tất cả" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="2">2</SelectItem>
-              <SelectItem value="4">4</SelectItem>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="7">7</SelectItem>
+              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value="2">2 chỗ</SelectItem>
+              <SelectItem value="4">4 chỗ</SelectItem>
+              <SelectItem value="5">5 chỗ</SelectItem>
+              <SelectItem value="7">7 chỗ</SelectItem>
             </SelectContent>
           </Select>
         </div>

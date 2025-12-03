@@ -81,14 +81,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Download,
-  FileSpreadsheet,
-  Plus,
-  Calendar,
-  DollarSign,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+  DownloadOutlined,
+  FileExcelOutlined,
+  PlusOutlined,
+  CalendarOutlined,
+  DollarOutlined,
+  RiseOutlined,
+  TeamOutlined,
+} from "@ant-design/icons";
 import BookingFilter from "@/components/admin/BookingFilter";
 import BookingTable from "@/components/admin/BookingTable";
 import BookingDetailModal from "@/components/admin/BookingDetailModal";
@@ -509,11 +509,11 @@ export default function Bookings() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExportCSV}>
-            <Download className="h-4 w-4 mr-2" />
+            <DownloadOutlined className="mr-2" />
             Xuất CSV
           </Button>
           <Button variant="outline" onClick={handleExportExcel}>
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            <FileExcelOutlined className="mr-2" />
             Xuất Excel
           </Button>
         </div>
@@ -524,7 +524,7 @@ export default function Bookings() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <CalendarOutlined className="text-muted-foreground" />
               Tổng đơn thuê
             </CardTitle>
           </CardHeader>
@@ -539,7 +539,7 @@ export default function Bookings() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-green-600" />
+              <DollarOutlined className="text-green-600" />
               Tổng doanh thu
             </CardTitle>
           </CardHeader>
@@ -560,7 +560,7 @@ export default function Bookings() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-yellow-600" />
+              <RiseOutlined className="text-yellow-600" />
               Chờ xác nhận
             </CardTitle>
           </CardHeader>
@@ -575,7 +575,7 @@ export default function Bookings() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4 text-blue-600" />
+              <TeamOutlined className="text-blue-600" />
               Đang thuê
             </CardTitle>
           </CardHeader>

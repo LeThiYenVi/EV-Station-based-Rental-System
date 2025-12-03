@@ -62,15 +62,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Eye,
-  Car,
-  Zap,
-  Fuel,
-  Star,
-} from "lucide-react";
+  MoreOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  CarOutlined,
+  ThunderboltOutlined,
+  StarOutlined,
+} from "@ant-design/icons";
 
 interface VehicleTableProps {
   vehicles: Vehicle[];
@@ -107,33 +106,33 @@ export default function VehicleTable({
       { label: string; className: string; icon: string }
     > = {
       available: {
-        label: "Available",
+        label: "Sẵn sàng",
         className: "bg-green-100 text-green-800 hover:bg-green-100",
         icon: "🟢",
       },
       rented: {
-        label: "Rented",
+        label: "Đang thuê",
         className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
         icon: "🟡",
       },
       maintenance: {
-        label: "Maintenance",
+        label: "Bảo trì",
         className: "bg-red-100 text-red-800 hover:bg-red-100",
         icon: "🔴",
       },
       charging: {
-        label: "Charging",
+        label: "Đang sạc",
         className: "bg-blue-100 text-blue-800 hover:bg-blue-100",
         icon: "⚡",
       },
       unavailable: {
-        label: "Unavailable",
+        label: "Không khả dụng",
         className: "bg-gray-100 text-gray-800 hover:bg-gray-100",
         icon: "⚫",
       },
     };
     const config = configs[key] ?? {
-      label: key || "Unknown",
+      label: key || "Không xác định",
       className: "bg-gray-100 text-gray-800 hover:bg-gray-100",
       icon: "❔",
     };
@@ -150,15 +149,14 @@ export default function VehicleTable({
     if (type === "ELECTRICITY") {
       return (
         <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1 w-fit">
-          <Zap className="h-3 w-3" />
-          Electric
+          <ThunderboltOutlined />
+          Điện
         </Badge>
       );
     }
     return (
       <Badge className="bg-orange-100 text-orange-800 flex items-center gap-1 w-fit">
-        <Fuel className="h-3 w-3" />
-        Gasoline
+        ⛽ Xăng
       </Badge>
     );
   };
@@ -186,9 +184,12 @@ export default function VehicleTable({
   if (vehicles.length === 0) {
     return (
       <div className="text-center py-12">
-        <Car className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-        <p className="text-gray-500 text-lg">No vehicles found</p>
-        <p className="text-gray-400 text-sm">Try adjusting your filters</p>
+        <CarOutlined
+          style={{ fontSize: 48 }}
+          className="mx-auto text-gray-400 mb-4"
+        />
+        <p className="text-gray-500 text-lg">Không tìm thấy xe nào</p>
+        <p className="text-gray-400 text-sm">Thử điều chỉnh bộ lọc của bạn</p>
       </div>
     );
   }
@@ -202,15 +203,15 @@ export default function VehicleTable({
               <TableHead className="w-12">
                 <Checkbox checked={allSelected} onCheckedChange={onSelectAll} />
               </TableHead>
-              <TableHead>Vehicle Info</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Capacity</TableHead>
-              <TableHead>Rating</TableHead>
-              <TableHead>Rent Count</TableHead>
-              <TableHead>Pricing</TableHead>
-              <TableHead>Deposit</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Thông tin xe</TableHead>
+              <TableHead>Loại</TableHead>
+              <TableHead>Số ghế</TableHead>
+              <TableHead>Đánh giá</TableHead>
+              <TableHead>Số lần thuê</TableHead>
+              <TableHead>Giá thuê</TableHead>
+              <TableHead>Tiền cọc</TableHead>
+              <TableHead>Trạng thái</TableHead>
+              <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -235,7 +236,10 @@ export default function VehicleTable({
                       />
                     ) : (
                       <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
-                        <Car className="h-8 w-8 text-gray-400" />
+                        <CarOutlined
+                          style={{ fontSize: 32 }}
+                          className="text-gray-400"
+                        />
                       </div>
                     )}
                     <div>
@@ -256,14 +260,14 @@ export default function VehicleTable({
                 {/* Capacity (ERD field, renamed from "seats") */}
                 <TableCell>
                   <div className="text-sm font-medium">
-                    {vehicle.capacity} seats
+                    {vehicle.capacity} chỗ
                   </div>
                 </TableCell>
 
                 {/* Rating (ERD field) */}
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <StarOutlined className="text-yellow-500" />
                     <span className="font-medium">
                       {vehicle.rating.toFixed(1)}
                     </span>
@@ -273,7 +277,7 @@ export default function VehicleTable({
                 {/* Rent Count (API field) */}
                 <TableCell>
                   <div className="text-sm font-medium">
-                    {vehicle.rentCount} times
+                    {vehicle.rentCount} lần
                   </div>
                 </TableCell>
 
@@ -281,10 +285,10 @@ export default function VehicleTable({
                 <TableCell>
                   <div className="text-sm">
                     <div className="font-medium">
-                      {formatCurrency(vehicle.dailyRate)}/day
+                      {formatCurrency(vehicle.dailyRate)}/ngày
                     </div>
                     <div className="text-xs text-gray-500">
-                      {formatCurrency(vehicle.hourlyRate)}/hour
+                      {formatCurrency(vehicle.hourlyRate)}/giờ
                     </div>
                   </div>
                 </TableCell>
@@ -304,33 +308,33 @@ export default function VehicleTable({
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreOutlined />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
                       <DropdownMenuItem onClick={() => onViewDetail(vehicle)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
+                        <EyeOutlined className="mr-2" />
+                        Xem chi tiết
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onEdit(vehicle)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Vehicle
+                        <EditOutlined className="mr-2" />
+                        Chỉnh sửa xe
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                      <DropdownMenuLabel>Đổi trạng thái</DropdownMenuLabel>
                       <DropdownMenuItem
                         onClick={() => onChangeStatus(vehicle.id, "AVAILABLE")}
                         disabled={vehicle.status === "AVAILABLE"}
                       >
-                        🟢 Set Available
+                        🟢 Sẵn sàng
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onChangeStatus(vehicle.id, "RENTED")}
                         disabled={vehicle.status === "RENTED"}
                       >
-                        🟡 Set Rented
+                        🟡 Đang thuê
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
@@ -338,7 +342,7 @@ export default function VehicleTable({
                         }
                         disabled={vehicle.status === "MAINTENANCE"}
                       >
-                        🔴 Set Maintenance
+                        🔴 Bảo trì
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onChangeStatus(vehicle.id, "CHARGING")}
@@ -347,7 +351,7 @@ export default function VehicleTable({
                           vehicle.fuelType !== "ELECTRICITY"
                         }
                       >
-                        ⚡ Set Charging
+                        ⚡ Đang sạc
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
@@ -355,7 +359,7 @@ export default function VehicleTable({
                         }
                         disabled={vehicle.status === "UNAVAILABLE"}
                       >
-                        ⚫ Set Unavailable
+                        ⚫ Không khả dụng
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
@@ -363,8 +367,8 @@ export default function VehicleTable({
                         onClick={() => handleDeleteClick(vehicle.id)}
                         className="text-red-600 focus:text-red-600"
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Vehicle
+                        <DeleteOutlined className="mr-2" />
+                        Xóa xe
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -379,19 +383,19 @@ export default function VehicleTable({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Vehicle?</AlertDialogTitle>
+            <AlertDialogTitle>Xóa xe?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              vehicle from the database.
+              Hành động này không thể hoàn tác. Xe sẽ bị xóa vĩnh viễn khỏi cơ
+              sở dữ liệu.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

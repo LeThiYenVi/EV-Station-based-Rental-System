@@ -24,7 +24,11 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, TrendingDown, Calendar } from "lucide-react";
+import {
+  RiseOutlined,
+  FallOutlined,
+  CalendarOutlined,
+} from "@ant-design/icons";
 
 type TimePeriod = "day" | "week" | "month" | "year";
 
@@ -166,7 +170,7 @@ export default function RevenueChart({
               size="sm"
               onClick={() => setShowComparison(!showComparison)}
             >
-              <Calendar className="h-4 w-4 mr-1" />
+              <CalendarOutlined className="mr-1" />
               So sánh
             </Button>
             <Select
@@ -206,9 +210,9 @@ export default function RevenueChart({
             <p className="text-xs text-muted-foreground">Tăng trưởng</p>
             <div className="flex items-center gap-1">
               {isPositiveGrowth ? (
-                <TrendingUp className="h-4 w-4 text-blue-600" />
+                <RiseOutlined className="text-blue-600" />
               ) : (
-                <TrendingDown className="h-4 w-4 text-red-600" />
+                <FallOutlined className="text-red-600" />
               )}
               <p
                 className={`text-lg font-bold ${isPositiveGrowth ? "text-blue-700" : "text-red-700"}`}

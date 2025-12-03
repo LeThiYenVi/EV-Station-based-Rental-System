@@ -16,20 +16,18 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Users,
-  Car,
-  ShoppingCart,
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  Clock,
-  Battery,
-  Zap,
-  CheckCircle,
-  AlertCircle,
-  Wrench,
-} from "lucide-react";
+  TeamOutlined,
+  CarOutlined,
+  ShoppingCartOutlined,
+  DollarOutlined,
+  RiseOutlined,
+  FallOutlined,
+  ThunderboltOutlined,
+  ClockCircleOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  ToolOutlined,
+} from "@ant-design/icons";
 import {
   LineChart,
   Line,
@@ -135,7 +133,7 @@ export default function Dashboard() {
       action: "New customer registered",
       user: "Nguyễn Văn A",
       time: "2 minutes ago",
-      icon: Users,
+      icon: TeamOutlined,
       color: "text-blue-600 bg-blue-100",
     },
     {
@@ -144,7 +142,7 @@ export default function Dashboard() {
       action: "New booking created",
       user: "Tesla Model 3",
       time: "15 minutes ago",
-      icon: ShoppingCart,
+      icon: ShoppingCartOutlined,
       color: "text-purple-600 bg-purple-100",
     },
     {
@@ -153,7 +151,7 @@ export default function Dashboard() {
       action: "Vehicle added to fleet",
       user: "VinFast VF8 Plus",
       time: "30 minutes ago",
-      icon: Car,
+      icon: CarOutlined,
       color: "text-green-600 bg-green-100",
     },
     {
@@ -162,7 +160,7 @@ export default function Dashboard() {
       action: "Maintenance completed",
       user: "Toyota Camry",
       time: "1 hour ago",
-      icon: Wrench,
+      icon: ToolOutlined,
       color: "text-orange-600 bg-orange-100",
     },
     {
@@ -171,7 +169,7 @@ export default function Dashboard() {
       action: "Booking completed",
       user: "Honda CR-V",
       time: "2 hours ago",
-      icon: CheckCircle,
+      icon: CheckCircleOutlined,
       color: "text-teal-600 bg-teal-100",
     },
   ];
@@ -204,7 +202,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <TeamOutlined className="text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -215,7 +213,7 @@ export default function Dashboard() {
               {stats.users.customer} Customers
             </p>
             <div className="flex items-center gap-1 mt-2">
-              <TrendingUp className="h-3 w-3 text-green-600" />
+              <RiseOutlined className="text-green-600" />
               <span className="text-xs text-green-600 font-medium">
                 +{stats.users.growth}%
               </span>
@@ -230,7 +228,7 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-medium">
               Total Vehicles
             </CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
+            <CarOutlined className="text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -241,7 +239,7 @@ export default function Dashboard() {
               Rented
             </p>
             <div className="flex items-center gap-1 mt-2">
-              <TrendingUp className="h-3 w-3 text-green-600" />
+              <RiseOutlined className="text-green-600" />
               <span className="text-xs text-green-600 font-medium">
                 +{stats.vehicles.growth}%
               </span>
@@ -256,7 +254,7 @@ export default function Dashboard() {
             <CardTitle className="text-sm font-medium">
               Total Bookings
             </CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            <ShoppingCartOutlined className="text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -267,7 +265,7 @@ export default function Dashboard() {
               Month
             </p>
             <div className="flex items-center gap-1 mt-2">
-              <TrendingUp className="h-3 w-3 text-green-600" />
+              <RiseOutlined className="text-green-600" />
               <span className="text-xs text-green-600 font-medium">
                 +{stats.bookings.growth}%
               </span>
@@ -280,7 +278,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarOutlined className="text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -291,7 +289,7 @@ export default function Dashboard() {
               {formatCurrency(stats.revenue.thisMonth)} This Month
             </p>
             <div className="flex items-center gap-1 mt-2">
-              <TrendingUp className="h-3 w-3 text-green-600" />
+              <RiseOutlined className="text-green-600" />
               <span className="text-xs text-green-600 font-medium">
                 +{stats.revenue.growth}%
               </span>
@@ -307,7 +305,7 @@ export default function Dashboard() {
         <Card className="col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
+              <RiseOutlined />
               Revenue & Bookings Trend
             </CardTitle>
             <CardDescription>
@@ -353,7 +351,7 @@ export default function Dashboard() {
         <Card className="col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
+              <ThunderboltOutlined />
               Vehicle Status Distribution
             </CardTitle>
             <CardDescription>Current fleet status breakdown</CardDescription>
@@ -401,7 +399,7 @@ export default function Dashboard() {
         <Card className="col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Battery className="h-5 w-5" />
+              <ThunderboltOutlined />
               Bookings by Vehicle Type
             </CardTitle>
             <CardDescription>Performance by fuel type</CardDescription>
@@ -441,7 +439,7 @@ export default function Dashboard() {
         <Card className="col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
+              <ClockCircleOutlined />
               Recent Activities
             </CardTitle>
             <CardDescription>Latest system activities</CardDescription>
@@ -478,7 +476,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="h-4 w-4 text-blue-600" />
+              <ThunderboltOutlined className="text-blue-600" />
               Electric Vehicle Fleet
             </CardTitle>
           </CardHeader>
@@ -515,7 +513,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CheckCircleOutlined className="text-green-600" />
               Booking Performance
             </CardTitle>
           </CardHeader>
@@ -557,7 +555,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <ExclamationCircleOutlined className="text-orange-600" />
               Maintenance Overview
             </CardTitle>
           </CardHeader>

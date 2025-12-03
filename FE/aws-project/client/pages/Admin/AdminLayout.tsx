@@ -12,6 +12,7 @@ import {
   SettingOutlined,
   LogoutOutlined,
   EnvironmentOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import "./AdminLayout.css";
@@ -23,6 +24,7 @@ import Reports from "./Reports";
 import Uploads from "./Uploads.tsx";
 import Settings from "./Settings";
 import Stations from "./Stations";
+import Blogs from "./Blogs";
 
 const { Header, Sider, Content } = Layout;
 
@@ -111,6 +113,12 @@ export default function AdminLayout() {
               onClick: () => navigate("/admin/stations"),
             },
             {
+              key: "7-blogs",
+              icon: <FileTextOutlined />,
+              label: "Bài viết",
+              onClick: () => navigate("/admin/blogs"),
+            },
+            {
               key: "6",
               icon: <UploadOutlined />,
               label: "Tải lên",
@@ -183,6 +191,7 @@ export default function AdminLayout() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/uploads" element={<Uploads />} />
             <Route path="/stations" element={<Stations />} />
+            <Route path="/blogs" element={<Blogs />} />
             {/* Add more routes here */}
           </Routes>
         </Content>

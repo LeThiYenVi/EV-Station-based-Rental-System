@@ -89,21 +89,27 @@ export interface StationResponse {
   id: string;
   name: string;
   address: string;
-  city: string;
-  district?: string;
-  ward?: string;
+  rating?: number;
   latitude?: number;
   longitude?: number;
+  hotline?: string;
+  status: StationStatus;
+  photo?: string;
+  startTime?: string; // ISO datetime "2025-11-10T06:00:00"
+  endTime?: string; // ISO datetime "2025-11-10T22:00:00"
+  createdAt?: string;
+  updatedAt?: string;
+  // Legacy fields for backwards compatibility
+  city?: string;
+  district?: string;
+  ward?: string;
   phoneNumber?: string;
   email?: string;
-  status: StationStatus;
   photoUrl?: string;
-  totalVehicles: number;
-  availableVehicles: number;
+  totalVehicles?: number;
+  availableVehicles?: number;
   openingTime?: string; // "08:00"
   closingTime?: string; // "20:00"
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface StationDetailResponse extends StationResponse {
@@ -134,11 +140,16 @@ export interface StationDetailResponse extends StationResponse {
 export interface CreateStationRequest {
   name: string;
   address: string;
-  city: string;
-  district?: string;
-  ward?: string;
   latitude?: number;
   longitude?: number;
+  hotline?: string;
+  photo?: string;
+  startTime?: string; // ISO datetime
+  endTime?: string; // ISO datetime
+  // Legacy fields
+  city?: string;
+  district?: string;
+  ward?: string;
   phoneNumber?: string;
   email?: string;
   description?: string;
@@ -150,15 +161,20 @@ export interface CreateStationRequest {
 export interface UpdateStationRequest {
   name?: string;
   address?: string;
+  latitude?: number;
+  longitude?: number;
+  hotline?: string;
+  photo?: string;
+  startTime?: string;
+  endTime?: string;
+  status?: StationStatus;
+  // Legacy fields
   city?: string;
   district?: string;
   ward?: string;
-  latitude?: number;
-  longitude?: number;
   phoneNumber?: string;
   email?: string;
   description?: string;
-  status?: StationStatus;
   openingTime?: string;
   closingTime?: string;
   amenities?: string[];

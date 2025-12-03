@@ -24,18 +24,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Eye,
-  MoreVertical,
-  Edit,
-  Trash2,
-  User,
-  Car,
-  Calendar,
-  DollarSign,
-  CheckCircle,
-  XCircle,
-  Clock,
-} from "lucide-react";
+  EyeOutlined,
+  MoreOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  UserOutlined,
+  CarOutlined,
+  CalendarOutlined,
+  DollarOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ClockCircleOutlined,
+} from "@ant-design/icons";
 
 interface BookingTableProps {
   bookings: Booking[];
@@ -98,7 +98,10 @@ export default function BookingTable({
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <Clock className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+          <ClockCircleOutlined
+            style={{ fontSize: 32 }}
+            className="animate-spin mx-auto mb-2 text-primary"
+          />
           <p className="text-muted-foreground">Đang tải dữ liệu...</p>
         </div>
       </div>
@@ -109,7 +112,10 @@ export default function BookingTable({
     return (
       <div className="flex items-center justify-center h-64 border rounded-lg">
         <div className="text-center">
-          <Car className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+          <CarOutlined
+            style={{ fontSize: 48 }}
+            className="mx-auto mb-3 text-muted-foreground"
+          />
           <h3 className="text-lg font-semibold mb-1">Không có đơn thuê</h3>
           <p className="text-sm text-muted-foreground">
             Chưa có đơn thuê nào phù hợp với bộ lọc
@@ -145,7 +151,7 @@ export default function BookingTable({
               {/* Renter */}
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
+                  <UserOutlined className="text-muted-foreground" />
                   <div>
                     <p className="font-medium text-sm">
                       {booking.renter?.full_name || "N/A"}
@@ -160,7 +166,7 @@ export default function BookingTable({
               {/* Vehicle */}
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <Car className="h-4 w-4 text-muted-foreground" />
+                  <CarOutlined className="text-muted-foreground" />
                   <div>
                     <p className="font-medium text-sm">
                       {booking.vehicle?.name || "N/A"}
@@ -176,20 +182,29 @@ export default function BookingTable({
               <TableCell>
                 <div className="space-y-1">
                   <div className="flex items-center gap-1 text-xs">
-                    <Calendar className="h-3 w-3 text-green-600" />
+                    <CalendarOutlined
+                      className="text-green-600"
+                      style={{ fontSize: 12 }}
+                    />
                     <span className="text-green-600">
                       {formatDateTime(booking.start_time)}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-xs">
-                    <Calendar className="h-3 w-3 text-orange-600" />
+                    <CalendarOutlined
+                      className="text-orange-600"
+                      style={{ fontSize: 12 }}
+                    />
                     <span className="text-orange-600">
                       {formatDateTime(booking.expected_end_time)}
                     </span>
                   </div>
                   {booking.actual_end_time && (
                     <div className="flex items-center gap-1 text-xs">
-                      <CheckCircle className="h-3 w-3 text-blue-600" />
+                      <CheckCircleOutlined
+                        className="text-blue-600"
+                        style={{ fontSize: 12 }}
+                      />
                       <span className="text-blue-600">
                         {formatDateTime(booking.actual_end_time)}
                       </span>
@@ -223,7 +238,7 @@ export default function BookingTable({
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4" />
+                      <MoreOutlined />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -231,17 +246,17 @@ export default function BookingTable({
                     <DropdownMenuSeparator />
 
                     <DropdownMenuItem onClick={() => onViewDetail(booking)}>
-                      <Eye className="h-4 w-4 mr-2" />
+                      <EyeOutlined className="mr-2" />
                       Xem chi tiết
                     </DropdownMenuItem>
 
                     <DropdownMenuItem onClick={() => onUpdateStatus(booking)}>
-                      <Edit className="h-4 w-4 mr-2" />
+                      <EditOutlined className="mr-2" />
                       Cập nhật trạng thái
                     </DropdownMenuItem>
 
                     <DropdownMenuItem onClick={() => onAssignStaff(booking)}>
-                      <User className="h-4 w-4 mr-2" />
+                      <UserOutlined className="mr-2" />
                       Phân công Staff
                     </DropdownMenuItem>
 
@@ -252,7 +267,7 @@ export default function BookingTable({
                           onClick={() => onDelete(booking.id)}
                           className="text-destructive"
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
+                          <DeleteOutlined className="mr-2" />
                           Xóa đơn
                         </DropdownMenuItem>
                       </>

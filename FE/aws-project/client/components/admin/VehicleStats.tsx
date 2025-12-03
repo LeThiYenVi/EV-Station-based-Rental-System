@@ -11,7 +11,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, DollarSign, Star, Calendar, Activity } from "lucide-react";
+import {
+  RiseOutlined,
+  DollarOutlined,
+  StarOutlined,
+  CalendarOutlined,
+  LineChartOutlined,
+} from "@ant-design/icons";
 
 interface VehicleStatsProps {
   open: boolean;
@@ -55,7 +61,7 @@ export default function VehicleStats({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
+            <LineChartOutlined style={{ fontSize: 20 }} />
             Vehicle Statistics - {vehicle.name}
           </DialogTitle>
         </DialogHeader>
@@ -68,7 +74,7 @@ export default function VehicleStats({
                 <CardTitle className="text-sm font-medium">
                   Total Bookings
                 </CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <CalendarOutlined className="text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.totalBookings}</div>
@@ -83,7 +89,7 @@ export default function VehicleStats({
                 <CardTitle className="text-sm font-medium">
                   Total Revenue
                 </CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <DollarOutlined className="text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
@@ -100,12 +106,15 @@ export default function VehicleStats({
                 <CardTitle className="text-sm font-medium">
                   Average Rating
                 </CardTitle>
-                <Star className="h-4 w-4 text-muted-foreground" />
+                <StarOutlined className="text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold flex items-center gap-1">
                   {stats.averageRating}
-                  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  <StarOutlined
+                    className="text-yellow-400"
+                    style={{ fontSize: 20 }}
+                  />
                 </div>
                 <p className="text-xs text-muted-foreground">
                   From {stats.completedTrips} reviews
@@ -118,7 +127,7 @@ export default function VehicleStats({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
+                <RiseOutlined style={{ fontSize: 20 }} />
                 Monthly Revenue Trend
               </CardTitle>
             </CardHeader>

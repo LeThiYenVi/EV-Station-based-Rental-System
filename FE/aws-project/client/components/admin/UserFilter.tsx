@@ -21,7 +21,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Search, X, Calendar as CalendarIcon, Filter } from "lucide-react";
+import {
+  SearchOutlined,
+  CloseOutlined,
+  CalendarOutlined,
+  FilterOutlined,
+} from "@ant-design/icons";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -111,8 +116,8 @@ export default function UserFilter({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Filter className="h-5 w-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+          <FilterOutlined style={{ fontSize: 20 }} className="text-gray-600" />
+          <h3 className="text-lg font-semibold text-gray-900">Bộ lọc</h3>
         </div>
         {hasActiveFilters && (
           <Button
@@ -121,8 +126,8 @@ export default function UserFilter({
             onClick={handleResetAll}
             className="text-gray-600 hover:text-gray-900"
           >
-            <X className="h-4 w-4 mr-1" />
-            Clear All
+            <CloseOutlined className="mr-1" />
+            Xóa tất cả
           </Button>
         )}
       </div>
@@ -132,13 +137,13 @@ export default function UserFilter({
         {/* Search */}
         <div className="lg:col-span-2">
           <Label htmlFor="search" className="text-sm font-medium text-gray-700">
-            Search
+            Tìm kiếm
           </Label>
           <div className="relative mt-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <SearchOutlined className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <Input
               id="search"
-              placeholder="Search by name, email, phone..."
+              placeholder="Tìm theo tên, email, số điện thoại..."
               value={filters.search || ""}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-10"
@@ -149,20 +154,20 @@ export default function UserFilter({
         {/* Role Filter */}
         <div>
           <Label htmlFor="role" className="text-sm font-medium text-gray-700">
-            Role
+            Vai trò
           </Label>
           <Select
             value={filters.role || "all"}
             onValueChange={handleRoleChange}
           >
             <SelectTrigger id="role" className="mt-1">
-              <SelectValue placeholder="All Roles" />
+              <SelectValue placeholder="Tất cả" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="staff">Staff</SelectItem>
-              <SelectItem value="renter">Customer</SelectItem>
+              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value="admin">Quản trị</SelectItem>
+              <SelectItem value="staff">Nhân viên</SelectItem>
+              <SelectItem value="renter">Khách hàng</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -170,20 +175,20 @@ export default function UserFilter({
         {/* Status Filter */}
         <div>
           <Label htmlFor="status" className="text-sm font-medium text-gray-700">
-            Status
+            Trạng thái
           </Label>
           <Select
             value={filters.status || "all"}
             onValueChange={handleStatusChange}
           >
             <SelectTrigger id="status" className="mt-1">
-              <SelectValue placeholder="All Status" />
+              <SelectValue placeholder="Tất cả" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="blocked">Blocked</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value="active">Hoạt động</SelectItem>
+              <SelectItem value="blocked">Bị khóa</SelectItem>
+              <SelectItem value="pending">Chờ duyệt</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -194,7 +199,7 @@ export default function UserFilter({
             htmlFor="verified"
             className="text-sm font-medium text-gray-700"
           >
-            Verification
+            Xác thực
           </Label>
           <Select
             value={
@@ -207,12 +212,12 @@ export default function UserFilter({
             onValueChange={handleVerifiedChange}
           >
             <SelectTrigger id="verified" className="mt-1">
-              <SelectValue placeholder="All" />
+              <SelectValue placeholder="Tất cả" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="verified">Verified</SelectItem>
-              <SelectItem value="unverified">Unverified</SelectItem>
+              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value="verified">Đã xác thực</SelectItem>
+              <SelectItem value="unverified">Chưa xác thực</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -221,9 +226,7 @@ export default function UserFilter({
         <div className="lg:col-span-2 grid grid-cols-2 gap-2">
           {/* Date From */}
           <div>
-            <Label className="text-sm font-medium text-gray-700">
-              From Date
-            </Label>
+            <Label className="text-sm font-medium text-gray-700">Từ ngày</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -233,8 +236,8 @@ export default function UserFilter({
                     !dateFrom && "text-muted-foreground",
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Pick date"}
+                  <CalendarOutlined className="mr-2" />
+                  {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Chọn ngày"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -250,7 +253,9 @@ export default function UserFilter({
 
           {/* Date To */}
           <div>
-            <Label className="text-sm font-medium text-gray-700">To Date</Label>
+            <Label className="text-sm font-medium text-gray-700">
+              Đến ngày
+            </Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -260,8 +265,8 @@ export default function UserFilter({
                     !dateTo && "text-muted-foreground",
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateTo ? format(dateTo, "dd/MM/yyyy") : "Pick date"}
+                  <CalendarOutlined className="mr-2" />
+                  {dateTo ? format(dateTo, "dd/MM/yyyy") : "Chọn ngày"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -280,30 +285,41 @@ export default function UserFilter({
       {/* Active Filters Display */}
       {hasActiveFilters && (
         <div className="flex flex-wrap gap-2 pt-2 border-t">
-          <span className="text-sm text-gray-600">Active filters:</span>
+          <span className="text-sm text-gray-600">Bộ lọc đang áp dụng:</span>
           {filters.search && (
             <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-              Search: {filters.search}
+              Tìm kiếm: {filters.search}
             </span>
           )}
           {filters.role && (
             <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-              Role: {filters.role}
+              Vai trò:{" "}
+              {filters.role === "admin"
+                ? "Quản trị"
+                : filters.role === "staff"
+                  ? "Nhân viên"
+                  : "Khách hàng"}
             </span>
           )}
           {filters.status && (
             <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">
-              Status: {filters.status}
+              Trạng thái:{" "}
+              {filters.status === "active"
+                ? "Hoạt động"
+                : filters.status === "blocked"
+                  ? "Bị khóa"
+                  : "Chờ duyệt"}
             </span>
           )}
           {filters.is_verified !== undefined && (
             <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
-              {filters.is_verified ? "Verified" : "Unverified"}
+              {filters.is_verified ? "Đã xác thực" : "Chưa xác thực"}
             </span>
           )}
           {(filters.date_from || filters.date_to) && (
             <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-pink-100 text-pink-800 rounded-full">
-              Date: {filters.date_from || "Start"} → {filters.date_to || "End"}
+              Ngày: {filters.date_from || "Bắt đầu"} →{" "}
+              {filters.date_to || "Kết thúc"}
             </span>
           )}
         </div>

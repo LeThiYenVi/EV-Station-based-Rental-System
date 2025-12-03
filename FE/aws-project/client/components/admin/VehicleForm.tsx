@@ -1,15 +1,15 @@
 ﻿/**
- * VehicleForm Component - Theo ERD 100%
- * Form thêm/sửa xe với các fields khớp hoàn toàn database schema
+ * VehicleForm Component - Tạo/Sửa xe
+ * Form thêm/sửa xe với các fields khớp API response
  */
 
 import { useEffect, useState } from "react";
 import {
-  Vehicle,
-  CreateVehicleDto,
-  UpdateVehicleDto,
   FuelType,
-} from "@shared/types";
+  FuelTypeLabel,
+  VehicleStatus,
+  VehicleStatusLabel,
+} from "@/service/types/enums";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,13 +31,93 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, X, Plus, Star, Zap, Fuel } from "lucide-react";
+import {
+  LoadingOutlined,
+  CloseOutlined,
+  PlusOutlined,
+  StarOutlined,
+  ThunderboltOutlined,
+  ExclamationCircleOutlined,
+  FireOutlined,
+} from "@ant-design/icons";
+import { stationService } from "@/service";
+import type { StationResponse } from "@/service/types/report-staff-station.types";
+
+// Danh sách các hãng xe phổ biến
+const VEHICLE_BRANDS = [
+  "VinFast",
+  "Tesla",
+  "Toyota",
+  "Honda",
+  "Mazda",
+  "Hyundai",
+  "Kia",
+  "Mercedes-Benz",
+  "BMW",
+  "Audi",
+  "Ford",
+  "Chevrolet",
+  "Nissan",
+  "Mitsubishi",
+  "Suzuki",
+  "Lexus",
+  "Porsche",
+  "Peugeot",
+  "MG",
+  "BYD",
+];
+
+// Types matching API request/response
+interface CreateVehicleRequest {
+  stationId: string;
+  licensePlate: string;
+  name: string;
+  brand: string;
+  color: string;
+  fuelType: FuelType;
+  capacity: number;
+  photos: string[];
+  hourlyRate: number;
+  dailyRate: number;
+  depositAmount: number;
+}
+
+interface VehicleData {
+  id?: string;
+  stationId: string;
+  licensePlate: string;
+  name: string;
+  brand: string;
+  color?: string;
+  fuelType: string;
+  capacity: number;
+  rating?: number;
+  rentCount?: number;
+  photos?: string[] | null;
+  status?: VehicleStatus;
+  hourlyRate: number;
+  dailyRate: number;
+  depositAmount: number;
+  polices?: string[] | null;
+}
 
 interface VehicleFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  vehicle?: Vehicle | null;
-  onSubmit: (data: CreateVehicleDto | UpdateVehicleDto) => Promise<void>;
+  vehicle?: VehicleData | null;
+  onSubmit: (data: any) => Promise<void>;
+}
+
+interface FormErrors {
+  stationId?: string;
+  licensePlate?: string;
+  name?: string;
+  brand?: string;
+  color?: string;
+  capacity?: string;
+  hourlyRate?: string;
+  dailyRate?: string;
+  depositAmount?: string;
 }
 
 export default function VehicleForm({
@@ -48,65 +128,180 @@ export default function VehicleForm({
 }: VehicleFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [stations, setStations] = useState<StationResponse[]>([]);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const [formData, setFormData] = useState({
-    station_id: "",
-    license_plate: "",
+    stationId: "",
+    licensePlate: "",
     name: "",
     brand: "",
-    type: "gasoline" as FuelType,
+    color: "",
+    fuelType: FuelType.ELECTRICITY,
     capacity: 5,
-    hourly_rate: 0,
-    daily_rate: 0,
-    deposit_amount: 0,
-    polices: [""] as string[],
+    hourlyRate: 0,
+    dailyRate: 0,
+    depositAmount: 0,
   });
 
   const [photos, setPhotos] = useState<string[]>([]);
+  const [photoUrl, setPhotoUrl] = useState("");
+
+  // Fetch stations on mount
+  useEffect(() => {
+    const fetchStations = async () => {
+      try {
+        const response = await stationService.getActiveStations();
+        setStations(response || []);
+      } catch (error) {
+        console.error("Failed to fetch stations:", error);
+      }
+    };
+    if (open) {
+      fetchStations();
+    }
+  }, [open]);
+
+  // Hàm format biển số xe tự động
+  // Input: 51b145455 -> Output: 51B-14545
+  // Input: 30a12345 -> Output: 30A-12345
+  const formatLicensePlate = (value: string): string => {
+    // Loại bỏ tất cả ký tự không phải chữ hoặc số
+    const cleaned = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+
+    if (cleaned.length < 3) return cleaned;
+
+    // Lấy 2 số đầu (tỉnh/thành phố)
+    const province = cleaned.slice(0, 2);
+
+    // Lấy 1 chữ cái (seri)
+    const series = cleaned.slice(2, 3);
+
+    // Lấy số còn lại (tối đa 5-6 số)
+    const number = cleaned.slice(3, 9);
+
+    // Kiểm tra xem province có phải là số và series có phải là chữ cái
+    if (/^\d{2}$/.test(province) && /^[A-Z]$/.test(series)) {
+      return `${province}${series}-${number}`;
+    }
+
+    return cleaned;
+  };
+
+  const handleLicensePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatLicensePlate(e.target.value);
+    setFormData((prev) => ({
+      ...prev,
+      licensePlate: formatted,
+    }));
+  };
 
   useEffect(() => {
     if (vehicle && open) {
       setFormData({
-        station_id: vehicle.station_id,
-        license_plate: vehicle.license_plate,
-        name: vehicle.name,
-        brand: vehicle.brand,
-        type: vehicle.type,
-        capacity: vehicle.capacity,
-        hourly_rate: vehicle.hourly_rate,
-        daily_rate: vehicle.daily_rate,
-        deposit_amount: vehicle.deposit_amount,
-        polices: vehicle.polices.length > 0 ? vehicle.polices : [""],
+        stationId: vehicle.stationId || "",
+        licensePlate: vehicle.licensePlate || "",
+        name: vehicle.name || "",
+        brand: vehicle.brand || "",
+        color: vehicle.color || "",
+        fuelType: (vehicle.fuelType as FuelType) || FuelType.ELECTRICITY,
+        capacity: vehicle.capacity || 5,
+        hourlyRate: vehicle.hourlyRate || 0,
+        dailyRate: vehicle.dailyRate || 0,
+        depositAmount: vehicle.depositAmount || 0,
       });
       setPhotos(vehicle.photos || []);
+      setErrors({});
     } else if (!open) {
       setFormData({
-        station_id: "",
-        license_plate: "",
+        stationId: "",
+        licensePlate: "",
         name: "",
         brand: "",
-        type: "gasoline",
+        color: "",
+        fuelType: FuelType.ELECTRICITY,
         capacity: 5,
-        hourly_rate: 0,
-        daily_rate: 0,
-        deposit_amount: 0,
-        polices: [""],
+        hourlyRate: 0,
+        dailyRate: 0,
+        depositAmount: 0,
       });
       setPhotos([]);
+      setPhotoUrl("");
+      setErrors({});
     }
   }, [vehicle, open]);
 
+  // Validation
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.stationId.trim()) {
+      newErrors.stationId = "Vui lòng chọn trạm";
+    }
+
+    if (!formData.licensePlate.trim()) {
+      newErrors.licensePlate = "Vui lòng nhập biển số xe";
+    } else if (!/^[0-9]{2}[A-Z]-[A-Z0-9]{4,6}$/.test(formData.licensePlate)) {
+      newErrors.licensePlate = "Biển số xe không hợp lệ (VD: 51B-12345)";
+    }
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Vui lòng nhập tên xe";
+    } else if (formData.name.length < 2) {
+      newErrors.name = "Tên xe phải có ít nhất 2 ký tự";
+    }
+
+    if (!formData.brand.trim()) {
+      newErrors.brand = "Vui lòng chọn hãng xe";
+    }
+
+    if (!formData.color.trim()) {
+      newErrors.color = "Vui lòng nhập màu xe";
+    }
+
+    if (formData.hourlyRate <= 0) {
+      newErrors.hourlyRate = "Giá theo giờ phải lớn hơn 0";
+    }
+
+    if (formData.dailyRate <= 0) {
+      newErrors.dailyRate = "Giá theo ngày phải lớn hơn 0";
+    }
+
+    if (formData.depositAmount < 0) {
+      newErrors.depositAmount = "Tiền đặt cọc không được âm";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng kiểm tra lại thông tin nhập vào",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const cleanedPolices = formData.polices.filter((p) => p.trim() !== "");
-
-      const submitData = {
-        ...formData,
-        polices: cleanedPolices,
+      const submitData: CreateVehicleRequest = {
+        stationId: formData.stationId,
+        licensePlate: formData.licensePlate,
+        name: formData.name,
+        brand: formData.brand,
+        color: formData.color,
+        fuelType: formData.fuelType,
+        capacity: formData.capacity,
         photos: photos,
+        hourlyRate: formData.hourlyRate,
+        dailyRate: formData.dailyRate,
+        depositAmount: formData.depositAmount,
       };
 
       await onSubmit(submitData);
@@ -116,10 +311,14 @@ export default function VehicleForm({
         description: `${formData.name} đã được ${vehicle ? "cập nhật" : "thêm"} vào hệ thống.`,
       });
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Không thể lưu thông tin xe. Vui lòng thử lại.";
       toast({
         title: "Lỗi",
-        description: "Không thể lưu thông tin xe. Vui lòng thử lại.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -142,29 +341,29 @@ export default function VehicleForm({
     }
   };
 
+  const addPhotoUrl = () => {
+    if (photoUrl.trim()) {
+      // Simple URL validation
+      try {
+        new URL(photoUrl);
+        setPhotos((prev) => [...prev, photoUrl.trim()]);
+        setPhotoUrl("");
+        toast({
+          title: "Đã thêm ảnh",
+          description: "URL ảnh đã được thêm vào danh sách.",
+        });
+      } catch {
+        toast({
+          title: "Lỗi",
+          description: "URL không hợp lệ. Vui lòng nhập URL đúng định dạng.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const removePhoto = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const addPolicy = () => {
-    setFormData((prev) => ({
-      ...prev,
-      polices: [...prev.polices, ""],
-    }));
-  };
-
-  const removePolicy = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      polices: prev.polices.filter((_, i) => i !== index),
-    }));
-  };
-
-  const updatePolicy = (index: number, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      polices: prev.polices.map((p, i) => (i === index ? value : p)),
-    }));
   };
 
   const formatCurrency = (value: number) => {
@@ -198,8 +397,8 @@ export default function VehicleForm({
                     Đánh giá
                   </Label>
                   <div className="flex items-center gap-1 mt-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-semibold">{vehicle.rating}</span>
+                    <StarOutlined className="text-yellow-400" />
+                    <span className="font-semibold">{vehicle.rating ?? 0}</span>
                     <span className="text-sm text-muted-foreground">/5.0</span>
                   </div>
                 </div>
@@ -208,7 +407,7 @@ export default function VehicleForm({
                     Số lần thuê
                   </Label>
                   <div className="font-semibold mt-1">
-                    {vehicle.rent_count} lần
+                    {vehicle.rentCount ?? 0} lần
                   </div>
                 </div>
                 <div>
@@ -218,18 +417,17 @@ export default function VehicleForm({
                   <div className="mt-1">
                     <Badge
                       variant={
-                        vehicle.status === "available"
+                        vehicle.status === VehicleStatus.AVAILABLE
                           ? "default"
-                          : vehicle.status === "rented"
+                          : vehicle.status === VehicleStatus.RENTED
                             ? "secondary"
                             : "destructive"
                       }
                     >
-                      {vehicle.status === "available" && "🟢 Sẵn sàng"}
-                      {vehicle.status === "rented" && "🟡 Đang thuê"}
-                      {vehicle.status === "maintenance" && "�� Bảo trì"}
-                      {vehicle.status === "charging" && "⚡ Đang sạc"}
-                      {vehicle.status === "unavailable" && "⚫ Không khả dụng"}
+                      {vehicle.status
+                        ? VehicleStatusLabel[vehicle.status as VehicleStatus] ||
+                          vehicle.status
+                        : "Không xác định"}
                     </Badge>
                   </div>
                 </div>
@@ -244,39 +442,59 @@ export default function VehicleForm({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="station_id">
-                  Station ID <span className="text-red-500">*</span>
+                <Label htmlFor="stationId">
+                  Trạm xe <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="station_id"
-                  value={formData.station_id}
-                  onChange={(e) =>
+                <Select
+                  value={formData.stationId}
+                  onValueChange={(value) =>
                     setFormData((prev) => ({
                       ...prev,
-                      station_id: e.target.value,
+                      stationId: value,
                     }))
                   }
-                  placeholder="e.g., station-001"
-                  required
-                />
+                >
+                  <SelectTrigger
+                    className={errors.stationId ? "border-red-500" : ""}
+                  >
+                    <SelectValue placeholder="Chọn trạm xe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stations.map((station) => (
+                      <SelectItem key={station.id} value={station.id}>
+                        {station.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.stationId && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <ExclamationCircleOutlined />
+                    {errors.stationId}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="license_plate">
+                <Label htmlFor="licensePlate">
                   Biển số xe <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="license_plate"
-                  value={formData.license_plate}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      license_plate: e.target.value.toUpperCase(),
-                    }))
-                  }
-                  placeholder="30A-12345"
-                  required
+                  id="licensePlate"
+                  value={formData.licensePlate}
+                  onChange={handleLicensePlateChange}
+                  placeholder="Nhập 51b12345 → Tự động: 51B-12345"
+                  className={errors.licensePlate ? "border-red-500" : ""}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Tự động format biển số xe theo chuẩn VN
+                </p>
+                {errors.licensePlate && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <ExclamationCircleOutlined />
+                    {errors.licensePlate}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -291,52 +509,95 @@ export default function VehicleForm({
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
                   }
-                  placeholder="Tesla Model 3 Long Range"
-                  required
+                  placeholder="VF 8 Plus, Tesla Model 3..."
+                  className={errors.name ? "border-red-500" : ""}
                 />
+                {errors.name && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <ExclamationCircleOutlined />
+                    {errors.name}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="brand">
                   Hãng xe <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="brand"
+                <Select
                   value={formData.brand}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, brand: e.target.value }))
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, brand: value }))
                   }
-                  placeholder="Tesla, VinFast, Toyota..."
-                  required
-                />
+                >
+                  <SelectTrigger
+                    className={errors.brand ? "border-red-500" : ""}
+                  >
+                    <SelectValue placeholder="Chọn hãng xe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VEHICLE_BRANDS.map((brand) => (
+                      <SelectItem key={brand} value={brand}>
+                        {brand}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.brand && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <ExclamationCircleOutlined />
+                    {errors.brand}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="type">
+                <Label htmlFor="color">
+                  Màu xe <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="color"
+                  value={formData.color}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, color: e.target.value }))
+                  }
+                  placeholder="Trắng, Đen, Xanh..."
+                  className={errors.color ? "border-red-500" : ""}
+                />
+                {errors.color && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <ExclamationCircleOutlined />
+                    {errors.color}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="fuelType">
                   Loại nhiên liệu <span className="text-red-500">*</span>
                 </Label>
                 <Select
-                  value={formData.type}
+                  value={formData.fuelType}
                   onValueChange={(value: FuelType) =>
-                    setFormData((prev) => ({ ...prev, type: value }))
+                    setFormData((prev) => ({ ...prev, fuelType: value }))
                   }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="electricity">
+                    <SelectItem value={FuelType.ELECTRICITY}>
                       <div className="flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-blue-500" />
-                        <span>Điện (Electric)</span>
+                        <ThunderboltOutlined className="text-blue-500" />
+                        <span>{FuelTypeLabel[FuelType.ELECTRICITY]}</span>
                       </div>
                     </SelectItem>
-                    <SelectItem value="gasoline">
+                    <SelectItem value={FuelType.GASOLINE}>
                       <div className="flex items-center gap-2">
-                        <Fuel className="h-4 w-4 text-orange-500" />
-                        <span>Xăng (Gasoline)</span>
+                        <FireOutlined className="text-orange-500" />
+                        <span>{FuelTypeLabel[FuelType.GASOLINE]}</span>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -377,72 +638,90 @@ export default function VehicleForm({
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="hourly_rate">
-                  Giá theo giờ <span className="text-red-500">*</span>
+                <Label htmlFor="hourlyRate">
+                  Giá theo giờ (VND) <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="hourly_rate"
+                  id="hourlyRate"
                   type="number"
-                  value={formData.hourly_rate}
+                  value={formData.hourlyRate}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      hourly_rate: parseFloat(e.target.value) || 0,
+                      hourlyRate: parseFloat(e.target.value) || 0,
+                    }))
+                  }
+                  min={0}
+                  step={1000}
+                  className={errors.hourlyRate ? "border-red-500" : ""}
+                />
+                <p className="text-xs text-green-600">
+                  {formatCurrency(formData.hourlyRate)}/giờ
+                </p>
+                {errors.hourlyRate && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <ExclamationCircleOutlined />
+                    {errors.hourlyRate}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dailyRate">
+                  Giá theo ngày (VND) <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="dailyRate"
+                  type="number"
+                  value={formData.dailyRate}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      dailyRate: parseFloat(e.target.value) || 0,
                     }))
                   }
                   min={0}
                   step={10000}
-                  required
+                  className={errors.dailyRate ? "border-red-500" : ""}
                 />
                 <p className="text-xs text-green-600">
-                  {formatCurrency(formData.hourly_rate)}/giờ
+                  {formatCurrency(formData.dailyRate)}/ngày
                 </p>
+                {errors.dailyRate && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <ExclamationCircleOutlined />
+                    {errors.dailyRate}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="daily_rate">
-                  Giá theo ngày <span className="text-red-500">*</span>
+                <Label htmlFor="depositAmount">
+                  Tiền đặt cọc (VND) <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="daily_rate"
+                  id="depositAmount"
                   type="number"
-                  value={formData.daily_rate}
+                  value={formData.depositAmount}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      daily_rate: parseFloat(e.target.value) || 0,
-                    }))
-                  }
-                  min={0}
-                  step={10000}
-                  required
-                />
-                <p className="text-xs text-green-600">
-                  {formatCurrency(formData.daily_rate)}/ngày
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="deposit_amount">
-                  Tiền đặt cọc <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="deposit_amount"
-                  type="number"
-                  value={formData.deposit_amount}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      deposit_amount: parseFloat(e.target.value) || 0,
+                      depositAmount: parseFloat(e.target.value) || 0,
                     }))
                   }
                   min={0}
                   step={100000}
-                  required
+                  className={errors.depositAmount ? "border-red-500" : ""}
                 />
                 <p className="text-xs text-green-600">
-                  {formatCurrency(formData.deposit_amount)}
+                  {formatCurrency(formData.depositAmount)}
                 </p>
+                {errors.depositAmount && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <ExclamationCircleOutlined />
+                    {errors.depositAmount}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -451,69 +730,61 @@ export default function VehicleForm({
             <h3 className="text-lg font-semibold border-b pb-2">
               📸 Hình ảnh xe
             </h3>
-            <Input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handlePhotoUpload}
-            />
+
+            {/* URL input for photos */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nhập URL hình ảnh..."
+                value={photoUrl}
+                onChange={(e) => setPhotoUrl(e.target.value)}
+                className="flex-1"
+              />
+              <Button type="button" onClick={addPhotoUrl} variant="outline">
+                <PlusOutlined className="mr-1" />
+                Thêm URL
+              </Button>
+            </div>
+
+            {/* File upload */}
+            <div className="flex items-center gap-2">
+              <Input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePhotoUpload}
+                className="flex-1"
+              />
+            </div>
+
             {photos.length > 0 && (
               <div className="grid grid-cols-4 gap-3">
                 {photos.map((url, index) => (
                   <div key={index} className="relative group">
                     <img
                       src={url}
-                      alt={`Photo ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
+                      alt={`Ảnh ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "https://via.placeholder.com/150?text=Error";
+                      }}
                     />
                     <button
                       type="button"
                       onClick={() => removePhoto(index)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100"
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <X className="h-3 w-3" />
+                      <CloseOutlined style={{ fontSize: 12 }} />
                     </button>
                   </div>
                 ))}
               </div>
             )}
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b pb-2">
-              <h3 className="text-lg font-semibold">📜 Điều khoản thuê xe</h3>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={addPolicy}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Thêm
-              </Button>
-            </div>
-            <div className="space-y-3">
-              {formData.polices.map((policy, index) => (
-                <div key={index} className="flex gap-2">
-                  <Textarea
-                    value={policy}
-                    onChange={(e) => updatePolicy(index, e.target.value)}
-                    placeholder={`Điều khoản ${index + 1}`}
-                    rows={2}
-                  />
-                  {formData.polices.length > 1 && (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => removePolicy(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
+            {photos.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Chưa có hình ảnh nào. Thêm URL hoặc tải lên hình ảnh.
+              </p>
+            )}
           </div>
 
           <DialogFooter>
@@ -530,7 +801,7 @@ export default function VehicleForm({
               disabled={loading}
               className="bg-green-600 hover:bg-green-700"
             >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading && <LoadingOutlined className="mr-2" spin />}
               {vehicle ? "Cập nhật xe" : "Thêm xe mới"}
             </Button>
           </DialogFooter>

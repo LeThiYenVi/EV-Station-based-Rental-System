@@ -36,15 +36,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Ban,
-  CheckCircle,
-  Eye,
-  ShieldCheck,
-  MapPin,
-} from "lucide-react";
+  MoreOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  StopOutlined,
+  CheckCircleOutlined,
+  EyeOutlined,
+  SafetyCertificateOutlined,
+  EnvironmentOutlined,
+} from "@ant-design/icons";
 import { format } from "date-fns";
 
 interface UserTableProps {
@@ -86,12 +86,12 @@ export default function UserTable({
         variant: "default" | "secondary" | "destructive" | "outline";
       }
     > = {
-      ADMIN: { label: "ADMIN", variant: "destructive" },
-      STAFF: { label: "STAFF", variant: "default" },
-      RENTER: { label: "RENTER", variant: "secondary" },
+      ADMIN: { label: "Quản trị", variant: "destructive" },
+      STAFF: { label: "Nhân viên", variant: "default" },
+      RENTER: { label: "Khách hàng", variant: "secondary" },
     };
     const config = configs[key] ?? {
-      label: key || "UNKNOWN",
+      label: key || "Không xác định",
       variant: "outline",
     };
     return (
@@ -106,20 +106,20 @@ export default function UserTable({
     const key = String(status).toLowerCase();
     const configs: Record<string, { label: string; className: string }> = {
       active: {
-        label: "Active",
+        label: "Hoạt động",
         className: "bg-green-100 text-green-800 hover:bg-green-100",
       },
       blocked: {
-        label: "Blocked",
+        label: "Bị khóa",
         className: "bg-red-100 text-red-800 hover:bg-red-100",
       },
       pending: {
-        label: "Pending",
+        label: "Chờ duyệt",
         className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
       },
     };
     const config = configs[key] ?? {
-      label: key || "Unknown",
+      label: key || "Không xác định",
       className: "bg-gray-100 text-gray-800 hover:bg-gray-100",
     };
     return (
@@ -162,17 +162,17 @@ export default function UserTable({
                 <Checkbox
                   checked={allSelected}
                   onCheckedChange={onSelectAll}
-                  aria-label="Select all"
+                  aria-label="Chọn tất cả"
                 />
               </TableHead>
-              <TableHead>User</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Verified</TableHead>
-              <TableHead>Station</TableHead>
-              <TableHead>Joined Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Người dùng</TableHead>
+              <TableHead>Liên hệ</TableHead>
+              <TableHead>Vai trò</TableHead>
+              <TableHead>Trạng thái</TableHead>
+              <TableHead>Xác thực</TableHead>
+              <TableHead>Trạm</TableHead>
+              <TableHead>Ngày tham gia</TableHead>
+              <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -182,7 +182,7 @@ export default function UserTable({
                   colSpan={9}
                   className="text-center py-8 text-gray-500"
                 >
-                  No users found
+                  Không tìm thấy người dùng nào
                 </TableCell>
               </TableRow>
             ) : (
@@ -244,13 +244,15 @@ export default function UserTable({
                   <TableCell>
                     {user.is_verified ? (
                       <div className="flex items-center gap-1 text-green-600">
-                        <CheckCircle className="h-4 w-4" />
-                        <span className="text-sm font-medium">Verified</span>
+                        <CheckCircleOutlined />
+                        <span className="text-sm font-medium">Đã xác thực</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1 text-orange-600">
-                        <ShieldCheck className="h-4 w-4" />
-                        <span className="text-sm font-medium">Pending</span>
+                        <SafetyCertificateOutlined />
+                        <span className="text-sm font-medium">
+                          Chưa xác thực
+                        </span>
                       </div>
                     )}
                   </TableCell>
@@ -259,8 +261,8 @@ export default function UserTable({
                   <TableCell>
                     {user.stationid ? (
                       <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <MapPin className="h-3 w-3" />
-                        Station {user.stationid.slice(0, 8)}
+                        <EnvironmentOutlined style={{ fontSize: 12 }} />
+                        Trạm {user.stationid.slice(0, 8)}
                       </div>
                     ) : (
                       <span className="text-gray-400 text-sm">-</span>
@@ -279,27 +281,27 @@ export default function UserTable({
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
+                          <MoreOutlined />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
                         <DropdownMenuSeparator />
 
                         <DropdownMenuItem onClick={() => onViewDetail(user)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Detail
+                          <EyeOutlined className="mr-2" />
+                          Xem chi tiết
                         </DropdownMenuItem>
 
                         <DropdownMenuItem onClick={() => onEdit(user)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
+                          <EditOutlined className="mr-2" />
+                          Chỉnh sửa
                         </DropdownMenuItem>
 
                         {!user.is_verified && (
                           <DropdownMenuItem onClick={() => onVerify(user.id)}>
-                            <ShieldCheck className="mr-2 h-4 w-4" />
-                            Verify User
+                            <SafetyCertificateOutlined className="mr-2" />
+                            Xác thực người dùng
                           </DropdownMenuItem>
                         )}
 
@@ -313,13 +315,13 @@ export default function UserTable({
                         >
                           {user.status === "active" ? (
                             <>
-                              <Ban className="mr-2 h-4 w-4" />
-                              Block User
+                              <StopOutlined className="mr-2" />
+                              Khóa tài khoản
                             </>
                           ) : (
                             <>
-                              <CheckCircle className="mr-2 h-4 w-4" />
-                              Activate User
+                              <CheckCircleOutlined className="mr-2" />
+                              Kích hoạt tài khoản
                             </>
                           )}
                         </DropdownMenuItem>
@@ -330,8 +332,8 @@ export default function UserTable({
                           onClick={() => handleDeleteClick(user.id)}
                           className="text-red-600 focus:text-red-600"
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          <DeleteOutlined className="mr-2" />
+                          Xóa
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -347,19 +349,19 @@ export default function UserTable({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Bạn có chắc chắn?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              user account and remove their data from our servers.
+              Hành động này không thể hoàn tác. Tài khoản người dùng sẽ bị xóa
+              vĩnh viễn và loại bỏ khỏi hệ thống.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
