@@ -31,6 +31,21 @@ export const useUser = () => {
     }
   }, []);
 
+  const getMyStats = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await userService.getMyStats();
+      return { success: true, data };
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Không thể tải thông tin người dùng';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const getAllUsers = useCallback(async (
     page: number = 0,
     size: number = 10,
@@ -156,6 +171,36 @@ export const useUser = () => {
     }
   }, []);
 
+  const uploadLicenseCardFront = useCallback(async (userId: string, file: File) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await userService.uploadLicenseCardFront(userId, file);
+      return { success: true, data };
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Không thể tải ảnh mặt trước giấy phép lên';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const uploadLicenseCardBack = useCallback(async (userId: string, file: File) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await userService.uploadLicenseCardBack(userId, file);
+      return { success: true, data };
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Không thể tải ảnh mặt sau giấy phép lên';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const deleteUser = useCallback(async (userId: string) => {
     setLoading(true);
     setError(null);
@@ -175,6 +220,7 @@ export const useUser = () => {
     loading,
     error,
     getMyInfo,
+    getMyStats,
     getAllUsers,
     getUserById,
     getUsersByRole,
@@ -183,6 +229,8 @@ export const useUser = () => {
     verifyUserLicense,
     uploadAvatar,
     uploadLicenseCard,
+    uploadLicenseCardFront,
+    uploadLicenseCardBack,
     deleteUser,
     // Helper methods
     getRoleText: userService.getRoleText,

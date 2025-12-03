@@ -10,6 +10,15 @@ export enum BookingStatus {
 // Booking Request DTOs
 export interface CreateBookingRequest {
   vehicleId: string; // UUID
+  stationId: string; // UUID - Station where vehicle is picked up
+  startTime: string; // ISO datetime
+  expectedEndTime: string; // ISO datetime
+  pickupNote?: string; // Optional note for pickup
+}
+
+// Legacy interface for backward compatibility
+export interface CreateBookingRequestLegacy {
+  vehicleId: string; // UUID
   pickupStationId: string; // UUID
   returnStationId: string; // UUID
   pickupTime: string; // ISO datetime
@@ -83,9 +92,40 @@ export interface BookingDetailResponse extends BookingResponse {
   };
 }
 
-export interface BookingWithPaymentResponse extends BookingResponse {
-  paymentUrl?: string;
-  paymentId?: string;
+export interface MomoPaymentResponse {
+  partnerCode: string;
+  orderId: string;
+  requestId: string;
+  amount: number;
+  responseTime: number;
+  message: string;
+  resultCode: string;
+  payUrl: string;
+  deeplink: string;
+  qrCodeUrl: string;
+}
+
+export interface BookingWithPaymentResponse {
+  id: string;
+  bookingCode: string;
+  renterId: string;
+  renterName: string;
+  renterEmail: string;
+  vehicleId: string;
+  vehicleName: string;
+  licensePlate: string;
+  stationId: string;
+  stationName: string;
+  startTime: string;
+  expectedEndTime: string;
+  status: string;
+  basePrice: number;
+  depositPaid: number;
+  totalAmount: number;
+  pickupNote?: string;
+  paymentStatus: string;
+  momoPayment?: MomoPaymentResponse;
+  createdAt?: string;
 }
 
 // Pagination

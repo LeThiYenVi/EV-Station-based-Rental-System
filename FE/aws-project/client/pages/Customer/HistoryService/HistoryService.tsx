@@ -1,33 +1,9 @@
 /**
  * HistoryService - Lịch sử đơn thuê xe
  *
- * TODO: Tích hợp API thực tế (hiện đang dùng mock data)
- *
- * Migration guide:
- * 1. Import hooks:
- *    import { useBooking } from "@/hooks/useBooking";
- *    import { useAuth } from "@/hooks/useAuth";
- *
- * 2. Use hooks:
- *    const { getUserBookings, getStatusText, getStatusColor, formatPrice, loading } = useBooking();
- *    const { getCurrentUser } = useAuth();
- *
- * 3. Load data:
- *    useEffect(() => {
- *      const loadBookings = async () => {
- *        const userId = localStorage.getItem('userId');
- *        const result = await getUserBookings(userId);
- *        if (result.success && result.data) {
- *          setOrders(result.data);
- *          setFilteredOrders(result.data);
- *        }
- *      };
- *      loadBookings();
- *    }, []);
- *
- * 4. Update UI để dùng BookingResponse type thay vì BookingOrder
- *
- * Xem chi tiết: CUSTOMER_PAGES_INTEGRATION.md
+ * Integrated with API:
+ * - GET /api/bookings/my-bookings - Get user's bookings list
+ * - GET /api/bookings/code/:code - Get booking detail by code
  */
 
 import { useState, useEffect } from "react";
@@ -38,6 +14,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Calendar,
   Clock,
   MapPin,
@@ -47,329 +31,200 @@ import {
   Search,
   Filter,
   ChevronRight,
+  Loader2,
+  RefreshCw,
+  XCircle,
 } from "lucide-react";
+import { useBooking } from "@/hooks/useBooking";
+import { useToast } from "@/hooks/use-toast";
 
 interface BookingOrder {
   bookingId: string;
+  bookingCode: string;
   carName: string;
   carImage: string;
+  licensePlate: string;
   pickupDate: string;
   pickupTime: string;
   returnDate: string;
   returnTime: string;
   pickupLocation: string;
-  total: number;
-  status: "completed" | "pending" | "cancelled" | "confirmed";
+  stationName: string;
+  basePrice: number;
+  depositPaid: number;
+  totalAmount: number;
+  status: "ONGOING" | "COMPLETED" | "CANCELLED" | "PENDING" | "CONFIRMED";
+  paymentStatus: string;
   createdAt: string;
-  paymentMethod: string;
   renterName?: string;
   phone?: string;
   email?: string;
-  duration?: string;
-  rentalType?: string;
-  driverService?: boolean;
-  carPrice?: number;
-  driverFee?: number;
-  insurance?: number;
-  additionalInsurance?: number;
-  serviceFee?: number;
-  deposit?: number;
-  discount?: number;
-  totalDeposit?: number;
-  transmission?: string;
-  seats?: number;
-  fuel?: string;
 }
 
 export default function HistoryService() {
   const navigate = useNavigate();
+  const { getMyBookings, cancelBooking, loading } = useBooking();
+  const { toast } = useToast();
+
   const [orders, setOrders] = useState<BookingOrder[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<BookingOrder[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Cancel booking states
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(
+    null,
+  );
+  const [cancellingOrderCode, setCancellingOrderCode] = useState<string>("");
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  // Default image when API returns null
+  const defaultCarImage =
+    "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop";
+
+  // Load bookings from API
+  const loadBookings = async () => {
+    try {
+      const result = await getMyBookings();
+
+      console.log("📦 API Response (my-bookings):", result);
+
+      if (result && Array.isArray(result)) {
+        // Map API response to UI format
+        // Note: API may return pickupTime/returnTime OR startTime/endTime
+        const mappedOrders: BookingOrder[] = result.map((booking: any) => {
+          console.log("📋 Booking item:", booking);
+
+          // Handle both field name variations
+          const pickupDateTime = booking.pickupTime || booking.startTime;
+          const returnDateTime =
+            booking.returnTime || booking.endTime || booking.expectedEndTime;
+          const stationName =
+            booking.pickupStationName || booking.stationName || "N/A";
+          const price =
+            booking.totalPrice || booking.totalAmount || booking.basePrice || 0;
+
+          return {
+            bookingId: booking.id,
+            bookingCode: booking.bookingCode,
+            carName: booking.vehicleName || "N/A",
+            carImage: defaultCarImage,
+            licensePlate: booking.licensePlate || "",
+            pickupDate: pickupDateTime
+              ? new Date(pickupDateTime).toLocaleDateString("vi-VN")
+              : "",
+            pickupTime: pickupDateTime
+              ? new Date(pickupDateTime).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "",
+            returnDate: returnDateTime
+              ? new Date(returnDateTime).toLocaleDateString("vi-VN")
+              : "",
+            returnTime: returnDateTime
+              ? new Date(returnDateTime).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "",
+            pickupLocation: stationName,
+            stationName: stationName,
+            basePrice: price,
+            depositPaid: booking.depositPaid || 0,
+            totalAmount: price,
+            status: booking.status,
+            paymentStatus: booking.paymentStatus || "PENDING",
+            createdAt: booking.createdAt
+              ? new Date(booking.createdAt).toLocaleString("vi-VN")
+              : "",
+            renterName: booking.renterName,
+            email: booking.renterEmail,
+          };
+        });
+
+        console.log("✅ Mapped orders:", mappedOrders);
+        setOrders(mappedOrders);
+        setFilteredOrders(mappedOrders);
+      }
+    } catch (error) {
+      console.error("Error loading bookings:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Mock data for demonstration - tạo nhiều đơn hàng mẫu
-    const mockOrders: BookingOrder[] = [
-      {
-        bookingId: "BK1733740800001",
-        carName: "MAZDA 2 2024",
-        carImage:
-          "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
-        pickupDate: "10/10/2025",
-        pickupTime: "09:00",
-        returnDate: "15/10/2025",
-        returnTime: "18:00",
-        pickupLocation: "Phường Linh Đông, TP Thủ Đức",
-        total: 3010000,
-        status: "completed",
-        createdAt: "08/10/2025 14:30",
-        paymentMethod: "qr",
-        renterName: "Nguyễn Văn A",
-        phone: "0901234567",
-        email: "nguyenvana@gmail.com",
-        duration: "5 ngày",
-        rentalType: "Theo ngày",
-        driverService: false,
-        carPrice: 3010000,
-        driverFee: 0,
-        insurance: 150000,
-        additionalInsurance: 0,
-        serviceFee: 50000,
-        deposit: 3000000,
-        discount: 200000,
-        totalDeposit: 3000000,
-        transmission: "Số tự động",
-        seats: 5,
-        fuel: "Xăng",
-      },
-      {
-        bookingId: "BK1733740700002",
-        carName: "TOYOTA VIOS 2023",
-        carImage:
-          "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
-        pickupDate: "12/10/2025",
-        pickupTime: "08:00",
-        returnDate: "14/10/2025",
-        returnTime: "20:00",
-        pickupLocation: "Quận 1, TP Hồ Chí Minh",
-        total: 1800000,
-        status: "confirmed",
-        createdAt: "07/10/2025 10:15",
-        paymentMethod: "bank",
-        renterName: "Trần Thị B",
-        phone: "0912345678",
-        email: "tranthib@gmail.com",
-        duration: "2 ngày",
-        rentalType: "Theo ngày",
-        driverService: false,
-        carPrice: 1800000,
-        driverFee: 0,
-        insurance: 90000,
-        additionalInsurance: 0,
-        serviceFee: 30000,
-        deposit: 2000000,
-        discount: 120000,
-        totalDeposit: 2000000,
-        transmission: "Số tự động",
-        seats: 5,
-        fuel: "Xăng",
-      },
-      {
-        bookingId: "BK1733740600003",
-        carName: "HONDA CITY 2024",
-        carImage:
-          "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop",
-        pickupDate: "08/10/2025",
-        pickupTime: "07:00",
-        returnDate: "08/10/2025",
-        returnTime: "22:00",
-        pickupLocation: "Quận 7, TP Hồ Chí Minh",
-        total: 650000,
-        status: "pending",
-        createdAt: "06/10/2025 16:45",
-        paymentMethod: "qr",
-        renterName: "Lê Văn C",
-        phone: "0923456789",
-        email: "levanc@gmail.com",
-        duration: "15 giờ",
-        rentalType: "Theo giờ",
-        driverService: false,
-        carPrice: 650000,
-        driverFee: 0,
-        insurance: 50000,
-        additionalInsurance: 0,
-        serviceFee: 20000,
-        deposit: 1500000,
-        discount: 70000,
-        totalDeposit: 1500000,
-        transmission: "Số tự động",
-        seats: 5,
-        fuel: "Xăng",
-      },
-      {
-        bookingId: "BK1733740500004",
-        carName: "MERCEDES E-CLASS 2023",
-        carImage:
-          "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&h=600&fit=crop",
-        pickupDate: "01/10/2025",
-        pickupTime: "10:00",
-        returnDate: "05/10/2025",
-        returnTime: "10:00",
-        pickupLocation: "Quận 3, TP Hồ Chí Minh",
-        total: 8000000,
-        status: "completed",
-        createdAt: "28/09/2025 09:20",
-        paymentMethod: "bank",
-        renterName: "Phạm Thị D",
-        phone: "0934567890",
-        email: "phamthid@gmail.com",
-        duration: "4 ngày",
-        rentalType: "Theo ngày",
-        driverService: true,
-        carPrice: 6000000,
-        driverFee: 2000000,
-        insurance: 300000,
-        additionalInsurance: 200000,
-        serviceFee: 100000,
-        deposit: 10000000,
-        discount: 600000,
-        totalDeposit: 10000000,
-        transmission: "Số tự động",
-        seats: 5,
-        fuel: "Xăng",
-      },
-      {
-        bookingId: "BK1733740400005",
-        carName: "HYUNDAI ACCENT 2023",
-        carImage:
-          "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
-        pickupDate: "20/09/2025",
-        pickupTime: "14:00",
-        returnDate: "22/09/2025",
-        returnTime: "14:00",
-        pickupLocation: "Quận Bình Thạnh, TP Hồ Chí Minh",
-        total: 1200000,
-        status: "cancelled",
-        createdAt: "18/09/2025 11:30",
-        paymentMethod: "qr",
-        renterName: "Võ Văn E",
-        phone: "0945678901",
-        email: "vovane@gmail.com",
-        duration: "2 ngày",
-        rentalType: "Theo ngày",
-        driverService: false,
-        carPrice: 1200000,
-        driverFee: 0,
-        insurance: 60000,
-        additionalInsurance: 0,
-        serviceFee: 25000,
-        deposit: 1800000,
-        discount: 85000,
-        totalDeposit: 1800000,
-        transmission: "Số tự động",
-        seats: 5,
-        fuel: "Xăng",
-      },
-      {
-        bookingId: "BK1733740300006",
-        carName: "KIA MORNING 2024",
-        carImage:
-          "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
-        pickupDate: "15/09/2025",
-        pickupTime: "08:00",
-        returnDate: "20/09/2025",
-        returnTime: "08:00",
-        pickupLocation: "Quận Gò Vấp, TP Hồ Chí Minh",
-        total: 2500000,
-        status: "completed",
-        createdAt: "13/09/2025 15:00",
-        paymentMethod: "bank",
-        renterName: "Nguyễn Thị F",
-        phone: "0956789012",
-        email: "nguyenthif@gmail.com",
-        duration: "5 ngày",
-        rentalType: "Theo ngày",
-        driverService: false,
-        carPrice: 2500000,
-        driverFee: 0,
-        insurance: 125000,
-        additionalInsurance: 0,
-        serviceFee: 40000,
-        deposit: 2000000,
-        discount: 165000,
-        totalDeposit: 2000000,
-        transmission: "Số tự động",
-        seats: 4,
-        fuel: "Xăng",
-      },
-      {
-        bookingId: "BK1733740200007",
-        carName: "FORD RANGER 2023",
-        carImage:
-          "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop",
-        pickupDate: "05/09/2025",
-        pickupTime: "06:00",
-        returnDate: "10/09/2025",
-        returnTime: "18:00",
-        pickupLocation: "Quận Tân Bình, TP Hồ Chí Minh",
-        total: 4500000,
-        status: "completed",
-        createdAt: "03/09/2025 08:45",
-        paymentMethod: "qr",
-        renterName: "Hoàng Văn G",
-        phone: "0967890123",
-        email: "hoangvang@gmail.com",
-        duration: "5 ngày",
-        rentalType: "Theo ngày",
-        driverService: true,
-        carPrice: 3500000,
-        driverFee: 1000000,
-        insurance: 175000,
-        additionalInsurance: 100000,
-        serviceFee: 60000,
-        deposit: 5000000,
-        discount: 335000,
-        totalDeposit: 5000000,
-        transmission: "Số tự động",
-        seats: 5,
-        fuel: "Dầu diesel",
-      },
-      {
-        bookingId: "BK1733740100008",
-        carName: "VINFAST LUX A2.0",
-        carImage:
-          "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&h=600&fit=crop",
-        pickupDate: "25/08/2025",
-        pickupTime: "12:00",
-        returnDate: "30/08/2025",
-        returnTime: "12:00",
-        pickupLocation: "Quận 2, TP Hồ Chí Minh",
-        total: 5500000,
-        status: "completed",
-        createdAt: "23/08/2025 13:20",
-        paymentMethod: "bank",
-        renterName: "Đỗ Thị H",
-        phone: "0978901234",
-        email: "dothih@gmail.com",
-        duration: "5 ngày",
-        rentalType: "Theo ngày",
-        driverService: false,
-        carPrice: 5500000,
-        driverFee: 0,
-        insurance: 275000,
-        additionalInsurance: 150000,
-        serviceFee: 80000,
-        deposit: 8000000,
-        discount: 505000,
-        totalDeposit: 8000000,
-        transmission: "Số tự động",
-        seats: 5,
-        fuel: "Xăng",
-      },
-    ];
-
-    // Load orders from localStorage
-    const savedOrders = localStorage.getItem("bookingOrders");
-    if (savedOrders) {
-      const parsedOrders = JSON.parse(savedOrders);
-      // Combine mock orders with saved orders
-      const allOrders = [...parsedOrders, ...mockOrders];
-      // Remove duplicates based on bookingId
-      const uniqueOrders = allOrders.filter(
-        (order, index, self) =>
-          index === self.findIndex((o) => o.bookingId === order.bookingId),
-      );
-      setOrders(uniqueOrders);
-      setFilteredOrders(uniqueOrders);
-    } else {
-      // If no saved orders, just use mock data
-      setOrders(mockOrders);
-      setFilteredOrders(mockOrders);
-      // Optionally save mock data to localStorage
-      localStorage.setItem("bookingOrders", JSON.stringify(mockOrders));
-    }
+    loadBookings();
   }, []);
+
+  // Refresh function
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadBookings();
+    setIsRefreshing(false);
+  };
+
+  // Open cancel confirmation dialog
+  const openCancelDialog = (bookingId: string, bookingCode: string) => {
+    setCancellingOrderId(bookingId);
+    setCancellingOrderCode(bookingCode);
+    setShowCancelDialog(true);
+  };
+
+  // Close cancel dialog
+  const closeCancelDialog = () => {
+    setShowCancelDialog(false);
+    setCancellingOrderId(null);
+    setCancellingOrderCode("");
+  };
+
+  // Handle cancel booking
+  const handleCancelBooking = async () => {
+    if (!cancellingOrderId) return;
+
+    try {
+      setIsCancelling(true);
+      const result = await cancelBooking(cancellingOrderId);
+
+      if (result) {
+        toast({
+          title: "Hủy đơn thành công",
+          description: `Đơn hàng ${cancellingOrderCode} đã được hủy.`,
+          variant: "default",
+        });
+
+        // Update local state to reflect cancelled status
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.bookingId === cancellingOrderId
+              ? { ...order, status: "CANCELLED" as const }
+              : order,
+          ),
+        );
+
+        closeCancelDialog();
+      } else {
+        toast({
+          title: "Hủy đơn thất bại",
+          description: "Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      toast({
+        title: "Hủy đơn thất bại",
+        description: "Có lỗi xảy ra khi hủy đơn hàng. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   useEffect(() => {
     // Filter orders based on search and status
@@ -378,6 +233,9 @@ export default function HistoryService() {
     if (searchQuery) {
       filtered = filtered.filter(
         (order) =>
+          order.bookingCode
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
           order.bookingId.toLowerCase().includes(searchQuery.toLowerCase()) ||
           order.carName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           order.pickupLocation
@@ -394,7 +252,28 @@ export default function HistoryService() {
   }, [searchQuery, statusFilter, orders]);
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
+    const statusConfig: Record<string, { label: string; className: string }> = {
+      ONGOING: {
+        label: "Đang thuê",
+        className: "bg-blue-100 text-blue-700",
+      },
+      COMPLETED: {
+        label: "Hoàn thành",
+        className: "bg-green-100 text-green-700",
+      },
+      PENDING: {
+        label: "Chờ xác nhận",
+        className: "bg-yellow-100 text-yellow-700",
+      },
+      CONFIRMED: {
+        label: "Đã xác nhận",
+        className: "bg-indigo-100 text-indigo-700",
+      },
+      CANCELLED: {
+        label: "Đã hủy",
+        className: "bg-red-100 text-red-700",
+      },
+      // Lowercase versions for backward compatibility
       completed: {
         label: "Hoàn thành",
         className: "bg-green-100 text-green-700",
@@ -422,7 +301,7 @@ export default function HistoryService() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 mt-[50px]">
       <div className="mx-auto px-6 sm:px-12 md:px-24 lg:px-[150px] py-8">
         {/* Header */}
         <div className="mb-8">
@@ -452,6 +331,17 @@ export default function HistoryService() {
               {/* Status Filter */}
               <div className="flex gap-2 flex-wrap">
                 <Button
+                  variant="outline"
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+                  />
+                  Làm mới
+                </Button>
+                <Button
                   variant={statusFilter === "all" ? "default" : "outline"}
                   onClick={() => setStatusFilter("all")}
                   className={
@@ -463,10 +353,10 @@ export default function HistoryService() {
                   Tất cả
                 </Button>
                 <Button
-                  variant={statusFilter === "pending" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("pending")}
+                  variant={statusFilter === "PENDING" ? "default" : "outline"}
+                  onClick={() => setStatusFilter("PENDING")}
                   className={
-                    statusFilter === "pending"
+                    statusFilter === "PENDING"
                       ? "bg-green-600 hover:bg-green-700"
                       : ""
                   }
@@ -474,21 +364,21 @@ export default function HistoryService() {
                   Chờ xác nhận
                 </Button>
                 <Button
-                  variant={statusFilter === "confirmed" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("confirmed")}
+                  variant={statusFilter === "ONGOING" ? "default" : "outline"}
+                  onClick={() => setStatusFilter("ONGOING")}
                   className={
-                    statusFilter === "confirmed"
+                    statusFilter === "ONGOING"
                       ? "bg-green-600 hover:bg-green-700"
                       : ""
                   }
                 >
-                  Đã xác nhận
+                  Đang thuê
                 </Button>
                 <Button
-                  variant={statusFilter === "completed" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("completed")}
+                  variant={statusFilter === "COMPLETED" ? "default" : "outline"}
+                  onClick={() => setStatusFilter("COMPLETED")}
                   className={
-                    statusFilter === "completed"
+                    statusFilter === "COMPLETED"
                       ? "bg-green-600 hover:bg-green-700"
                       : ""
                   }
@@ -501,7 +391,14 @@ export default function HistoryService() {
         </Card>
 
         {/* Orders List */}
-        {filteredOrders.length === 0 ? (
+        {isLoading ? (
+          <Card className="shadow-sm">
+            <CardContent className="p-12 text-center">
+              <Loader2 className="w-12 h-12 animate-spin text-green-600 mx-auto mb-4" />
+              <p className="text-gray-600">Đang tải lịch sử giao dịch...</p>
+            </CardContent>
+          </Card>
+        ) : filteredOrders.length === 0 ? (
           <Card className="shadow-sm">
             <CardContent className="p-12 text-center">
               <Car className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -553,7 +450,7 @@ export default function HistoryService() {
                           <p className="text-sm text-gray-500">
                             Mã đơn:{" "}
                             <span className="font-medium text-gray-700">
-                              {order.bookingId}
+                              {order.bookingCode || order.bookingId.slice(-8)}
                             </span>
                           </p>
                         </div>
@@ -562,7 +459,7 @@ export default function HistoryService() {
                             Tổng tiền
                           </p>
                           <p className="text-2xl font-bold text-green-600">
-                            {formatCurrency(order.total)}
+                            {formatCurrency(order.totalAmount)}
                           </p>
                         </div>
                       </div>
@@ -609,9 +506,11 @@ export default function HistoryService() {
                                 Thanh toán
                               </p>
                               <p className="font-medium text-gray-900">
-                                {order.paymentMethod === "qr"
-                                  ? "Quét mã QR"
-                                  : "Chuyển khoản"}
+                                {order.paymentStatus === "PAID"
+                                  ? "Đã thanh toán"
+                                  : order.paymentStatus === "PENDING"
+                                    ? "Chờ thanh toán"
+                                    : order.paymentStatus}
                               </p>
                             </div>
                           </div>
@@ -623,20 +522,32 @@ export default function HistoryService() {
                       {/* Actions */}
                       <div className="flex flex-wrap gap-3">
                         <Button
-                          onClick={() => navigate(`/order/${order.bookingId}`)}
+                          onClick={() =>
+                            navigate(
+                              `/order/${order.bookingCode || order.bookingId}`,
+                            )
+                          }
                           className="bg-green-600 hover:bg-green-700"
                         >
                           <Eye className="w-4 h-4 mr-2" />
                           Xem chi tiết
                         </Button>
-                        {order.status === "completed" && (
+                        {order.status === "COMPLETED" && (
                           <Button variant="outline">Đặt lại</Button>
                         )}
-                        {order.status === "pending" && (
+                        {(order.status === "PENDING" ||
+                          order.status === "CONFIRMED") && (
                           <Button
                             variant="outline"
-                            className="text-red-600 hover:text-red-700"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() =>
+                              openCancelDialog(
+                                order.bookingId,
+                                order.bookingCode || order.bookingId.slice(-8),
+                              )
+                            }
                           >
+                            <XCircle className="w-4 h-4 mr-2" />
                             Hủy đơn
                           </Button>
                         )}
@@ -655,6 +566,53 @@ export default function HistoryService() {
             Hiển thị {filteredOrders.length} / {orders.length} giao dịch
           </div>
         )}
+
+        {/* Cancel Confirmation Dialog */}
+        <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <XCircle className="w-5 h-5" />
+                Xác nhận hủy đơn
+              </DialogTitle>
+              <DialogDescription>
+                Bạn có chắc chắn muốn hủy đơn hàng{" "}
+                <span className="font-semibold text-gray-900">
+                  {cancellingOrderCode}
+                </span>{" "}
+                không?
+                <br />
+                <span className="text-red-500 text-sm mt-2 block">
+                  Lưu ý: Hành động này không thể hoàn tác.
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={closeCancelDialog}
+                disabled={isCancelling}
+              >
+                Đóng
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleCancelBooking}
+                disabled={isCancelling}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isCancelling ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Đang hủy...
+                  </>
+                ) : (
+                  "Xác nhận hủy"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

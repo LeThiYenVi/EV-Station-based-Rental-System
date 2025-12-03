@@ -59,6 +59,7 @@ import { authService } from "@/service/auth/authService";
 
 interface BookingOrder {
   bookingId: string;
+  bookingCode: string;
   carName: string;
   carImage: string;
   pickupDate: string;
@@ -79,10 +80,11 @@ export default function UserProfile() {
 
   // API Hooks
   const {
-    getMyInfo,
+    getMyStats,
     updateUser,
     uploadAvatar,
-    uploadLicenseCard,
+    uploadLicenseCardFront,
+    uploadLicenseCardBack,
     loading: userLoading,
   } = useUser();
   const { getMyBookings, loading: bookingLoading } = useBooking();
@@ -167,27 +169,43 @@ export default function UserProfile() {
   const loadUserData = async () => {
     try {
       setIsLoadingData(true);
-      const result = await getMyInfo();
+      const result = await getMyStats();
 
-      console.log("getMyInfo result:", result); // DEBUG
+      console.log("getMyStats result:", result); // DEBUG
 
       if (result.success && result.data) {
         const user = result.data;
         console.log("User data from API:", user); // DEBUG
         console.log("Avatar URL:", user.avatarUrl); // DEBUG
 
+        // Parse address: "Phường Bà Rịa, TP.HCM" -> ward: "Phường Bà Rịa", city: "TP.HCM"
+        let parsedWard = "";
+        let parsedCity = "";
+        if (user.address) {
+          const addressParts = user.address
+            .split(",")
+            .map((part: string) => part.trim());
+          if (addressParts.length >= 2) {
+            parsedWard = addressParts[0] || "";
+            parsedCity = addressParts[1] || "";
+          } else {
+            // If no comma, put all in address field
+            parsedWard = user.address;
+          }
+        }
+
         setUserData({
           id: user.id || "",
           username: user.email || "",
           fullName: user.fullName || "",
           email: user.email || "",
-          phone: user.phone || user.phoneNumber || "", // API returns "phone"
+          phone: user.phone || user.phoneNumber || "",
           dateOfBirth: user.dateOfBirth || "",
           gender: "male",
           address: user.address || "",
-          city: "",
+          city: parsedCity,
           district: "",
-          ward: "",
+          ward: parsedWard,
           avatar: user.avatarUrl || "",
 
           // Driver's License Info
@@ -196,27 +214,30 @@ export default function UserProfile() {
           licenseIssueDate: user.licenseIssueDate || "",
           licenseExpiryDate: user.licenseExpiryDate || "",
           licenseIssuePlace: "",
-          licenseFrontImage:
-            user.licenseCardImageUrl || user.licenseCardUrl || "", // API returns "licenseCardImageUrl"
-          licenseBackImage: "",
-          licenseVerified:
-            user.isLicenseVerified || user.licenseVerified || false, // API returns "isLicenseVerified"
+          licenseFrontImage: user.licenseCardFrontImageUrl || "",
+          licenseBackImage: user.licenseCardBackImageUrl || "",
+          licenseVerified: user.isLicenseVerified || false,
 
           // ID Card Info
-          idNumber: user.identityNumber || "", // API returns "identityNumber"
+          idNumber: user.identityNumber || "",
           idIssueDate: "",
           idIssuePlace: "",
 
-          // Statistics - will be updated from booking history
-          totalTrips: 0,
-          completedTrips: 0,
-          cancelledTrips: 0,
+          // Statistics from API /users/me/stats
+          totalTrips: user.totalBookings || 0,
+          completedTrips: user.completedBookings || 0,
+          cancelledTrips: user.cancelledBookings || 0,
           memberSince: user.createdAt
             ? new Date(user.createdAt).toLocaleDateString("vi-VN")
             : "",
         });
 
-        console.log("Updated userData.avatar:", user.avatarUrl); // DEBUG
+        console.log("Updated userData with stats:", {
+          totalBookings: user.totalBookings,
+          completedBookings: user.completedBookings,
+          cancelledBookings: user.cancelledBookings,
+          activeBookings: user.activeBookings,
+        }); // DEBUG
       } else {
         console.error("API call failed or no data:", result); // DEBUG
       }
@@ -232,38 +253,56 @@ export default function UserProfile() {
     try {
       const result = await getMyBookings();
 
+      console.log("📦 API Response (my-bookings) in4:", result);
+
       if (result) {
         // Map API bookings to UI format
-        const mappedOrders: BookingOrder[] = result.map((booking: any) => ({
-          bookingId: booking.id,
-          carName: booking.vehicleName || "N/A",
-          carImage: booking.vehicleImageUrl || "/placeholder-car.jpg",
-          pickupDate: booking.pickupDate
-            ? new Date(booking.pickupDate).toLocaleDateString("vi-VN")
-            : "",
-          pickupTime: booking.pickupDate
-            ? new Date(booking.pickupDate).toLocaleTimeString("vi-VN", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "",
-          returnDate: booking.returnDate
-            ? new Date(booking.returnDate).toLocaleDateString("vi-VN")
-            : "",
-          returnTime: booking.returnDate
-            ? new Date(booking.returnDate).toLocaleTimeString("vi-VN", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "",
-          pickupLocation: booking.pickupStationName || "N/A",
-          total: booking.totalPrice || 0,
-          status: mapBookingStatus(booking.status),
-          createdAt: booking.createdAt || "",
-          paymentMethod: booking.paymentMethod || "N/A",
-          duration: calculateDuration(booking.pickupDate, booking.returnDate),
-        }));
+        // Note: API may return pickupTime/returnTime OR startTime/endTime
+        const mappedOrders: BookingOrder[] = result.map((booking: any) => {
+          console.log("📋 Booking item in4:", booking);
 
+          // Handle both field name variations
+          const pickupDateTime = booking.pickupTime || booking.startTime;
+          const returnDateTime =
+            booking.returnTime || booking.endTime || booking.expectedEndTime;
+          const stationName =
+            booking.pickupStationName || booking.stationName || "N/A";
+          const price =
+            booking.totalPrice || booking.totalAmount || booking.basePrice || 0;
+
+          return {
+            bookingId: booking.id,
+            bookingCode: booking.bookingCode,
+            carName: booking.vehicleName || "N/A",
+            carImage: booking.vehicleImageUrl || "/placeholder-car.jpg",
+            pickupDate: pickupDateTime
+              ? new Date(pickupDateTime).toLocaleDateString("vi-VN")
+              : "",
+            pickupTime: pickupDateTime
+              ? new Date(pickupDateTime).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "",
+            returnDate: returnDateTime
+              ? new Date(returnDateTime).toLocaleDateString("vi-VN")
+              : "",
+            returnTime: returnDateTime
+              ? new Date(returnDateTime).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "",
+            pickupLocation: stationName,
+            total: price,
+            status: mapBookingStatus(booking.status),
+            createdAt: booking.createdAt || "",
+            paymentMethod: booking.paymentMethod || "N/A",
+            duration: calculateDuration(pickupDateTime, returnDateTime),
+          };
+        });
+
+        console.log("✅ Mapped orders in4:", mappedOrders);
         setBookingOrders(mappedOrders);
 
         // Update statistics
@@ -320,15 +359,18 @@ export default function UserProfile() {
 
   const handleSaveProfile = async () => {
     try {
+      // Combine ward and city back to address format: "Phường/Xã, Tỉnh/TP"
+      const combinedAddress =
+        userData.ward && userData.city
+          ? `${userData.ward}, ${userData.city}`
+          : userData.ward || userData.city || userData.address;
+
       const result = await updateUser(userData.id, {
         fullName: userData.fullName,
-        phone: userData.phone, // API expects "phone"
+        phone: userData.phone,
+        address: combinedAddress,
         licenseNumber: userData.licenseNumber,
-        identityNumber: userData.idNumber, // Map idNumber to identityNumber
-        address: userData.address,
-        dateOfBirth: userData.dateOfBirth,
-        licenseIssueDate: userData.licenseIssueDate,
-        licenseExpiryDate: userData.licenseExpiryDate,
+        identityNumber: userData.idNumber,
       });
 
       if (result.success) {
@@ -378,12 +420,20 @@ export default function UserProfile() {
     if (!file) return;
 
     try {
-      const result = await uploadLicenseCard(userData.id, file);
+      // Gọi API upload riêng cho front/back
+      const result =
+        side === "front"
+          ? await uploadLicenseCardFront(userData.id, file)
+          : await uploadLicenseCardBack(userData.id, file);
 
       if (result.success && result.data) {
-        // API trả về licenseCardImageUrl
+        // API trả về licenseCardFrontImageUrl hoặc licenseCardBackImageUrl
         const imageUrl =
-          result.data!.licenseCardImageUrl || result.data!.licenseCardUrl || "";
+          side === "front"
+            ? result.data!.licenseCardFrontImageUrl ||
+              result.data!.licenseCardImageUrl ||
+              ""
+            : result.data!.licenseCardBackImageUrl || "";
 
         if (side === "front") {
           setUserData((prev) => ({
@@ -519,7 +569,7 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 mt-[20px]">
       {contextHolder}
 
       {/* Loading State */}
@@ -610,14 +660,21 @@ export default function UserProfile() {
                       <p className="text-2xl font-bold">
                         {userData.completedTrips}
                       </p>
-                      <p className="text-sm text-black">Chuyến đi</p>
+                      <p className="text-sm text-black">Hoàn thành</p>
                     </div>
                     <div className="h-12 w-px bg-white/30"></div>
                     <div>
                       <p className="text-2xl font-bold">
-                        {userData.totalTrips - userData.completedTrips}
+                        {userData.totalTrips}
                       </p>
-                      <p className="text-sm text-black">Đang thuê</p>
+                      <p className="text-sm text-black">Tổng chuyến</p>
+                    </div>
+                    <div className="h-12 w-px bg-white/30"></div>
+                    <div>
+                      <p className="text-2xl font-bold">
+                        {userData.cancelledTrips}
+                      </p>
+                      <p className="text-sm text-black">Đã hủy</p>
                     </div>
                   </div>
                 </div>
@@ -818,7 +875,7 @@ export default function UserProfile() {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      {/* <div className="space-y-2">
                         <Label htmlFor="address">Địa chỉ chi tiết</Label>
                         <Input
                           id="address"
@@ -832,7 +889,7 @@ export default function UserProfile() {
                           disabled={editingSection !== "personal"}
                           placeholder="Số nhà, tên đường..."
                         />
-                      </div>
+                      </div> */}
                     </div>
                   </CardContent>
                 </Card>
@@ -1197,7 +1254,8 @@ export default function UserProfile() {
                                   className="hover:bg-gray-50"
                                 >
                                   <TableCell className="font-medium text-xs">
-                                    {order.bookingId.slice(-6)}
+                                    {order.bookingCode ||
+                                      order.bookingId.slice(-6)}
                                   </TableCell>
                                   <TableCell>
                                     <div className="flex items-center gap-3">
@@ -1249,7 +1307,9 @@ export default function UserProfile() {
                                       variant="outline"
                                       size="sm"
                                       onClick={() =>
-                                        navigate(`/order/${order.bookingId}`)
+                                        navigate(
+                                          `/order/${order.bookingCode || order.bookingId}`,
+                                        )
                                       }
                                       className="flex items-center gap-1"
                                     >
@@ -1285,7 +1345,9 @@ export default function UserProfile() {
                                       {getStatusBadge(order.status)}
                                     </div>
                                     <p className="text-xs text-gray-500 mb-1">
-                                      Mã: {order.bookingId.slice(-6)}
+                                      Mã:{" "}
+                                      {order.bookingCode ||
+                                        order.bookingId.slice(-6)}
                                     </p>
                                     <div className="flex items-center gap-1 text-xs text-gray-600">
                                       <Calendar className="w-3 h-3" />
@@ -1312,7 +1374,9 @@ export default function UserProfile() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() =>
-                                      navigate(`/order/${order.bookingId}`)
+                                      navigate(
+                                        `/order/${order.bookingCode || order.bookingId}`,
+                                      )
                                     }
                                   >
                                     <Eye className="w-3 h-3 mr-1" />

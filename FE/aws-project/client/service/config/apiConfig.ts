@@ -71,6 +71,7 @@ export const API_ENDPOINTS = {
   },
   USERS: {
     GET_ME: '/users/me',
+    GET_MY_STATS: '/users/me/stats',
     GET_ALL: '/users',
     GET_BY_ID: '/users/:userId',
     GET_BY_ROLE: '/users/role/:role',
@@ -79,6 +80,8 @@ export const API_ENDPOINTS = {
     VERIFY_LICENSE: '/users/:userId/verify-license',
     UPLOAD_AVATAR: '/users/:userId/avatar',
     UPLOAD_LICENSE_CARD: '/users/:userId/license-card',
+    UPLOAD_LICENSE_CARD_FRONT: '/users/:userId/license-card/front',
+    UPLOAD_LICENSE_CARD_BACK: '/users/:userId/license-card/back',
     DELETE: '/users/:userId',
   },
   VEHICLES: {
