@@ -68,7 +68,7 @@ import {
   BulbOutlined,
   DashboardOutlined,
   HomeOutlined,
-  //CleaningOutlined,
+  FormatPainterOutlined,
   PlusOutlined,
   EyeOutlined,
   EditOutlined,
@@ -78,7 +78,6 @@ import {
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { UploadFile } from "antd/es/upload/interface";
-import dayjs from "dayjs";
 import vehicleService from "@/service/vehicle/vehicleService";
 
 const { TextArea } = Input;
@@ -136,152 +135,8 @@ interface MaintenanceHistory {
   nextScheduled?: string;
 }
 
-// Mock data
-const mockVehicles: Vehicle[] = [
-  {
-    id: "v1",
-    name: "Tesla Model 3 Long Range",
-    brand: "Tesla",
-    plateNumber: "30A-12345",
-    type: "Điện",
-    status: "available",
-    imageUrl: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=500",
-    currentKm: 15000,
-    lastInspection: "2025-11-15T10:00:00Z",
-    nextInspection: "2025-12-15T10:00:00Z",
-    daysSinceInspection: 17,
-    batteryHealth: 95,
-    fuelLevel: 85,
-    stationName: "Trạm Quận 1 - Nguyễn Huệ",
-  },
-  {
-    id: "v2",
-    name: "VinFast VF8 Plus",
-    brand: "VinFast",
-    plateNumber: "30B-67890",
-    type: "Điện",
-    status: "rented",
-    imageUrl:
-      "https://images.unsplash.com/photo-1617788138017-80ad40651399?w=500",
-    currentKm: 8500,
-    lastInspection: "2025-11-20T14:00:00Z",
-    nextInspection: "2025-12-20T14:00:00Z",
-    daysSinceInspection: 12,
-    batteryHealth: 98,
-    fuelLevel: 70,
-    stationName: "Trạm Quận 7 - Phú Mỹ Hưng",
-  },
-  {
-    id: "v3",
-    name: "Toyota Camry 2024",
-    brand: "Toyota",
-    plateNumber: "51F-11111",
-    type: "Xăng",
-    status: "maintenance",
-    imageUrl:
-      "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500",
-    currentKm: 25000,
-    lastInspection: "2025-10-01T09:00:00Z",
-    nextInspection: "2025-11-01T09:00:00Z",
-    daysSinceInspection: 62,
-    fuelLevel: 40,
-    stationName: "Trạm Quận 1 - Nguyễn Huệ",
-  },
-  {
-    id: "v4",
-    name: "Mazda CX-5 2024",
-    brand: "Mazda",
-    plateNumber: "29H-22222",
-    type: "Xăng",
-    status: "available",
-    imageUrl:
-      "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=500",
-    currentKm: 18000,
-    lastInspection: "2025-11-25T11:00:00Z",
-    nextInspection: "2025-12-25T11:00:00Z",
-    daysSinceInspection: 7,
-    fuelLevel: 90,
-    stationName: "Trạm Quận 7 - Phú Mỹ Hưng",
-  },
-  {
-    id: "v5",
-    name: "Hyundai Ioniq 5",
-    brand: "Hyundai",
-    plateNumber: "51G-33333",
-    type: "Điện",
-    status: "out_of_service",
-    imageUrl:
-      "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=500",
-    currentKm: 12000,
-    lastInspection: "2025-11-28T15:00:00Z",
-    nextInspection: "2025-12-28T15:00:00Z",
-    daysSinceInspection: 4,
-    batteryHealth: 75,
-    fuelLevel: 30,
-    stationName: "Trạm Quận 1 - Nguyễn Huệ",
-  },
-];
-
-const mockMaintenanceHistory: Record<string, MaintenanceHistory[]> = {
-  v1: [
-    {
-      id: "m1",
-      date: "2025-11-15T10:00:00Z",
-      type: "Bảo trì định kỳ",
-      description: "Kiểm tra hệ thống điện, thay lốp trước phải",
-      cost: 2500000,
-      serviceProvider: "Tesla Service Center",
-      staffName: "Nguyễn Văn A",
-      nextScheduled: "2025-12-15T10:00:00Z",
-    },
-    {
-      id: "m2",
-      date: "2025-10-10T14:00:00Z",
-      type: "Sửa chữa",
-      description: "Thay pin 12V, cập nhật phần mềm",
-      cost: 1800000,
-      serviceProvider: "Tesla Service Center",
-      staffName: "Trần Thị B",
-    },
-  ],
-  v3: [
-    {
-      id: "m3",
-      date: "2025-10-01T09:00:00Z",
-      type: "Bảo trì định kỳ",
-      description: "Thay dầu động cơ, kiểm tra phanh",
-      cost: 1500000,
-      serviceProvider: "Toyota Authorized Service",
-      staffName: "Lê Văn C",
-      nextScheduled: "2025-11-01T09:00:00Z",
-    },
-    {
-      id: "m4",
-      date: "2025-11-30T10:00:00Z",
-      type: "Sửa chữa khẩn cấp",
-      description: "Sửa hộp số, thay má phanh",
-      cost: 8500000,
-      serviceProvider: "Toyota Authorized Service",
-      staffName: "Nguyễn Văn A",
-      nextScheduled: "2025-12-30T10:00:00Z",
-    },
-  ],
-  v5: [
-    {
-      id: "m5",
-      date: "2025-11-28T15:00:00Z",
-      type: "Sửa chữa lớn",
-      description: "Thay pin động cơ điện",
-      cost: 15000000,
-      serviceProvider: "Hyundai Service Center",
-      staffName: "Phạm Thị D",
-      nextScheduled: "2026-01-28T15:00:00Z",
-    },
-  ],
-};
-
 export default function VehicleInspection() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>(mockVehicles);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [inspectionModalOpen, setInspectionModalOpen] = useState(false);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
@@ -291,6 +146,13 @@ export default function VehicleInspection() {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [stationId, setStationId] = useState<string>("");
   const [listLoading, setListLoading] = useState<boolean>(false);
+  const [pageNumber, setPageNumber] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [totalElements, setTotalElements] = useState<number>(0);
+  const [sortBy, setSortBy] = useState<string | undefined>("createdAt");
+  const [sortDirection, setSortDirection] = useState<
+    "asc" | "desc" | undefined
+  >("desc");
 
   // Inspection checklist
   const [checklist, setChecklist] = useState<ChecklistItem[]>([
@@ -324,14 +186,20 @@ export default function VehicleInspection() {
 
   useEffect(() => {
     const loadVehicles = async () => {
-      if (!stationId) return;
       setListLoading(true);
       try {
-        const data = await vehicleService.getVehiclesByStation(stationId);
-        // Map to local Vehicle shape if needed
-        const mapped: Vehicle[] = data.map((v: any) => ({
+        const res = await vehicleService.getAllVehicles({
+          page: pageNumber,
+          size: pageSize,
+          sortBy,
+          sortDirection,
+        });
+        console.log("📦 API Response:", res);
+        console.log("📋 Content array:", res.content);
+
+        const mapped: Vehicle[] = res.content.map((v: any) => ({
           id: v.id,
-          name: v.name || `${v.brand} ${v.model}`,
+          name: v.name || `${v.brand}`,
           brand: v.brand,
           plateNumber: v.licensePlate,
           type:
@@ -352,26 +220,30 @@ export default function VehicleInspection() {
                     : v.status === "UNAVAILABLE"
                       ? "unavailable"
                       : "out_of_service",
-          imageUrl: v.imageUrl,
-          currentKm: v.currentKm || 0,
-          lastInspection: v.lastInspection || new Date().toISOString(),
-          nextInspection:
-            v.nextInspection ||
-            new Date(Date.now() + 30 * 86400000).toISOString(),
-          daysSinceInspection: v.daysSinceInspection || 0,
-          batteryHealth: v.batteryHealth,
-          fuelLevel: v.fuelLevel,
-          stationName: v.stationName || "",
+          imageUrl: v.photos?.[0] || v.imageUrl,
+          currentKm: 0, // API không trả về currentKm
+          lastInspection: new Date().toISOString(),
+          nextInspection: new Date(Date.now() + 30 * 86400000).toISOString(),
+          daysSinceInspection: 0,
+          batteryHealth: v.fuelType === "ELECTRICITY" ? 100 : undefined,
+          fuelLevel: v.fuelType === "ELECTRICITY" ? 100 : 80,
+          stationName:
+            `Trạm ${v.stationId?.substring(0, 8)}...` || "Chưa xác định",
         }));
+
+        console.log("✅ Mapped vehicles:", mapped);
+        console.log("📊 Total elements:", res.totalElements);
         setVehicles(mapped);
+        setTotalElements(res.totalElements);
       } catch (e) {
-        message.error("Không thể tải danh sách xe theo trạm");
+        console.error("❌ Error loading vehicles:", e);
+        message.error("Không thể tải danh sách xe");
       } finally {
         setListLoading(false);
       }
     };
     loadVehicles();
-  }, [stationId]);
+  }, [pageNumber, pageSize, sortBy, sortDirection]);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -496,6 +368,8 @@ export default function VehicleInspection() {
         available: "AVAILABLE",
         rented: "RENTED",
         maintenance: "MAINTENANCE",
+        charging: "CHARGING",
+        unavailable: "UNAVAILABLE",
         out_of_service: "OUT_OF_SERVICE",
       };
 
@@ -776,25 +650,22 @@ export default function VehicleInspection() {
 
       {/* Table */}
       <Card>
-        <div className="mb-4 flex items-center gap-3">
-          <span>Chọn trạm:</span>
-          <Input
-            placeholder="Nhập Station ID"
-            value={stationId}
-            onChange={(e) => setStationId(e.target.value)}
-            style={{ width: 280 }}
-          />
-          {listLoading && <span className="text-gray-500">Đang tải...</span>}
-        </div>
         <Table
           columns={columns}
           dataSource={vehicles}
           rowKey="id"
           scroll={{ x: 1400 }}
+          loading={listLoading}
           pagination={{
-            pageSize: 10,
+            current: pageNumber + 1,
+            pageSize: pageSize,
+            total: totalElements,
             showTotal: (total) => `Tổng ${total} xe`,
             showSizeChanger: true,
+          }}
+          onChange={(pagination) => {
+            if (pagination.current) setPageNumber(pagination.current - 1);
+            if (pagination.pageSize) setPageSize(pagination.pageSize);
           }}
         />
       </Card>
@@ -883,7 +754,7 @@ export default function VehicleInspection() {
                             )}
                             {item.category === "interior" && <HomeOutlined />}
                             {item.category === "cleaning" && (
-                              <CleaningOutlined />
+                              <FormatPainterOutlined />
                             )}
                             {item.label}
                           </div>
@@ -1077,12 +948,7 @@ export default function VehicleInspection() {
                 <Col span={8}>
                   <Statistic
                     title="Tổng chi phí bảo trì"
-                    value={
-                      mockMaintenanceHistory[selectedVehicle.id]?.reduce(
-                        (sum, item) => sum + item.cost,
-                        0,
-                      ) || 0
-                    }
+                    value={0}
                     formatter={(value) => formatCurrency(value as number)}
                     valueStyle={{ color: "#ff4d4f", fontSize: "18px" }}
                   />
@@ -1090,25 +956,14 @@ export default function VehicleInspection() {
                 <Col span={8}>
                   <Statistic
                     title="Số lần bảo trì"
-                    value={
-                      mockMaintenanceHistory[selectedVehicle.id]?.length || 0
-                    }
+                    value={0}
                     valueStyle={{ color: "#1890ff", fontSize: "18px" }}
                   />
                 </Col>
                 <Col span={8}>
                   <Statistic
                     title="Bảo trì tiếp theo"
-                    value={
-                      mockMaintenanceHistory[selectedVehicle.id]?.[0]
-                        ?.nextScheduled
-                        ? new Date(
-                            mockMaintenanceHistory[
-                              selectedVehicle.id
-                            ][0].nextScheduled,
-                          ).toLocaleDateString("vi-VN")
-                        : "Chưa xác định"
-                    }
+                    value="Chưa xác định"
                     valueStyle={{ fontSize: "16px" }}
                   />
                 </Col>
@@ -1116,89 +971,10 @@ export default function VehicleInspection() {
             </Card>
 
             {/* Timeline */}
-            {mockMaintenanceHistory[selectedVehicle.id] &&
-            mockMaintenanceHistory[selectedVehicle.id].length > 0 ? (
-              <Timeline
-                mode="left"
-                items={mockMaintenanceHistory[selectedVehicle.id].map(
-                  (history) => ({
-                    label: formatDateTime(history.date),
-                    children: (
-                      <Card size="small" className="shadow-sm">
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="font-semibold text-base">
-                                {history.type === "Bảo trì định kỳ" && (
-                                  <CheckCircleOutlined className="text-green-600" />
-                                )}
-                                {history.type === "Sửa chữa" && (
-                                  <ToolOutlined className="text-orange-500" />
-                                )}
-                                {history.type === "Sửa chữa khẩn cấp" && (
-                                  <ExclamationCircleOutlined className="text-red-600" />
-                                )}
-                                {history.type === "Sửa chữa lớn" && (
-                                  <WarningOutlined className="text-red-600" />
-                                )}{" "}
-                                {history.type}
-                              </div>
-                              <div className="text-sm text-gray-600 mt-1">
-                                {history.description}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-lg font-bold text-red-600">
-                                {formatCurrency(history.cost)}
-                              </div>
-                            </div>
-                          </div>
-
-                          <Divider className="my-2" />
-
-                          <Row gutter={16}>
-                            <Col span={12}>
-                              <div className="text-xs text-gray-500">
-                                <ShopOutlined /> Đơn vị:{" "}
-                                {history.serviceProvider}
-                              </div>
-                            </Col>
-                            <Col span={12}>
-                              <div className="text-xs text-gray-500">
-                                <UserOutlined /> Người phụ trách:{" "}
-                                {history.staffName}
-                              </div>
-                            </Col>
-                          </Row>
-
-                          {history.nextScheduled && (
-                            <Alert
-                              message={`Bảo trì tiếp theo: ${formatDateTime(history.nextScheduled)}`}
-                              type="info"
-                              showIcon
-                              icon={<CalendarOutlined />}
-                              className="mt-2"
-                            />
-                          )}
-                        </div>
-                      </Card>
-                    ),
-                    color:
-                      history.type.includes("khẩn cấp") ||
-                      history.type.includes("lớn")
-                        ? "red"
-                        : history.type.includes("Sửa chữa")
-                          ? "orange"
-                          : "green",
-                  }),
-                )}
-              />
-            ) : (
-              <div className="text-center py-12">
-                <HistoryOutlined className="text-6xl text-gray-300 mb-4" />
-                <p className="text-gray-500">Chưa có lịch sử bảo trì</p>
-              </div>
-            )}
+            <div className="text-center py-12">
+              <HistoryOutlined className="text-6xl text-gray-300 mb-4" />
+              <p className="text-gray-500">Chưa có lịch sử bảo trì</p>
+            </div>
           </div>
         )}
       </Modal>

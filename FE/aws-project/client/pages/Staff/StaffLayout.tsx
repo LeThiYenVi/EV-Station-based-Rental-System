@@ -9,13 +9,14 @@ import {
   DashboardOutlined,
   LogoutOutlined,
   CheckCircleOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { useNavigate, Routes, Route, useLocation } from "react-router-dom";
 import Confirmations from "./Confirmations";
 import ActiveBookings from "./ActiveBookings";
 import VehicleInspection from "./VehicleInspection";
 import Customers from "./Customers";
-import Schedule from "./Schedule";
+import Blog from "./Blog";
 import StaffReports from "./StaffReports";
 
 const { Header, Sider, Content } = Layout;
@@ -31,16 +32,31 @@ export default function StaffLayout() {
   // Get current menu key from location
   const getCurrentKey = () => {
     const path = location.pathname;
-    if (path.includes("/confirmations")) return "3";
-    if (path.includes("/bookings")) return "2";
+    if (path.includes("/confirmations")) return "2";
+    if (path.includes("/bookings")) return "3";
     if (path.includes("/vehicles")) return "4";
     if (path.includes("/customers")) return "5";
+    if (path.includes("/blog")) return "6";
+    if (path.includes("/reports")) return "7";
     return "1"; // dashboard
   };
 
   const handleLogout = () => {
     navigate("/login");
   };
+
+  // Read staff info from localStorage (set by auth)
+  const storedUser = (() => {
+    try {
+      const raw = localStorage.getItem("user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const fullName = storedUser?.fullName || storedUser?.name || "Staff User";
+  const email = storedUser?.email || localStorage.getItem("userEmail") || "";
+  const userRole = localStorage.getItem("userRole") || "STAFF";
 
   return (
     <Layout className="min-h-screen">
@@ -89,15 +105,15 @@ export default function StaffLayout() {
             },
             {
               key: "2",
-              icon: <ShoppingOutlined />,
-              label: "Quản lý đơn thuê",
-              onClick: () => navigate("/staff/bookings"),
-            },
-            {
-              key: "3",
               icon: <CheckCircleOutlined />,
               label: "Xác nhận đơn",
               onClick: () => navigate("/staff/confirmations"),
+            },
+            {
+              key: "3",
+              icon: <ShoppingOutlined />,
+              label: "Quản lý đơn thuê",
+              onClick: () => navigate("/staff/bookings"),
             },
             {
               key: "4",
@@ -113,9 +129,9 @@ export default function StaffLayout() {
             },
             {
               key: "6",
-              icon: <DashboardOutlined />,
-              label: "Lịch công việc",
-              onClick: () => navigate("/staff/schedule"),
+              icon: <FileTextOutlined />,
+              label: "Quản lý Blog",
+              onClick: () => navigate("/staff/blog"),
             },
             {
               key: "7",
@@ -144,7 +160,7 @@ export default function StaffLayout() {
       <Layout>
         {/* Header */}
         <Header
-          className="!px-4 flex items-center justify-between shadow-md"
+          className="!px-4 !py-0 !h-16 flex items-center justify-between shadow-md"
           style={{ padding: 0, background: colorBgContainer }}
         >
           <Button
@@ -154,13 +170,17 @@ export default function StaffLayout() {
             className="!text-lg !w-16 !h-16 hover:!bg-blue-50"
           />
 
-          <div className="flex items-center gap-4">
-            <div className="text-right mr-4">
-              <div className="font-semibold text-gray-700">Staff User</div>
-              <div className="text-xs text-gray-500">staff@example.com</div>
+          <div className="flex items-center gap-3 max-w-[50%]">
+            <div className="text-right mr-2 leading-tight">
+              <div className="font-semibold text-gray-700 truncate max-w-[220px]">
+                {fullName}
+              </div>
+              <div className="text-xs text-gray-500 truncate max-w-[220px]">
+                {email}
+              </div>
             </div>
-            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-              S
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold shrink-0">
+              {userRole?.[0] || "S"}
             </div>
           </div>
         </Header>
@@ -260,7 +280,7 @@ export default function StaffLayout() {
             <Route path="/bookings" element={<ActiveBookings />} />
             <Route path="/vehicles" element={<VehicleInspection />} />
             <Route path="/customers" element={<Customers />} />
-            <Route path="/schedule" element={<Schedule />} />
+            <Route path="/blog" element={<Blog />} />
             <Route path="/reports" element={<StaffReports />} />
           </Routes>
         </Content>
