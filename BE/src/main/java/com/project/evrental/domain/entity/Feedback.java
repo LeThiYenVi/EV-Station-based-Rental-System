@@ -48,7 +48,7 @@ public class Feedback {
     private String response;
 
     @Column(name = "responded_by")
-    private UUID respondedBy;
+    private UUID respondedBy; // ADMIN or STAFF
 
     @Column(name = "responded_at")
     private LocalDateTime respondedAt;
