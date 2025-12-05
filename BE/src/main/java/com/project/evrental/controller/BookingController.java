@@ -187,12 +187,12 @@ public class BookingController {
 
     @PatchMapping("/{bookingId}/complete")
     @PreAuthorize("hasRole('STAFF') or hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<BookingResponse>> completeBooking(
+    public ResponseEntity<ApiResponse<BookingWithPaymentResponse>> completeBooking(
             @PathVariable UUID bookingId
     ) {
         log.info("Request to complete booking: {}", bookingId);
         return ResponseEntity.status(HttpStatus.OK)
-                .body(ApiResponse.<BookingResponse>builder()
+                .body(ApiResponse.<BookingWithPaymentResponse>builder()
                         .statusCode(200)
                         .message("Booking completed successfully")
                         .data(bookingService.completeBooking(bookingId))

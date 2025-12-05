@@ -20,6 +20,5 @@ public class UpdateFeedbackRequest {
     @Max(value = 5, message = "Station rating must be at most 5")
     private Double stationRating;
 
-    @Size(min = 10, max = 1000, message = "Comment must be between 10 and 1000 characters")
     private String comment;
 }

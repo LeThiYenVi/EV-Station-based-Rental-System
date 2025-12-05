@@ -7,6 +7,10 @@ import com.project.evrental.domain.dto.request.UpdateVehicleRequest;
 import com.project.evrental.domain.dto.response.VehicleDetailResponse;
 import com.project.evrental.domain.dto.response.VehicleResponse;
 import com.project.evrental.service.VehicleService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -207,16 +211,19 @@ public class VehicleController {
 
     @PostMapping(value = "/{vehicleId}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    @Operation(summary = "Upload vehicle photos", description = "Upload multiple photos for a vehicle")
     public ResponseEntity<ApiResponse<VehicleResponse>> uploadVehiclePhotos(
             @PathVariable UUID vehicleId,
-            @RequestParam("files") MultipartFile[] files
+            @Parameter(description = "Multiple image files to upload", required = true)
+            @RequestPart("files") List<MultipartFile> files
     ) {
         log.info("Request to upload photos for vehicle: {}", vehicleId);
+        MultipartFile[] fileArray = files.toArray(new MultipartFile[0]);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.<VehicleResponse>builder()
                         .statusCode(200)
                         .message("Vehicle photos uploaded successfully")
-                        .data(vehicleService.uploadVehiclePhotos(vehicleId, files))
+                        .data(vehicleService.uploadVehiclePhotos(vehicleId, fileArray))
                         .build());
     }
 }
