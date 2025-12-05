@@ -50,6 +50,8 @@ export interface User {
   role?: string;
   emailVerified?: boolean;
   isActive?: boolean;
+  active?: boolean; // API may return this field
+  blacklisted?: boolean; // Blacklist status
   createdAt?: string;
   updatedAt?: string;
   // Extended user fields
@@ -67,13 +69,18 @@ export interface User {
   isLicenseVerified?: boolean; // API returns this field name
   licenseVerified?: boolean; // Keep for backward compatibility
   verifiedAt?: string;
-  stationId?: string;
+  stationId?: string | null;
   stationName?: string;
   // Booking statistics from API
-  totalBookings?: number;
-  completedBookings?: number;
-  activeBookings?: number;
-  cancelledBookings?: number;
+  totalBookings?: number | null;
+  completedBookings?: number | null;
+  activeBookings?: number | null;
+  cancelledBookings?: number | null;
+  // Computed fields
+  bookingCount?: number; // For backward compatibility
+  rating?: number; // User rating
+  reviewCount?: number; // Number of reviews
+  bookings?: any[]; // Booking history
 }
 
 export interface AuthResponse {

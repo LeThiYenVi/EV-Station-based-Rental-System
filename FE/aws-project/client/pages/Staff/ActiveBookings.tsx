@@ -279,57 +279,67 @@ export default function ActiveBookings() {
 
         // Filter only CONFIRMED and ONGOING bookings for active page
         const activeBookings = all.filter(
-          (b: any) =>
-            b.status === BookingStatus.CONFIRMED ||
-            b.status === BookingStatus.ONGOING,
+          (b: any) => b.status === "CONFIRMED" || b.status === "ONGOING",
         );
 
-        const mapped: ActiveBooking[] = activeBookings.map((b: any) => ({
-          id: b.id,
-          bookingCode: b.bookingCode,
-          vehicleId: b.vehicleId,
-          renterId: b.renterId,
-          pickupStationId: b.pickupStationId,
-          returnStationId: b.returnStationId,
-          pickupTime: b.pickupTime,
-          returnTime: b.returnTime,
-          status: b.status,
-          totalPrice: b.totalPrice,
-          notes: b.notes,
-          createdAt: b.createdAt,
-          updatedAt: b.updatedAt,
-          renter: {
-            id: b.renter?.id || b.renterId,
-            fullName: b.renter?.fullName || "Khách hàng",
-            email: b.renter?.email || "",
-            phoneNumber: b.renter?.phoneNumber || "",
-            identityNumber: b.renter?.identityNumber || "",
-          },
-          vehicle: {
-            id: b.vehicle?.id || b.vehicleId,
-            name: b.vehicle?.name || "Xe",
-            brand: b.vehicle?.brand || "",
-            plateNumber: b.vehicle?.licensePlate || "",
-            type: b.vehicle?.fuelType || "",
-            imageUrl: b.vehicle?.imageUrl,
-            currentKm: b.vehicle?.currentKm || 0,
-            fuelLevel: b.vehicle?.fuelLevel || 0,
-          },
-          pickupStation: {
-            id: b.station?.id || b.pickupStationId,
-            name: b.station?.name || "Trạm",
-            address: b.station?.address || "",
-          },
-          returnStation: {
-            id: b.returnStation?.id || b.returnStationId,
-            name: b.returnStation?.name || "Trạm",
-            address: b.returnStation?.address || "",
-          },
-          timeRemaining: Math.round(
-            (new Date(b.returnTime).getTime() - Date.now()) / (1000 * 60 * 60),
-          ),
-          isOverdue: new Date(b.returnTime).getTime() - Date.now() < 0,
-        }));
+        const mapped: ActiveBooking[] = activeBookings.map((b: any) => {
+          // Support both old and new API field names
+          const pickupTime = b.startTime || b.pickupTime || "";
+          const returnTime = b.expectedEndTime || b.returnTime || "";
+          const totalPrice = b.totalAmount || b.totalPrice || 0;
+
+          return {
+            id: b.id,
+            bookingCode: b.bookingCode,
+            vehicleId: b.vehicleId,
+            renterId: b.renterId,
+            pickupStationId: b.stationId || b.pickupStationId,
+            returnStationId: b.stationId || b.returnStationId,
+            pickupTime: pickupTime,
+            returnTime: returnTime,
+            status: b.status,
+            totalPrice: totalPrice,
+            notes: b.pickupNote || b.notes || "",
+            createdAt: b.createdAt,
+            updatedAt: b.updatedAt,
+            renter: {
+              id: b.renterId,
+              fullName: b.renterName || b.renter?.fullName || "Khách hàng",
+              email: b.renterEmail || b.renter?.email || "",
+              phoneNumber: b.renter?.phoneNumber || "",
+              identityNumber: b.renter?.identityNumber || "",
+            },
+            vehicle: {
+              id: b.vehicleId,
+              name: b.vehicleName || b.vehicle?.name || "Xe",
+              brand: b.vehicle?.brand || "",
+              plateNumber: b.licensePlate || b.vehicle?.licensePlate || "",
+              type: b.vehicle?.fuelType || "",
+              imageUrl: b.vehicle?.imageUrl,
+              currentKm: b.vehicle?.currentKm || 0,
+              fuelLevel: b.vehicle?.fuelLevel || 0,
+            },
+            pickupStation: {
+              id: b.stationId || b.station?.id || b.pickupStationId,
+              name: b.stationName || b.station?.name || "Trạm",
+              address: b.station?.address || "",
+            },
+            returnStation: {
+              id: b.stationId || b.returnStation?.id || b.returnStationId,
+              name: b.stationName || b.returnStation?.name || "Trạm",
+              address: b.returnStation?.address || "",
+            },
+            timeRemaining: returnTime
+              ? Math.round(
+                  (new Date(returnTime).getTime() - Date.now()) /
+                    (1000 * 60 * 60),
+                )
+              : 0,
+            isOverdue: returnTime
+              ? new Date(returnTime).getTime() - Date.now() < 0
+              : false,
+          };
+        });
         setBookings(mapped);
       } catch (e) {
         setBookings(mockActiveBookings);
