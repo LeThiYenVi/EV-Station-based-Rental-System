@@ -121,7 +121,6 @@ public class FeedbackController {
             @RequestParam(required = false) UUID stationId,
             @RequestParam(required = false) UUID vehicleId,
             @RequestParam(required = false) UUID renterId,
-            @RequestParam(required = false) Boolean responded,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
             @RequestParam(required = false) Double minRating,
@@ -135,7 +134,7 @@ public class FeedbackController {
                 .body(ApiResponse.<Page<FeedbackResponse>>builder()
                         .statusCode(200)
                         .data(feedbackService.getAllFeedbacksWithFilters(
-                                stationId, vehicleId, renterId, responded,
+                                stationId, vehicleId, renterId,
                                 fromDate, toDate, minRating, maxRating, pageable
                         ))
                         .build());

@@ -56,22 +56,20 @@ public interface FeedbackRepository extends JpaRepository<Feedback, UUID> {
                                          @Param("maxRating") Double maxRating);
 
     // Admin/Staff moderation queries with filters
-    @Query("SELECT f FROM Feedback f WHERE " +
-           "(:stationId IS NULL OR f.booking.station.id = :stationId) AND " +
-           "(:vehicleId IS NULL OR f.booking.vehicle.id = :vehicleId) AND " +
-           "(:renterId IS NULL OR f.renter.id = :renterId) AND " +
-           "(:responded IS NULL OR " +
-           "  (:responded = true AND f.response IS NOT NULL) OR " +
-           "  (:responded = false AND f.response IS NULL)) AND " +
-           "(:fromDate IS NULL OR f.createdAt >= :fromDate) AND " +
-           "(:toDate IS NULL OR f.createdAt <= :toDate) AND " +
-           "(:minRating IS NULL OR (f.vehicleRating >= :minRating AND f.stationRating >= :minRating)) AND " +
-           "(:maxRating IS NULL OR (f.vehicleRating <= :maxRating AND f.stationRating <= :maxRating)) " +
-           "ORDER BY f.createdAt DESC")
+    @Query(value = "SELECT f.* FROM feedbacks f " +
+           "JOIN bookings b ON b.id = f.booking_id " +
+           "WHERE (CAST(:stationId AS uuid) IS NULL OR b.station_id = CAST(:stationId AS uuid)) " +
+           "AND (CAST(:vehicleId AS uuid) IS NULL OR b.vehicle_id = CAST(:vehicleId AS uuid)) " +
+           "AND (CAST(:renterId AS uuid) IS NULL OR f.renter_id = CAST(:renterId AS uuid)) " +
+           "AND (CAST(:fromDate AS timestamp) IS NULL OR f.created_at >= CAST(:fromDate AS timestamp)) " +
+           "AND (CAST(:toDate AS timestamp) IS NULL OR f.created_at <= CAST(:toDate AS timestamp)) " +
+           "AND (CAST(:minRating AS double precision) IS NULL OR (f.vehicle_rating >= CAST(:minRating AS double precision) AND f.station_rating >= CAST(:minRating AS double precision))) " +
+           "AND (CAST(:maxRating AS double precision) IS NULL OR (f.vehicle_rating <= CAST(:maxRating AS double precision) AND f.station_rating <= CAST(:maxRating AS double precision))) " +
+           "ORDER BY f.created_at DESC",
+           nativeQuery = true)
     Page<Feedback> findByFilters(@Param("stationId") UUID stationId,
                                   @Param("vehicleId") UUID vehicleId,
                                   @Param("renterId") UUID renterId,
-                                  @Param("responded") Boolean responded,
                                   @Param("fromDate") LocalDateTime fromDate,
                                   @Param("toDate") LocalDateTime toDate,
                                   @Param("minRating") Double minRating,

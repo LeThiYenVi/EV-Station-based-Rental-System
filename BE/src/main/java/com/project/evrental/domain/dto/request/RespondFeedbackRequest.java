@@ -14,6 +14,6 @@ import lombok.NoArgsConstructor;
 public class RespondFeedbackRequest {
 
     @NotBlank(message = "Response is required")
-    @Size(min = 10, max = 1000, message = "Response must be between 10 and 1000 characters")
+    @Size(min = 1, max = 1000, message = "Response must be between 10 and 1000 characters")
     private String response;
 }

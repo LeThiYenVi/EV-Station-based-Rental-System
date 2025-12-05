@@ -49,9 +49,9 @@ public class FeedbackService {
     public FeedbackResponse createFeedback(CreateFeedbackRequest request) {
         log.info("Creating feedback for booking: {}", request.getBookingId());
 
-        String email = getEmailFromAuthentication();
-        User renter = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        String sub = getCognitoSubFromAuthentication();
+        User renter = userRepository.findByCognitoSub(sub)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with cognito sub: " + sub));
 
         // Validate booking
         Booking booking = bookingRepository.findById(request.getBookingId())
@@ -94,9 +94,9 @@ public class FeedbackService {
         Feedback feedback = feedbackRepository.findById(feedbackId)
                 .orElseThrow(() -> new ResourceNotFoundException("Feedback not found with ID: " + feedbackId));
 
-        String email = getEmailFromAuthentication();
-        User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        String sub = getCognitoSubFromAuthentication();
+        User currentUser = userRepository.findByCognitoSub(sub)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with cognito sub: " + sub));
 
         // Check if user has permission to view this feedback
         if (!feedback.getRenter().getId().equals(currentUser.getId()) &&
@@ -119,9 +119,9 @@ public class FeedbackService {
         Feedback feedback = feedbackRepository.findByBookingId(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Feedback not found for booking: " + bookingId));
 
-        String email = getEmailFromAuthentication();
-        User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        String sub = getCognitoSubFromAuthentication();
+        User currentUser = userRepository.findByCognitoSub(sub)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with cognito sub: " + sub));
 
         // Check permission
         if (!feedback.getRenter().getId().equals(currentUser.getId()) &&
@@ -141,9 +141,9 @@ public class FeedbackService {
     public FeedbackResponse updateFeedback(UUID feedbackId, UpdateFeedbackRequest request) {
         log.info("Updating feedback with ID: {}", feedbackId);
 
-        String email = getEmailFromAuthentication();
-        User renter = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        String sub = getCognitoSubFromAuthentication();
+        User renter = userRepository.findByCognitoSub(sub)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with cognito sub: " + sub));
 
         Feedback feedback = feedbackRepository.findById(feedbackId)
                 .orElseThrow(() -> new ResourceNotFoundException("Feedback not found with ID: " + feedbackId));
@@ -188,9 +188,9 @@ public class FeedbackService {
     public Page<FeedbackResponse> getMyFeedbacks(Pageable pageable) {
         log.info("Fetching all feedbacks for current renter");
 
-        String email = getEmailFromAuthentication();
-        User renter = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        String sub = getCognitoSubFromAuthentication();
+        User renter = userRepository.findByCognitoSub(sub)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with cognito sub: " + sub));
 
         Page<Feedback> feedbacks = feedbackRepository.findByRenterIdOrderByCreatedAtDesc(renter.getId(), pageable);
 
@@ -204,7 +204,6 @@ public class FeedbackService {
             UUID stationId,
             UUID vehicleId,
             UUID renterId,
-            Boolean responded,
             LocalDateTime fromDate,
             LocalDateTime toDate,
             Double minRating,
@@ -213,7 +212,7 @@ public class FeedbackService {
         log.info("Fetching feedbacks with filters");
 
         Page<Feedback> feedbacks = feedbackRepository.findByFilters(
-                stationId, vehicleId, renterId, responded,
+                stationId, vehicleId, renterId,
                 fromDate, toDate, minRating, maxRating, pageable
         );
 
@@ -224,9 +223,9 @@ public class FeedbackService {
     public FeedbackResponse respondToFeedback(UUID feedbackId, RespondFeedbackRequest request) {
         log.info("Responding to feedback with ID: {}", feedbackId);
 
-        String email = getEmailFromAuthentication();
-        User staff = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        String sub = getCognitoSubFromAuthentication();
+        User staff = userRepository.findByCognitoSub(sub)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with cognito sub: " + sub));
 
         Feedback feedback = feedbackRepository.findById(feedbackId)
                 .orElseThrow(() -> new ResourceNotFoundException("Feedback not found with ID: " + feedbackId));
@@ -245,9 +244,9 @@ public class FeedbackService {
     public FeedbackResponse updateResponse(UUID feedbackId, RespondFeedbackRequest request) {
         log.info("Updating response for feedback with ID: {}", feedbackId);
 
-        String email = getEmailFromAuthentication();
-        User staff = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        String sub = getCognitoSubFromAuthentication();
+        User staff = userRepository.findByCognitoSub(sub)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with cognito sub: " + sub));
 
         Feedback feedback = feedbackRepository.findById(feedbackId)
                 .orElseThrow(() -> new ResourceNotFoundException("Feedback not found with ID: " + feedbackId));
@@ -454,6 +453,14 @@ public class FeedbackService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
             return jwt.getClaim("email");
+        }
+        throw new IllegalStateException("User is not authenticated");
+    }
+
+    private String getCognitoSubFromAuthentication() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+            return jwt.getClaim("sub");
         }
         throw new IllegalStateException("User is not authenticated");
     }
