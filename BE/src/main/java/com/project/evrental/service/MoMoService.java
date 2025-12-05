@@ -27,15 +27,16 @@ public class MoMoService {
     MoMoConfig moMoConfig;
     ObjectMapper objectMapper;
 
-    public MoMoPaymentResponse createPayment(UUID bookingId, BigDecimal amount, String orderInfo) {
+    public MoMoPaymentResponse createPayment(UUID bookingId, BigDecimal amount, String orderInfo, boolean isDeposit) {
         try {
             String orderId = UUID.randomUUID().toString();
             String requestId = UUID.randomUUID().toString();
             long amountLong = amount.longValue();
 
+            String extraDataStr = String.valueOf(isDeposit);
             String rawSignature = "accessKey=" + moMoConfig.getAccessKey() +
                     "&amount=" + amountLong +
-                    "&extraData=" +
+                    "&extraData=" + extraDataStr +
                     "&ipnUrl=" + moMoConfig.getNotifyUrl() +
                     "&orderId=" + orderId +
                     "&orderInfo=" + orderInfo +
@@ -57,7 +58,7 @@ public class MoMoService {
             requestBody.put("redirectUrl", moMoConfig.getRedirectUrl());
             requestBody.put("ipnUrl", moMoConfig.getNotifyUrl());
             requestBody.put("lang", "vi");
-            requestBody.put("extraData", "");
+            requestBody.put("extraData", extraDataStr);
             requestBody.put("requestType", "captureWallet");
             requestBody.put("signature", signature);
 
@@ -87,9 +88,11 @@ public class MoMoService {
 
     public boolean verifySignature(MoMoCallbackRequest callback) {
         try {
+            String extraDataStr = (callback.getExtraData() != null && !callback.getExtraData().isEmpty()) 
+                    ? callback.getExtraData() : "";
             String rawSignature = "accessKey=" + moMoConfig.getAccessKey() +
                     "&amount=" + callback.getAmount() +
-                    "&extraData=" + (callback.getExtraData() != null ? callback.getExtraData() : "") +
+                    "&extraData=" + extraDataStr +
                     "&message=" + callback.getMessage() +
                     "&orderId=" + callback.getOrderId() +
                     "&orderInfo=" + callback.getOrderInfo() +

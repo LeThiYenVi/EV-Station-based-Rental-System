@@ -13,7 +13,14 @@
         "AWS_REGION": "ap-southeast-1",
         "AWS_ACCESS_KEY": "AKIA37HL6QNXA2E3CAWA",
         "AWS_SECRET_KEY": "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",
-        "AWS_COGNITO_DOMAIN_PREFIX": "ap-southeast-1ipsbwwpyr"
+        "AWS_COGNITO_DOMAIN_PREFIX": "ap-southeast-1ipsbwwpyr",
+        "AWS_COGNITO_ACCESS_KEY": "AKIA37HL6QNXA2E3CAWA",
+        "MOMO_PARTNER_CODE": "MOMO",
+        "MOMO_ACCESS_KEY": "F8BBA842ECF85",
+        "MOMO_SECRET_KEY": "K951B6PE1waDMi640xX08PD3vg6EkVlz",
+        "MOMO_ENDPOINT": "https://test-payment.momo.vn/v2/gateway/api/create",
+        "MOMO_REDIRECT_URL": "http://localhost:5173/history-service",
+        "MOMO_NOTIFY_URL": "http://localhost:8080/api/payments/momo/callback"
       }
     }
   ]

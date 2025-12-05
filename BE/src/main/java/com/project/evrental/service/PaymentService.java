@@ -33,26 +33,40 @@ public class PaymentService {
     @Transactional
     public void processMoMoCallback(MoMoCallbackRequest callback) {
         System.out.println("Received MoMo callback: ");
-        log.info("Processing MoMo callback - orderId: {}, resultCode: {}", 
-                callback.getOrderId(), callback.getResultCode());
+        log.info("Processing MoMo callback - orderId: {}, resultCode: {}, extraData: {}", 
+                callback.getOrderId(), callback.getResultCode(), callback.getExtraData());
 
         if (!moMoService.verifySignature(callback)) {
             log.error("Invalid MoMo callback signature - orderId: {}", callback.getOrderId());
             throw new RuntimeException("Invalid signature");
         }
-
+        
+        boolean isDeposit = "true".equalsIgnoreCase(callback.getExtraData());
         Payment payment = paymentRepository.findByTransactionId(callback.getOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found with transaction ID: " + callback.getOrderId()));
 
         if ("0".equals(callback.getResultCode())) {
-            payment.setStatus(PaymentStatus.PAID);
-            payment.setPaidAt(LocalDateTime.now());
-
             Booking booking = payment.getBooking();
-            booking.setPaymentStatus(PaymentStatus.PAID);
-            bookingRepository.save(booking);
+            if(isDeposit) {
+                payment.setStatus(PaymentStatus.PARTIALLY_PAID);
+                payment.setPaidAt(LocalDateTime.now());
+                booking.setDepositPaid(payment.getAmount());
+                booking.setPaymentStatus(PaymentStatus.PARTIALLY_PAID);
 
-            log.info("Payment successful - orderId: {}, transId: {}", callback.getOrderId(), callback.getTransId());
+                log.info("Deposit payment successful - booking: {}, amount: {}", 
+                        booking.getBookingCode(), payment.getAmount());
+            } else {
+                payment.setStatus(PaymentStatus.PAID);
+                payment.setPaidAt(LocalDateTime.now());
+                booking.setPaymentStatus(PaymentStatus.PAID);
+                
+                log.info("Remaining payment successful - booking: {}, amount: {}", 
+                        booking.getBookingCode(), payment.getAmount());
+            }
+
+            bookingRepository.save(booking);
+            log.info("Payment successful - orderId: {}, transId: {}, isDeposit: {}", 
+                    callback.getOrderId(), callback.getTransId(), isDeposit);
         } else {
             payment.setStatus(PaymentStatus.FAILED);
             log.warn("Payment failed - orderId: {}, resultCode: {}, message: {}", 

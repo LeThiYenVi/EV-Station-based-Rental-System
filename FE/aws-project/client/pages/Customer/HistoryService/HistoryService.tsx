@@ -262,11 +262,11 @@ export default function HistoryService() {
         className: "bg-green-100 text-green-700",
       },
       PENDING: {
-        label: "Chờ xác nhận",
+        label: "Chờ thanh toán",
         className: "bg-yellow-100 text-yellow-700",
       },
       CONFIRMED: {
-        label: "Đã xác nhận",
+        label: "Đã thanh toán cọc",
         className: "bg-indigo-100 text-indigo-700",
       },
       CANCELLED: {
@@ -279,12 +279,12 @@ export default function HistoryService() {
         className: "bg-green-100 text-green-700",
       },
       pending: {
-        label: "Chờ xác nhận",
+        label: "Chờ thanh toán",
         className: "bg-yellow-100 text-yellow-700",
       },
       confirmed: {
-        label: "Đã xác nhận",
-        className: "bg-blue-100 text-blue-700",
+        label: "Đã thanh toán cọc",
+        className: "bg-indigo-100 text-indigo-700",
       },
       cancelled: { label: "Đã hủy", className: "bg-red-100 text-red-700" },
     };
@@ -306,7 +306,7 @@ export default function HistoryService() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Lịch sử giao dịch
+            Lịch sử giao dịch 
           </h1>
           <p className="text-gray-600">
             Quản lý và theo dõi tất cả các chuyến đi của bạn
@@ -361,7 +361,18 @@ export default function HistoryService() {
                       : ""
                   }
                 >
-                  Chờ xác nhận
+                  Chờ thanh toán
+                </Button>
+                <Button
+                  variant={statusFilter === "CONFIRMED" ? "default" : "outline"}
+                  onClick={() => setStatusFilter("CONFIRMED")}
+                  className={
+                    statusFilter === "CONFIRMED"
+                      ? "bg-green-600 hover:bg-green-700"
+                      : ""
+                  }
+                >
+                  Đã cọc
                 </Button>
                 <Button
                   variant={statusFilter === "ONGOING" ? "default" : "outline"}
@@ -507,10 +518,12 @@ export default function HistoryService() {
                               </p>
                               <p className="font-medium text-gray-900">
                                 {order.paymentStatus === "PAID"
-                                  ? "Đã thanh toán"
-                                  : order.paymentStatus === "PENDING"
-                                    ? "Chờ thanh toán"
-                                    : order.paymentStatus}
+                                  ? "Đã thanh toán đầy đủ"
+                                  : order.paymentStatus === "PARTIALLY_PAID"
+                                    ? "Đã thanh toán cọc"
+                                    : order.paymentStatus === "PENDING"
+                                      ? "Chờ thanh toán"
+                                      : order.paymentStatus}
                               </p>
                             </div>
                           </div>

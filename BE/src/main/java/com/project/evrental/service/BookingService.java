@@ -135,7 +135,8 @@ public class BookingService {
         MoMoPaymentResponse moMoResponse = moMoService.createPayment(
                 savedBooking.getId(),
                 depositAmount,
-                "Thanh toan tien coc booking " + bookingCode
+                "Thanh toan tien coc booking " + bookingCode,
+                true
         );
 
         if ("0".equals(moMoResponse.getResultCode())) {
@@ -372,7 +373,8 @@ public class BookingService {
         MoMoPaymentResponse moMoResponse = moMoService.createPayment(
                 booking.getId(),
                 remainingAmount,
-                "Thanh toan con lai booking " + booking.getBookingCode()
+                "Thanh toan con lai booking " + booking.getBookingCode(),
+                false
         );
 
         if ("0".equals(moMoResponse.getResultCode())) {
