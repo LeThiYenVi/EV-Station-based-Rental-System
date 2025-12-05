@@ -60,7 +60,9 @@ public interface FeedbackRepository extends JpaRepository<Feedback, UUID> {
            "(:stationId IS NULL OR f.booking.station.id = :stationId) AND " +
            "(:vehicleId IS NULL OR f.booking.vehicle.id = :vehicleId) AND " +
            "(:renterId IS NULL OR f.renter.id = :renterId) AND " +
-           "(:responded IS NULL OR (f.response IS NOT NULL) = :responded) AND " +
+           "(:responded IS NULL OR " +
+           "  (:responded = true AND f.response IS NOT NULL) OR " +
+           "  (:responded = false AND f.response IS NULL)) AND " +
            "(:fromDate IS NULL OR f.createdAt >= :fromDate) AND " +
            "(:toDate IS NULL OR f.createdAt <= :toDate) AND " +
            "(:minRating IS NULL OR (f.vehicleRating >= :minRating AND f.stationRating >= :minRating)) AND " +
