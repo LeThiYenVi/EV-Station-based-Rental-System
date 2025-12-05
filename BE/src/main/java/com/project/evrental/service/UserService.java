@@ -98,6 +98,21 @@ public class UserService {
         return UserMapper.fromEntity(loadedUser);
     }
 
+    @Transactional
+    @CacheEvict(value = "users", key = "#id")
+    public UserResponse rejectLicenseVerification(UUID id) {
+        log.info("Rejecting license verification for user: {}", id);
+        var loadedUser = userRepository.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("User not found with id: " + id)
+        );
+
+        loadedUser.setIsLicenseVerified(false);
+        loadedUser.setVerifiedAt(null);
+        loadedUser = userRepository.save(loadedUser);
+        log.info("License verification rejected for user: {}", id);
+        return UserMapper.fromEntity(loadedUser);
+    }
+
     @Cacheable(value = "users", key = "#role")
     public List<UserResponse> getUsersByRole(UserRole role) {
         return userRepository.findByRole(role).stream().map(UserMapper::fromEntity).toList();

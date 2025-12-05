@@ -65,4 +65,21 @@ public class StaffController {
                 .data(user)
                 .build());
     }
+
+    /**
+     * Staff rejects/revokes user's license verification
+     * POST /api/staff/users/{userId}/reject-license
+     */
+    @PostMapping("/users/{userId}/reject-license")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    public ResponseEntity<ApiResponse<UserResponse>> rejectUserLicense(
+            @PathVariable UUID userId
+    ) {
+        UserResponse user = userService.rejectLicenseVerification(userId);
+        return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
+                .statusCode(200)
+                .message("User license verification rejected successfully")
+                .data(user)
+                .build());
+    }
 }
