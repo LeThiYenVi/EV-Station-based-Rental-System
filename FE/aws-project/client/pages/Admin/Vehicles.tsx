@@ -80,7 +80,9 @@ import {
 } from "@ant-design/icons";
 import VehicleTable from "../../components/admin/VehicleTable";
 import VehicleFilter from "../../components/admin/VehicleFilter";
-import VehicleForm from "../../components/admin/VehicleForm";
+import VehicleCreateModal from "../../components/admin/VehicleCreateModal";
+import VehicleEditModal from "../../components/admin/VehicleEditModal";
+import PhotoUploadModal from "../../components/admin/PhotoUploadModal";
 import { exportToCSV, exportToExcel } from "@/lib/export-utils";
 
 export default function Vehicles() {
@@ -139,9 +141,17 @@ export default function Vehicles() {
 
   const [filters, setFilters] = useState<VehicleFilterParams>({});
   const [selectedVehicles, setSelectedVehicles] = useState<string[]>([]);
-  const [showForm, setShowForm] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  // Photo upload modal state
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [currentVehicleForPhoto, setCurrentVehicleForPhoto] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Filtered vehicles - Client-side filtering for search
   const filteredVehicles = useMemo(() => {
@@ -199,7 +209,8 @@ export default function Vehicles() {
   // Handlers với API integration
   const handleCreate = async (data: CreateVehicleRequest) => {
     try {
-      await adminService.vehicles.createVehicle({
+      // Step 1: Create vehicle first (without photos)
+      const createResponse = await adminService.vehicles.createVehicle({
         stationId: data.stationId,
         licensePlate: data.licensePlate,
         name: data.name,
@@ -207,18 +218,26 @@ export default function Vehicles() {
         color: data.color,
         fuelType: data.fuelType,
         capacity: data.capacity,
-        photos: data.photos,
+        photos: [],
         hourlyRate: data.hourlyRate,
         dailyRate: data.dailyRate,
         depositAmount: data.depositAmount,
       });
 
-      await fetchVehicles(); // Refresh list
-      setShowForm(false);
+      const newVehicleId = createResponse.data.id;
+
       toast({
         title: "Tạo xe thành công",
         description: `Xe ${data.name} đã được thêm vào hệ thống.`,
       });
+
+      // Step 2: Open photo upload modal
+      setCurrentVehicleForPhoto({
+        id: newVehicleId,
+        name: data.name,
+      });
+      setShowPhotoModal(true);
+      setShowCreateModal(false);
     } catch (error: any) {
       console.error("Failed to create vehicle:", error);
       const errorMessage =
@@ -228,6 +247,68 @@ export default function Vehicles() {
         description: errorMessage,
         variant: "destructive",
       });
+      throw error;
+    }
+  };
+
+  // Handle photo upload from PhotoUploadModal
+  const handlePhotoUpload = async (files: File[]) => {
+    if (!currentVehicleForPhoto) return;
+
+    try {
+      await adminService.vehicles.uploadVehiclePhotos(
+        currentVehicleForPhoto.id,
+        files,
+      );
+
+      toast({
+        title: "Ảnh đã được tải lên",
+        description: `${files.length} ảnh đã được upload thành công.`,
+      });
+
+      await fetchVehicles(); // Refresh list
+    } catch (error: any) {
+      console.error("Failed to upload photos:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        "Không thể upload ảnh. Vui lòng thử lại.";
+      toast({
+        title: "Lỗi",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const handleSkipPhoto = async () => {
+    await fetchVehicles(); // Refresh list anyway
+  };
+
+  // Handle photo upload for editing vehicle
+  const handleEditPhotoUpload = async (files: File[]) => {
+    if (!editingVehicle) return;
+
+    try {
+      await adminService.vehicles.uploadVehiclePhotos(editingVehicle.id, files);
+
+      toast({
+        title: "Ảnh đã được tải lên",
+        description: `${files.length} ảnh đã được upload thành công.`,
+      });
+
+      await fetchVehicles();
+    } catch (error: any) {
+      console.error("Failed to upload photos:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        "Không thể upload ảnh. Vui lòng thử lại.";
+      toast({
+        title: "Lỗi",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
@@ -248,7 +329,8 @@ export default function Vehicles() {
       });
 
       await fetchVehicles();
-      setShowForm(false);
+      setShowEditModal(false);
+
       toast({
         title: "Cập nhật thành công",
         description: `Xe ${data.name} đã được cập nhật.`,
@@ -371,7 +453,7 @@ export default function Vehicles() {
         <Button
           onClick={() => {
             setEditingVehicle(null);
-            setShowForm(true);
+            setShowCreateModal(true);
           }}
           className="bg-green-600 hover:bg-green-700"
         >
@@ -538,7 +620,7 @@ export default function Vehicles() {
             }}
             onEdit={(vehicle) => {
               setEditingVehicle(vehicle as any);
-              setShowForm(true);
+              setShowEditModal(true);
             }}
             onDelete={(vehicleId) => {
               setSelectedVehicles([vehicleId]);
@@ -645,11 +727,28 @@ export default function Vehicles() {
       </Card>
 
       {/* Dialogs */}
-      <VehicleForm
-        open={showForm}
-        onOpenChange={setShowForm}
-        vehicle={editingVehicle}
-        onSubmit={editingVehicle ? handleUpdate : handleCreate}
+      <VehicleCreateModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onSubmit={handleCreate}
+      />
+
+      {editingVehicle && (
+        <VehicleEditModal
+          open={showEditModal}
+          onOpenChange={setShowEditModal}
+          vehicle={editingVehicle}
+          onSubmit={handleUpdate}
+          onPhotoUpload={handleEditPhotoUpload}
+        />
+      )}
+
+      <PhotoUploadModal
+        open={showPhotoModal}
+        onOpenChange={setShowPhotoModal}
+        vehicleName={currentVehicleForPhoto?.name || ""}
+        onUpload={handlePhotoUpload}
+        onSkip={handleSkipPhoto}
       />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

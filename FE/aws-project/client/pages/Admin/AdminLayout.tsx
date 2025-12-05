@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout, Menu, Button, theme } from "antd";
 import {
   MenuFoldOutlined,
@@ -30,10 +30,30 @@ const { Header, Sider, Content } = Layout;
 
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
+  const [userInfo, setUserInfo] = useState({
+    fullName: "Admin User",
+    email: "admin@example.com",
+  });
   const navigate = useNavigate();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  // Load user info from localStorage
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setUserInfo({
+          fullName: user.fullName || user.fullname || "Admin User",
+          email: user.email || user.username || "admin@example.com",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load user info:", error);
+    }
+  }, []);
 
   const handleLogout = () => {
     // Handle logout logic
@@ -161,13 +181,17 @@ export default function AdminLayout() {
             className="!text-lg !w-16 !h-16 hover:!bg-green-50"
           />
 
-          <div className="flex items-center gap-4">
-            <div className="text-right mr-4">
-              <div className="font-semibold text-gray-700">Admin User</div>
-              <div className="text-xs text-gray-500">admin@example.com</div>
+          <div className="flex items-center gap-3">
+            <div className="text-right mr-2 max-w-[200px] max-h-[100]">
+              <div className="font-semibold text-gray-700 truncate">
+                {userInfo.fullName}
+              </div>
+              <div className="text-xs text-gray-500 truncate">
+                {userInfo.email}
+              </div>
             </div>
-            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
-              A
+            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+              {userInfo.fullName.charAt(0).toUpperCase()}
             </div>
           </div>
         </Header>

@@ -1,6 +1,6 @@
 ﻿/**
- * VehicleForm Component - Tạo/Sửa xe
- * Form thêm/sửa xe với các fields khớp API response
+ * VehicleEditModal Component - Sửa xe (có upload ảnh tích hợp)
+ * Form sửa xe với photo upload section
  */
 
 import { useEffect, useState } from "react";
@@ -102,10 +102,10 @@ interface VehicleData {
   polices?: string[] | null;
 }
 
-interface VehicleFormProps {
+interface VehicleEditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  vehicle?: VehicleData | null;
+  vehicle: VehicleData; // Required, not optional
   onSubmit: (data: any) => Promise<void>;
   onPhotoUpload?: (files: File[]) => Promise<void>;
 }
@@ -122,13 +122,13 @@ interface FormErrors {
   depositAmount?: string;
 }
 
-export default function VehicleForm({
+export default function VehicleEditModal({
   open,
   onOpenChange,
   vehicle,
   onSubmit,
   onPhotoUpload,
-}: VehicleFormProps) {
+}: VehicleEditModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [stations, setStations] = useState<StationResponse[]>([]);
@@ -146,11 +146,6 @@ export default function VehicleForm({
     dailyRate: 0,
     depositAmount: 0,
   });
-
-  // Photo upload state (only for editing)
-  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
-  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
 
   // Photo upload state (only for editing)
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -401,59 +396,7 @@ export default function VehicleForm({
 
   const removePhoto = (index: number) => {
     setPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
-    
-    const existingCount = existingPhotos.length;
-    if (index >= existingCount) {
-      const fileIndex = index - existingCount;
-      setPhotoFiles((prev) => prev.filter((_, i) => i !== fileIndex));
-    } else {
-      setExistingPhotos((prev) => prev.filter((_, i) => i !== index));
-    }
-  };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const newFiles = Array.from(files);
-    setPhotoFiles((prev) => [...prev, ...newFiles]);
-
-    // Create preview URLs
-    const fileReaders = newFiles.map((file) => {
-      return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === "string") {
-            resolve(reader.result);
-          } else {
-            reject(new Error("Failed to read file"));
-          }
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    });
-
-    try {
-      const base64Images = await Promise.all(fileReaders);
-      setPhotoPreviews((prev) => [...prev, ...base64Images]);
-
-      toast({
-        title: "Ảnh đã được chọn",
-        description: `${newFiles.length} ảnh sẽ được upload khi lưu.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Lỗi",
-        description: "Không thể đọc file ảnh. Vui lòng thử lại.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const removePhoto = (index: number) => {
-    setPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
-    
     const existingCount = existingPhotos.length;
     if (index >= existingCount) {
       const fileIndex = index - existingCount;
@@ -831,7 +774,9 @@ export default function VehicleForm({
               </h3>
 
               <div
-                onClick={() => document.getElementById("photo-upload-edit")?.click()}
+                onClick={() =>
+                  document.getElementById("photo-upload-edit")?.click()
+                }
                 className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer bg-muted/20 hover:bg-muted/40"
               >
                 <input
@@ -913,7 +858,7 @@ export default function VehicleForm({
               className="bg-green-600 hover:bg-green-700"
             >
               {loading && <LoadingOutlined className="mr-2" spin />}
-              {vehicle ? "Cập nhật xe" : "Thêm xe mới"}
+              Cập nhật xe
             </Button>
           </DialogFooter>
         </form>
