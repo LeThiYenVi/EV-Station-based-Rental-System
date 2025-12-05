@@ -33,321 +33,188 @@ import {
   Col,
   Statistic,
   Modal,
-  Form,
-  Input,
-  Radio,
   message,
-  Image,
   Descriptions,
-  Badge,
-  Popconfirm,
   Tooltip,
   Avatar,
-  Timeline,
   Alert,
 } from "antd";
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   EyeOutlined,
-  PhoneOutlined,
-  MessageOutlined,
   CarOutlined,
   UserOutlined,
-  IdcardOutlined,
   CalendarOutlined,
   DollarOutlined,
   ClockCircleOutlined,
-  WarningOutlined,
   FileTextOutlined,
   MailOutlined,
-  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import { BookingResponse } from "@/service/types/booking.types";
-import { BookingStatus } from "@/service/types/enums";
-import bookingService from "@/service/booking/bookingService";
-import staffService from "@/service/staff/staffService";
+import { useBooking } from "@/hooks/useBooking";
 
-const { TextArea } = Input;
-
-// Mock data - TODO: Replace with API
-interface PendingBooking extends BookingResponse {
-  renter: {
-    id: string;
-    fullName: string;
-    email: string;
-    phoneNumber: string;
-    identityNumber: string;
-    licenseNumber: string;
-    identityCardFront?: string;
-    identityCardBack?: string;
-    isVerified: boolean;
-  };
-  vehicle: {
-    id: string;
-    name: string;
-    brand: string;
-    plateNumber: string;
-    type: string;
-    status: "available" | "rented" | "maintenance";
-    imageUrl?: string;
-    pricePerDay: number;
-    depositAmount: number;
-  };
-  pickupStation: {
-    id: string;
-    name: string;
-    address: string;
-  };
-  returnStation: {
-    id: string;
-    name: string;
-    address: string;
-  };
+// Interface khớp với API response thực tế
+interface BookingData {
+  id: string;
+  bookingCode: string;
+  renterId: string;
+  renterName?: string;
+  renterEmail?: string;
+  vehicleId: string;
+  vehicleName?: string;
+  licensePlate?: string;
+  stationId?: string;
+  stationName?: string;
+  // Support both old and new field names
+  startTime?: string;
+  expectedEndTime?: string;
+  pickupTime?: string;
+  returnTime?: string;
+  actualEndTime?: string | null;
+  status: string;
+  checkedOutById?: string | null;
+  checkedOutByName?: string | null;
+  checkedInById?: string | null;
+  checkedInByName?: string | null;
+  basePrice?: number;
+  depositPaid?: number;
+  extraFee?: number | null;
+  totalAmount?: number;
+  totalPrice?: number;
+  pickupNote?: string | null;
+  returnNote?: string | null;
+  notes?: string;
+  paymentStatus?: string;
+  createdAt: string;
+  updatedAt?: string;
+  // Station names
+  pickupStationId?: string;
+  pickupStationName?: string;
+  returnStationId?: string;
+  returnStationName?: string;
 }
 
-const mockPendingBookings: PendingBooking[] = [
-  {
-    id: "1",
-    bookingCode: "BK2025120001",
-    vehicleId: "v1",
-    renterId: "r1",
-    pickupStationId: "s1",
-    returnStationId: "s1",
-    pickupTime: "2025-12-05T08:00:00Z",
-    returnTime: "2025-12-08T18:00:00Z",
-    status: BookingStatus.PENDING,
-    totalPrice: 3600000,
-    notes: "Cần xe gấp để đi công tác",
-    createdAt: "2025-12-02T10:30:00Z",
-    updatedAt: "2025-12-02T10:30:00Z",
-    renter: {
-      id: "r1",
-      fullName: "Nguyễn Văn An",
-      email: "nguyenvanan@gmail.com",
-      phoneNumber: "0901234567",
-      identityNumber: "001201012345",
-      licenseNumber: "B2-123456789",
-      identityCardFront:
-        "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400",
-      identityCardBack:
-        "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400",
-      isVerified: false,
-    },
-    vehicle: {
-      id: "v1",
-      name: "Tesla Model 3 Long Range",
-      brand: "Tesla",
-      plateNumber: "30A-12345",
-      type: "Điện",
-      status: "available",
-      imageUrl:
-        "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=500",
-      pricePerDay: 1200000,
-      depositAmount: 10000000,
-    },
-    pickupStation: {
-      id: "s1",
-      name: "Trạm Quận 1 - Nguyễn Huệ",
-      address: "123 Nguyễn Huệ, Quận 1, TP.HCM",
-    },
-    returnStation: {
-      id: "s1",
-      name: "Trạm Quận 1 - Nguyễn Huệ",
-      address: "123 Nguyễn Huệ, Quận 1, TP.HCM",
-    },
-  },
-  {
-    id: "2",
-    bookingCode: "BK2025120002",
-    vehicleId: "v2",
-    renterId: "r2",
-    pickupStationId: "s2",
-    returnStationId: "s2",
-    pickupTime: "2025-12-06T09:00:00Z",
-    returnTime: "2025-12-10T17:00:00Z",
-    status: BookingStatus.PENDING,
-    totalPrice: 4800000,
-    notes: "",
-    createdAt: "2025-12-02T11:15:00Z",
-    updatedAt: "2025-12-02T11:15:00Z",
-    renter: {
-      id: "r2",
-      fullName: "Trần Thị Bình",
-      email: "tranthib@gmail.com",
-      phoneNumber: "0912345678",
-      identityNumber: "002202023456",
-      licenseNumber: "B2-987654321",
-      identityCardFront:
-        "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400",
-      identityCardBack:
-        "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400",
-      isVerified: true,
-    },
-    vehicle: {
-      id: "v2",
-      name: "VinFast VF8 Plus",
-      brand: "VinFast",
-      plateNumber: "30B-67890",
-      type: "Điện",
-      status: "available",
-      imageUrl:
-        "https://images.unsplash.com/photo-1617788138017-80ad40651399?w=500",
-      pricePerDay: 950000,
-      depositAmount: 8000000,
-    },
-    pickupStation: {
-      id: "s2",
-      name: "Trạm Quận 7 - Phú Mỹ Hưng",
-      address: "456 Nguyễn Lương Bằng, Quận 7, TP.HCM",
-    },
-    returnStation: {
-      id: "s2",
-      name: "Trạm Quận 7 - Phú Mỹ Hưng",
-      address: "456 Nguyễn Lương Bằng, Quận 7, TP.HCM",
-    },
-  },
-  {
-    id: "3",
-    bookingCode: "BK2025120003",
-    vehicleId: "v3",
-    renterId: "r3",
-    pickupStationId: "s1",
-    returnStationId: "s1",
-    pickupTime: "2025-12-04T10:00:00Z",
-    returnTime: "2025-12-06T18:00:00Z",
-    status: BookingStatus.PENDING,
-    totalPrice: 1600000,
-    notes: "Lần đầu thuê xe điện",
-    createdAt: "2025-12-02T09:00:00Z",
-    updatedAt: "2025-12-02T09:00:00Z",
-    renter: {
-      id: "r3",
-      fullName: "Lê Văn Cường",
-      email: "levanc@gmail.com",
-      phoneNumber: "0923456789",
-      identityNumber: "003303034567",
-      licenseNumber: "B2-111222333",
-      identityCardFront:
-        "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400",
-      identityCardBack:
-        "https://images.unsplash.com/photo-1633409361618-c73427e4e206?w=400",
-      isVerified: false,
-    },
-    vehicle: {
-      id: "v3",
-      name: "Toyota Camry 2024",
-      brand: "Toyota",
-      plateNumber: "51F-11111",
-      type: "Xăng",
-      status: "maintenance",
-      imageUrl:
-        "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500",
-      pricePerDay: 800000,
-      depositAmount: 5000000,
-    },
-    pickupStation: {
-      id: "s1",
-      name: "Trạm Quận 1 - Nguyễn Huệ",
-      address: "123 Nguyễn Huệ, Quận 1, TP.HCM",
-    },
-    returnStation: {
-      id: "s1",
-      name: "Trạm Quận 1 - Nguyễn Huệ",
-      address: "123 Nguyễn Huệ, Quận 1, TP.HCM",
-    },
-  },
-];
-
 export default function Confirmations() {
-  const [bookings, setBookings] = useState<PendingBooking[]>([]);
-  const staffId = "staff-uuid-placeholder"; // TODO: replace with authenticated staff id
-
-  useEffect(() => {
-    const loadPending = async () => {
-      try {
-        const list = await bookingService.getBookingsByStatus(
-          BookingStatus.PENDING,
-        );
-        // Map minimal BookingResponse to PendingBooking-like shape (fallback to mock fields if missing)
-        const mapped: PendingBooking[] = list.map((b: any) => ({
-          id: b.id,
-          bookingCode: b.bookingCode,
-          vehicleId: b.vehicleId,
-          renterId: b.renterId,
-          pickupStationId: b.pickupStationId,
-          returnStationId: b.returnStationId,
-          pickupTime: b.pickupTime,
-          returnTime: b.returnTime,
-          status: b.status,
-          totalPrice: b.totalPrice,
-          notes: b.notes,
-          createdAt: b.createdAt,
-          updatedAt: b.updatedAt,
-          renter: {
-            id: b.renter?.id || b.renterId,
-            fullName: b.renter?.fullName || "Khách hàng",
-            email: b.renter?.email || "",
-            phoneNumber: b.renter?.phoneNumber || "",
-            identityNumber: b.renter?.identityNumber || "",
-            licenseNumber: b.renter?.licenseNumber || "",
-            identityCardFront: b.renter?.licenseCardFrontImageUrl,
-            identityCardBack: b.renter?.licenseCardBackImageUrl,
-            isVerified: !!b.renter?.isLicenseVerified,
-          },
-          vehicle: {
-            id: b.vehicle?.id || b.vehicleId,
-            name: b.vehicle?.name || "Xe",
-            brand: b.vehicle?.brand || "",
-            plateNumber: b.vehicle?.licensePlate || "",
-            type: b.vehicle?.fuelType || "",
-            status: (b.vehicle?.status || "available").toString().toLowerCase(),
-            imageUrl: b.vehicle?.imageUrl,
-            pricePerDay: b.vehicle?.pricePerDay || 0,
-            depositAmount: b.depositAmount || 0,
-          },
-          pickupStation: {
-            id: b.station?.id || b.pickupStationId,
-            name: b.station?.name || "Trạm",
-            address: b.station?.address || "",
-          },
-          returnStation: {
-            id: b.returnStation?.id || b.returnStationId,
-            name: b.returnStation?.name || "Trạm",
-            address: b.returnStation?.address || "",
-          },
-        }));
-        setBookings(mapped);
-      } catch (e) {
-        message.error("Không tải được danh sách đơn chờ xác nhận");
-        setBookings(mockPendingBookings);
-      }
-    };
-    loadPending();
-  }, []);
-  const [selectedBooking, setSelectedBooking] = useState<PendingBooking | null>(
+  const [bookings, setBookings] = useState<BookingData[]>([]);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  const [tableLoading, setTableLoading] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(
     null,
   );
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [action, setAction] = useState<"confirm" | "reject">("confirm");
-  const [form] = Form.useForm();
+  const [action, setAction] = useState<
+    "confirm" | "reject" | "start" | "complete"
+  >("confirm");
   const [loading, setLoading] = useState(false);
 
-  // Statistics
+  // Use booking hook
+  const {
+    getAllBookings,
+    confirmBooking,
+    cancelBooking,
+    startBooking,
+    completeBooking,
+  } = useBooking();
+
+  // Load bookings with pagination
+  const loadBookings = async (page = 0, size = 10) => {
+    setTableLoading(true);
+    try {
+      const response = await getAllBookings({
+        page,
+        size,
+        sortBy: "createdAt",
+        sortDirection: "DESC",
+      });
+
+      if (response) {
+        // Hiển thị tất cả các đơn (không filter)
+        const allBookings = (response.content || []) as BookingData[];
+
+        setBookings(allBookings);
+        setPagination({
+          current: page + 1,
+          pageSize: size,
+          total: response.totalElements || allBookings.length,
+        });
+      }
+    } catch (e) {
+      message.error("Không tải được danh sách đơn chờ xác nhận");
+    } finally {
+      setTableLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBookings(0, 10);
+  }, []);
+
+  // Handle table pagination change
+  const handleTableChange = (page: number, pageSize: number) => {
+    loadBookings(page - 1, pageSize);
+  };
+
+  // Helper to get pickup time (support both field names)
+  const getPickupTime = (b: BookingData) => b.startTime || b.pickupTime || "";
+  const getReturnTime = (b: BookingData) =>
+    b.expectedEndTime || b.returnTime || "";
+  const getTotalPrice = (b: BookingData) => b.totalAmount || b.totalPrice || 0;
+  const getStationName = (b: BookingData) =>
+    b.stationName || b.pickupStationName || "N/A";
+  const getRenterEmail = (b: BookingData) => b.renterEmail || "";
+
+  // Statistics - đếm theo trạng thái
   const stats = {
     total: bookings.length,
-    needVerification: bookings.filter((b) => !b.renter.isVerified).length,
-    vehicleUnavailable: bookings.filter((b) => b.vehicle.status !== "available")
-      .length,
-    urgent: bookings.filter((b) => {
-      const pickupTime = new Date(b.pickupTime);
-      const now = new Date();
-      const hoursUntilPickup =
-        (pickupTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-      return hoursUntilPickup < 24;
-    }).length,
+    pending: bookings.filter((b) => b.status === "PENDING").length,
+    confirmed: bookings.filter((b) => b.status === "CONFIRMED").length,
+    ongoing: bookings.filter((b) => b.status === "ONGOING").length,
+    completed: bookings.filter((b) => b.status === "COMPLETED").length,
+    cancelled: bookings.filter((b) => b.status === "CANCELLED").length,
+  };
+
+  // Get status tag
+  const getStatusTag = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return (
+          <Tag color="orange" icon={<ClockCircleOutlined />}>
+            Chờ xác nhận
+          </Tag>
+        );
+      case "CONFIRMED":
+        return (
+          <Tag color="blue" icon={<CheckCircleOutlined />}>
+            Đã xác nhận
+          </Tag>
+        );
+      case "ONGOING":
+        return (
+          <Tag color="cyan" icon={<CarOutlined />}>
+            Đang thuê
+          </Tag>
+        );
+      case "COMPLETED":
+        return (
+          <Tag color="green" icon={<CheckCircleOutlined />}>
+            Hoàn thành
+          </Tag>
+        );
+      case "CANCELLED":
+        return (
+          <Tag color="red" icon={<CloseCircleOutlined />}>
+            Đã hủy
+          </Tag>
+        );
+      default:
+        return <Tag>{status}</Tag>;
+    }
   };
 
   // Format currency
@@ -360,6 +227,7 @@ export default function Confirmations() {
 
   // Format datetime
   const formatDateTime = (dateString: string) => {
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleString("vi-VN", {
       day: "2-digit",
@@ -390,64 +258,54 @@ export default function Confirmations() {
   };
 
   // View details
-  const handleViewDetail = (booking: PendingBooking) => {
+  const handleViewDetail = (booking: BookingData) => {
     setSelectedBooking(booking);
     setDetailModalOpen(true);
   };
 
-  // Open confirm/reject modal
+  // Open action modal
   const handleOpenConfirmModal = (
-    booking: PendingBooking,
-    actionType: "confirm" | "reject",
+    booking: BookingData,
+    actionType: "confirm" | "reject" | "start" | "complete",
   ) => {
     setSelectedBooking(booking);
     setAction(actionType);
     setConfirmModalOpen(true);
-    form.resetFields();
   };
 
-  // Handle confirmation
-  const handleConfirmBooking = async (values: any) => {
+  // Handle action - chỉ cần truyền bookingId
+  const handleConfirmBooking = async () => {
     if (!selectedBooking) return;
 
     setLoading(true);
     try {
-      if (action === "confirm") {
-        await staffService.confirmBookingAsStaff(selectedBooking.id, staffId);
-        // Update booking status to CONFIRMED
-        setBookings((prev) => prev.filter((b) => b.id !== selectedBooking.id));
-        message.success({
-          content: `Đã xác nhận đơn ${selectedBooking.bookingCode}. Email xác nhận đã được gửi cho khách hàng.`,
-          duration: 5,
-        });
-      } else {
-        await bookingService.cancelBooking(selectedBooking.id);
-        setBookings((prev) => prev.filter((b) => b.id !== selectedBooking.id));
-        message.warning({
-          content: `Đã từ chối đơn ${selectedBooking.bookingCode}. Email thông báo đã được gửi cho khách hàng.`,
-          duration: 5,
-        });
+      switch (action) {
+        case "confirm":
+          await confirmBooking(selectedBooking.id);
+          message.success(`Đã xác nhận đơn ${selectedBooking.bookingCode}`);
+          break;
+        case "reject":
+          await cancelBooking(selectedBooking.id);
+          message.warning(`Đã từ chối đơn ${selectedBooking.bookingCode}`);
+          break;
+        case "start":
+          await startBooking(selectedBooking.id);
+          message.success(`Đã bắt đầu đơn thuê ${selectedBooking.bookingCode}`);
+          break;
+        case "complete":
+          await completeBooking(selectedBooking.id);
+          message.success(`Đã hoàn thành đơn ${selectedBooking.bookingCode}`);
+          break;
       }
 
       setConfirmModalOpen(false);
-      form.resetFields();
+      // Reload bookings để cập nhật trạng thái mới
+      loadBookings(pagination.current - 1, pagination.pageSize);
     } catch (error: any) {
       message.error(error?.message || "Có lỗi xảy ra, vui lòng thử lại!");
     } finally {
       setLoading(false);
     }
-  };
-
-  // Call customer
-  const handleCallCustomer = (phoneNumber: string) => {
-    window.open(`tel:${phoneNumber}`);
-    message.info(`Đang gọi ${phoneNumber}...`);
-  };
-
-  // Send SMS
-  const handleSendSMS = (phoneNumber: string) => {
-    window.open(`sms:${phoneNumber}`);
-    message.info(`Đang soạn tin nhắn đến ${phoneNumber}...`);
   };
 
   // Send email
@@ -456,50 +314,49 @@ export default function Confirmations() {
     message.info(`Đang soạn email đến ${email}...`);
   };
 
-  // Table columns
-  const columns: ColumnsType<PendingBooking> = [
+  // Table columns - Updated for new API structure
+  const columns: ColumnsType<BookingData> = [
     {
       title: "Mã đơn",
       dataIndex: "bookingCode",
       key: "bookingCode",
       fixed: "left",
-      width: 150,
-      render: (code: string, record: PendingBooking) => (
-        <div>
-          <div className="font-mono font-semibold">{code}</div>
-          {isUrgent(record.pickupTime) && (
-            <Tag color="red" icon={<ClockCircleOutlined />} className="mt-1">
-              Gấp
-            </Tag>
-          )}
-        </div>
+      width: 180,
+      render: (code: string) => (
+        <div className="font-mono font-semibold text-blue-600">{code}</div>
       ),
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
+      width: 140,
+      filters: [
+        { text: "Chờ xác nhận", value: "PENDING" },
+        { text: "Đã xác nhận", value: "CONFIRMED" },
+        { text: "Đang thuê", value: "ONGOING" },
+        { text: "Hoàn thành", value: "COMPLETED" },
+        { text: "Đã hủy", value: "CANCELLED" },
+      ],
+      onFilter: (value, record) => record.status === value,
+      render: (status: string) => getStatusTag(status),
     },
     {
       title: "Khách hàng",
       key: "renter",
       width: 220,
-      render: (_: any, record: PendingBooking) => (
+      render: (_: any, record: BookingData) => (
         <div>
           <div className="flex items-center gap-2">
             <Avatar icon={<UserOutlined />} size="small" />
             <div>
-              <div className="font-medium">{record.renter.fullName}</div>
+              <div className="font-medium">
+                {record.renterName || "Khách hàng"}
+              </div>
               <div className="text-xs text-gray-500">
-                {record.renter.phoneNumber}
+                {getRenterEmail(record)}
               </div>
             </div>
-          </div>
-          <div className="mt-1">
-            {record.renter.isVerified ? (
-              <Tag color="green" icon={<SafetyCertificateOutlined />}>
-                Đã xác thực
-              </Tag>
-            ) : (
-              <Tag color="orange" icon={<WarningOutlined />}>
-                Chưa xác thực
-              </Tag>
-            )}
           </div>
         </div>
       ),
@@ -507,33 +364,24 @@ export default function Confirmations() {
     {
       title: "Xe thuê",
       key: "vehicle",
-      width: 250,
-      render: (_: any, record: PendingBooking) => (
-        <div className="flex gap-3">
-          {record.vehicle.imageUrl && (
-            <Image
-              src={record.vehicle.imageUrl}
-              width={60}
-              height={45}
-              className="rounded object-cover"
-              preview={false}
-            />
-          )}
-          <div>
-            <div className="font-medium">{record.vehicle.name}</div>
-            <div className="text-xs text-gray-500">
-              {record.vehicle.plateNumber} • {record.vehicle.type}
-            </div>
-            <div className="mt-1">
-              {record.vehicle.status === "available" ? (
-                <Tag color="green">Sẵn sàng</Tag>
-              ) : record.vehicle.status === "rented" ? (
-                <Tag color="orange">Đang thuê</Tag>
-              ) : (
-                <Tag color="red">Bảo trì</Tag>
-              )}
-            </div>
+      width: 200,
+      render: (_: any, record: BookingData) => (
+        <div>
+          <div className="font-medium">{record.vehicleName || "Xe"}</div>
+          <div className="text-xs text-gray-500">
+            <CarOutlined className="mr-1" />
+            {record.licensePlate || "N/A"}
           </div>
+        </div>
+      ),
+    },
+    {
+      title: "Trạm",
+      key: "station",
+      width: 150,
+      render: (_: any, record: BookingData) => (
+        <div>
+          <div className="text-sm">{getStationName(record)}</div>
         </div>
       ),
     },
@@ -541,36 +389,47 @@ export default function Confirmations() {
       title: "Thời gian thuê",
       key: "time",
       width: 200,
-      render: (_: any, record: PendingBooking) => {
-        const days = calculateDays(record.pickupTime, record.returnTime);
+      render: (_: any, record: BookingData) => {
+        const startTime = getPickupTime(record);
+        const endTime = getReturnTime(record);
+        const days = calculateDays(startTime, endTime);
         return (
           <div className="text-sm">
             <div className="flex items-center gap-1 text-green-600">
               <CalendarOutlined />
-              <span>{formatDateTime(record.pickupTime)}</span>
+              <span>{formatDateTime(startTime)}</span>
             </div>
             <div className="flex items-center gap-1 text-orange-600 mt-1">
               <CalendarOutlined />
-              <span>{formatDateTime(record.returnTime)}</span>
+              <span>{formatDateTime(endTime)}</span>
             </div>
-            <div className="text-xs text-gray-500 mt-1">{days} ngày</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {days > 0 ? `${days} ngày` : "N/A"}
+            </div>
           </div>
         );
       },
     },
     {
-      title: "Tổng tiền",
-      dataIndex: "totalPrice",
-      key: "totalPrice",
+      title: "Thanh toán",
+      key: "payment",
       width: 150,
-      render: (price: number, record: PendingBooking) => (
+      render: (_: any, record: BookingData) => (
         <div>
           <div className="font-semibold text-green-600">
-            {formatCurrency(price)}
+            {formatCurrency(getTotalPrice(record))}
           </div>
           <div className="text-xs text-gray-500 mt-1">
-            Cọc: {formatCurrency(record.vehicle.depositAmount)}
+            Cọc: {formatCurrency(record.depositPaid || 0)}
           </div>
+          <Tag
+            color={record.paymentStatus === "PENDING" ? "orange" : "green"}
+            className="mt-1"
+          >
+            {record.paymentStatus === "PENDING"
+              ? "Chờ thanh toán"
+              : "Đã thanh toán"}
+          </Tag>
         </div>
       ),
     },
@@ -579,7 +438,7 @@ export default function Confirmations() {
       key: "actions",
       fixed: "right",
       width: 200,
-      render: (_: any, record: PendingBooking) => (
+      render: (_: any, record: BookingData) => (
         <Space direction="vertical" size="small" className="w-full">
           <Button
             type="link"
@@ -589,48 +448,51 @@ export default function Confirmations() {
           >
             Xem chi tiết
           </Button>
-          <Space size="small" className="w-full">
-            <Tooltip title="Gọi điện">
+          {/* Nút Xác nhận/Từ chối cho đơn PENDING */}
+          {record.status === "PENDING" && (
+            <Space size="small" className="w-full">
               <Button
+                type="primary"
                 size="small"
-                icon={<PhoneOutlined />}
-                onClick={() => handleCallCustomer(record.renter.phoneNumber)}
-              />
-            </Tooltip>
-            <Tooltip title="Gửi SMS">
+                icon={<CheckCircleOutlined />}
+                onClick={() => handleOpenConfirmModal(record, "confirm")}
+              >
+                Xác nhận
+              </Button>
               <Button
+                danger
                 size="small"
-                icon={<MessageOutlined />}
-                onClick={() => handleSendSMS(record.renter.phoneNumber)}
-              />
-            </Tooltip>
-            <Tooltip title="Gửi Email">
-              <Button
-                size="small"
-                icon={<MailOutlined />}
-                onClick={() => handleSendEmail(record.renter.email)}
-              />
-            </Tooltip>
-          </Space>
-          <Space size="small" className="w-full">
+                icon={<CloseCircleOutlined />}
+                onClick={() => handleOpenConfirmModal(record, "reject")}
+              >
+                Từ chối
+              </Button>
+            </Space>
+          )}
+          {/* Nút Bắt đầu cho đơn CONFIRMED */}
+          {record.status === "CONFIRMED" && (
+            <Button
+              type="primary"
+              size="small"
+              icon={<CarOutlined />}
+              onClick={() => handleOpenConfirmModal(record, "start")}
+              className="bg-cyan-500 hover:bg-cyan-600"
+            >
+              Bắt đầu thuê
+            </Button>
+          )}
+          {/* Nút Hoàn thành cho đơn ONGOING */}
+          {record.status === "ONGOING" && (
             <Button
               type="primary"
               size="small"
               icon={<CheckCircleOutlined />}
-              onClick={() => handleOpenConfirmModal(record, "confirm")}
-              disabled={record.vehicle.status !== "available"}
+              onClick={() => handleOpenConfirmModal(record, "complete")}
+              className="bg-green-500 hover:bg-green-600"
             >
-              Xác nhận
+              Hoàn thành
             </Button>
-            <Button
-              danger
-              size="small"
-              icon={<CloseCircleOutlined />}
-              onClick={() => handleOpenConfirmModal(record, "reject")}
-            >
-              Từ chối
-            </Button>
-          </Space>
+          )}
         </Space>
       ),
     },
@@ -640,71 +502,75 @@ export default function Confirmations() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-800">Xác nhận đơn thuê</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Quản lý đơn thuê</h1>
         <p className="text-gray-600 mt-2">
-          Kiểm tra và xác nhận các đơn đặt xe từ khách hàng
+          Xem và quản lý tất cả các đơn đặt xe
         </p>
       </div>
 
       {/* Statistics */}
       <Row gutter={16}>
-        <Col span={6}>
+        <Col span={4}>
           <Card>
             <Statistic
-              title="Tổng đơn chờ"
+              title="Tổng đơn"
               value={stats.total}
-              prefix={<ClockCircleOutlined />}
+              prefix={<FileTextOutlined />}
               valueStyle={{ color: "#1890ff" }}
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col span={4}>
           <Card>
             <Statistic
-              title="Cần xác thực"
-              value={stats.needVerification}
-              prefix={<WarningOutlined />}
+              title="Chờ xác nhận"
+              value={stats.pending}
+              prefix={<ClockCircleOutlined />}
               valueStyle={{ color: "#faad14" }}
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col span={4}>
           <Card>
             <Statistic
-              title="Xe không khả dụng"
-              value={stats.vehicleUnavailable}
-              prefix={<CarOutlined />}
-              valueStyle={{ color: "#ff4d4f" }}
+              title="Đã xác nhận"
+              value={stats.confirmed}
+              prefix={<CheckCircleOutlined />}
+              valueStyle={{ color: "#1890ff" }}
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col span={4}>
           <Card>
             <Statistic
-              title="Đơn gấp (<24h)"
-              value={stats.urgent}
-              prefix={<ClockCircleOutlined />}
+              title="Đang thuê"
+              value={stats.ongoing}
+              prefix={<CarOutlined />}
+              valueStyle={{ color: "#13c2c2" }}
+            />
+          </Card>
+        </Col>
+        <Col span={4}>
+          <Card>
+            <Statistic
+              title="Hoàn thành"
+              value={stats.completed}
+              prefix={<CheckCircleOutlined />}
+              valueStyle={{ color: "#52c41a" }}
+            />
+          </Card>
+        </Col>
+        <Col span={4}>
+          <Card>
+            <Statistic
+              title="Đã hủy"
+              value={stats.cancelled}
+              prefix={<CloseCircleOutlined />}
               valueStyle={{ color: "#ff4d4f" }}
             />
           </Card>
         </Col>
       </Row>
-
-      {/* Alert for important notes */}
-      <Alert
-        message="Lưu ý quan trọng"
-        description={
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Kiểm tra kỹ CCCD và GPLX của khách hàng trước khi xác nhận</li>
-            <li>Gọi điện xác nhận thông tin với khách hàng</li>
-            <li>Đảm bảo xe có sẵn trước khi xác nhận đơn</li>
-            <li>Ưu tiên xử lý các đơn gấp (thời gian nhận xe {"<"} 24h)</li>
-          </ul>
-        }
-        type="info"
-        showIcon
-        closable
-      />
 
       {/* Table */}
       <Card>
@@ -712,11 +578,15 @@ export default function Confirmations() {
           columns={columns}
           dataSource={bookings}
           rowKey="id"
+          loading={tableLoading}
           scroll={{ x: 1400 }}
           pagination={{
-            pageSize: 10,
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
             showTotal: (total) => `Tổng ${total} đơn`,
             showSizeChanger: true,
+            onChange: handleTableChange,
           }}
         />
       </Card>
@@ -731,20 +601,10 @@ export default function Confirmations() {
         }
         open={detailModalOpen}
         onCancel={() => setDetailModalOpen(false)}
-        width={1000}
+        width={800}
         footer={[
           <Button key="close" onClick={() => setDetailModalOpen(false)}>
             Đóng
-          </Button>,
-          <Button
-            key="call"
-            icon={<PhoneOutlined />}
-            onClick={() =>
-              selectedBooking &&
-              handleCallCustomer(selectedBooking.renter.phoneNumber)
-            }
-          >
-            Gọi khách hàng
           </Button>,
           <Button
             key="reject"
@@ -762,7 +622,6 @@ export default function Confirmations() {
             key="confirm"
             type="primary"
             icon={<CheckCircleOutlined />}
-            disabled={selectedBooking?.vehicle.status !== "available"}
             onClick={() => {
               setDetailModalOpen(false);
               selectedBooking &&
@@ -775,26 +634,6 @@ export default function Confirmations() {
       >
         {selectedBooking && (
           <div className="space-y-6">
-            {/* Vehicle Status Warning */}
-            {selectedBooking.vehicle.status !== "available" && (
-              <Alert
-                message="Cảnh báo: Xe không khả dụng"
-                description={`Xe ${selectedBooking.vehicle.plateNumber} đang ở trạng thái "${selectedBooking.vehicle.status === "rented" ? "Đang thuê" : "Bảo trì"}". Bạn cần từ chối đơn này hoặc liên hệ khách hàng để chọn xe khác.`}
-                type="error"
-                showIcon
-              />
-            )}
-
-            {/* Not Verified Warning */}
-            {!selectedBooking.renter.isVerified && (
-              <Alert
-                message="Chưa xác thực"
-                description="Khách hàng chưa được xác thực. Vui lòng kiểm tra kỹ CCCD và GPLX trước khi xác nhận."
-                type="warning"
-                showIcon
-              />
-            )}
-
             {/* Customer Information */}
             <Card
               title={
@@ -806,83 +645,32 @@ export default function Confirmations() {
             >
               <Descriptions column={2} bordered>
                 <Descriptions.Item label="Họ tên" span={1}>
-                  {selectedBooking.renter.fullName}
-                </Descriptions.Item>
-                <Descriptions.Item label="Trạng thái" span={1}>
-                  {selectedBooking.renter.isVerified ? (
-                    <Tag color="green" icon={<SafetyCertificateOutlined />}>
-                      Đã xác thực
-                    </Tag>
-                  ) : (
-                    <Tag color="orange" icon={<WarningOutlined />}>
-                      Chưa xác thực
-                    </Tag>
-                  )}
-                </Descriptions.Item>
-                <Descriptions.Item label="Số điện thoại" span={1}>
-                  <Space>
-                    {selectedBooking.renter.phoneNumber}
-                    <Button
-                      size="small"
-                      type="link"
-                      icon={<PhoneOutlined />}
-                      onClick={() =>
-                        handleCallCustomer(selectedBooking.renter.phoneNumber)
-                      }
-                    >
-                      Gọi
-                    </Button>
-                  </Space>
+                  {selectedBooking.renterName || "Khách hàng"}
                 </Descriptions.Item>
                 <Descriptions.Item label="Email" span={1}>
                   <Space>
-                    {selectedBooking.renter.email}
-                    <Button
-                      size="small"
-                      type="link"
-                      icon={<MailOutlined />}
-                      onClick={() =>
-                        handleSendEmail(selectedBooking.renter.email)
-                      }
-                    >
-                      Email
-                    </Button>
+                    {getRenterEmail(selectedBooking) || "N/A"}
+                    {getRenterEmail(selectedBooking) && (
+                      <Button
+                        size="small"
+                        type="link"
+                        icon={<MailOutlined />}
+                        onClick={() =>
+                          handleSendEmail(getRenterEmail(selectedBooking))
+                        }
+                      >
+                        Email
+                      </Button>
+                    )}
                   </Space>
                 </Descriptions.Item>
-                <Descriptions.Item label="CCCD/CMND" span={1}>
-                  {selectedBooking.renter.identityNumber}
+                <Descriptions.Item label="Người checkout" span={1}>
+                  {selectedBooking.checkedOutByName || "Chưa có"}
                 </Descriptions.Item>
-                <Descriptions.Item label="Số GPLX" span={1}>
-                  {selectedBooking.renter.licenseNumber}
+                <Descriptions.Item label="Người checkin" span={1}>
+                  {selectedBooking.checkedInByName || "Chưa có"}
                 </Descriptions.Item>
               </Descriptions>
-
-              {/* Identity Card Images */}
-              <div className="mt-4">
-                <div className="font-semibold mb-2">
-                  <IdcardOutlined /> Ảnh CCCD/CMND:
-                </div>
-                <Space size="large">
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Mặt trước</div>
-                    <Image
-                      src={selectedBooking.renter.identityCardFront}
-                      width={200}
-                      height={130}
-                      className="rounded border"
-                    />
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Mặt sau</div>
-                    <Image
-                      src={selectedBooking.renter.identityCardBack}
-                      width={200}
-                      height={130}
-                      className="rounded border"
-                    />
-                  </div>
-                </Space>
-              </div>
             </Card>
 
             {/* Vehicle Information */}
@@ -894,53 +682,19 @@ export default function Confirmations() {
               }
               size="small"
             >
-              <div className="flex gap-4">
-                {selectedBooking.vehicle.imageUrl && (
-                  <Image
-                    src={selectedBooking.vehicle.imageUrl}
-                    width={200}
-                    height={150}
-                    className="rounded border object-cover"
-                  />
-                )}
-                <div className="flex-1">
-                  <Descriptions column={2} bordered>
-                    <Descriptions.Item label="Tên xe" span={2}>
-                      {selectedBooking.vehicle.name}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Biển số" span={1}>
-                      <span className="font-mono font-semibold">
-                        {selectedBooking.vehicle.plateNumber}
-                      </span>
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Loại xe" span={1}>
-                      {selectedBooking.vehicle.type}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Hãng" span={1}>
-                      {selectedBooking.vehicle.brand}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Trạng thái" span={1}>
-                      {selectedBooking.vehicle.status === "available" ? (
-                        <Tag color="green">Sẵn sàng</Tag>
-                      ) : selectedBooking.vehicle.status === "rented" ? (
-                        <Tag color="orange">Đang thuê</Tag>
-                      ) : (
-                        <Tag color="red">Bảo trì</Tag>
-                      )}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Giá thuê/ngày" span={1}>
-                      <span className="font-semibold text-green-600">
-                        {formatCurrency(selectedBooking.vehicle.pricePerDay)}
-                      </span>
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Tiền đặt cọc" span={1}>
-                      <span className="font-semibold text-blue-600">
-                        {formatCurrency(selectedBooking.vehicle.depositAmount)}
-                      </span>
-                    </Descriptions.Item>
-                  </Descriptions>
-                </div>
-              </div>
+              <Descriptions column={2} bordered>
+                <Descriptions.Item label="Tên xe" span={1}>
+                  {selectedBooking.vehicleName || "Xe"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Biển số" span={1}>
+                  <span className="font-mono font-semibold">
+                    {selectedBooking.licensePlate || "N/A"}
+                  </span>
+                </Descriptions.Item>
+                <Descriptions.Item label="Trạm" span={2}>
+                  {getStationName(selectedBooking)}
+                </Descriptions.Item>
+              </Descriptions>
             </Card>
 
             {/* Booking Details */}
@@ -961,51 +715,62 @@ export default function Confirmations() {
                 <Descriptions.Item label="Trạng thái" span={1}>
                   <Tag color="orange">Chờ xác nhận</Tag>
                 </Descriptions.Item>
-                <Descriptions.Item label="Thời gian nhận xe" span={2}>
+                <Descriptions.Item label="Thời gian bắt đầu" span={1}>
                   <span className="text-green-600 font-medium">
-                    {formatDateTime(selectedBooking.pickupTime)}
+                    {formatDateTime(getPickupTime(selectedBooking))}
                   </span>
                 </Descriptions.Item>
-                <Descriptions.Item label="Thời gian trả xe" span={2}>
+                <Descriptions.Item label="Thời gian kết thúc dự kiến" span={1}>
                   <span className="text-orange-600 font-medium">
-                    {formatDateTime(selectedBooking.returnTime)}
+                    {formatDateTime(getReturnTime(selectedBooking))}
                   </span>
                 </Descriptions.Item>
                 <Descriptions.Item label="Số ngày thuê" span={1}>
                   {calculateDays(
-                    selectedBooking.pickupTime,
-                    selectedBooking.returnTime,
+                    getPickupTime(selectedBooking),
+                    getReturnTime(selectedBooking),
                   )}{" "}
                   ngày
                 </Descriptions.Item>
-                <Descriptions.Item label="Tổng tiền" span={1}>
-                  <span className="text-lg font-bold text-green-600">
-                    {formatCurrency(selectedBooking.totalPrice)}
+                <Descriptions.Item label="Trạng thái thanh toán" span={1}>
+                  <Tag
+                    color={
+                      selectedBooking.paymentStatus === "PENDING"
+                        ? "orange"
+                        : "green"
+                    }
+                  >
+                    {selectedBooking.paymentStatus === "PENDING"
+                      ? "Chờ thanh toán"
+                      : "Đã thanh toán"}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Giá cơ bản" span={1}>
+                  {formatCurrency(selectedBooking.basePrice || 0)}
+                </Descriptions.Item>
+                <Descriptions.Item label="Tiền đặt cọc" span={1}>
+                  <span className="font-semibold text-blue-600">
+                    {formatCurrency(selectedBooking.depositPaid || 0)}
                   </span>
                 </Descriptions.Item>
-                <Descriptions.Item label="Trạm nhận xe" span={2}>
-                  <div>
-                    <div className="font-medium">
-                      {selectedBooking.pickupStation.name}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {selectedBooking.pickupStation.address}
-                    </div>
-                  </div>
+                <Descriptions.Item label="Phí phát sinh" span={1}>
+                  {selectedBooking.extraFee
+                    ? formatCurrency(selectedBooking.extraFee)
+                    : "0 ₫"}
                 </Descriptions.Item>
-                <Descriptions.Item label="Trạm trả xe" span={2}>
-                  <div>
-                    <div className="font-medium">
-                      {selectedBooking.returnStation.name}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {selectedBooking.returnStation.address}
-                    </div>
-                  </div>
+                <Descriptions.Item label="Tổng tiền" span={1}>
+                  <span className="text-lg font-bold text-green-600">
+                    {formatCurrency(getTotalPrice(selectedBooking))}
+                  </span>
                 </Descriptions.Item>
-                {selectedBooking.notes && (
-                  <Descriptions.Item label="Ghi chú" span={2}>
-                    {selectedBooking.notes}
+                {(selectedBooking.pickupNote || selectedBooking.notes) && (
+                  <Descriptions.Item label="Ghi chú nhận xe" span={2}>
+                    {selectedBooking.pickupNote || selectedBooking.notes}
+                  </Descriptions.Item>
+                )}
+                {selectedBooking.returnNote && (
+                  <Descriptions.Item label="Ghi chú trả xe" span={2}>
+                    {selectedBooking.returnNote}
                   </Descriptions.Item>
                 )}
                 <Descriptions.Item label="Thời gian đặt" span={2}>
@@ -1013,210 +778,117 @@ export default function Confirmations() {
                 </Descriptions.Item>
               </Descriptions>
             </Card>
-
-            {/* Workflow Timeline */}
-            <Card
-              title={
-                <>
-                  <FileTextOutlined /> Quy trình xác nhận
-                </>
-              }
-              size="small"
-            >
-              <Timeline
-                items={[
-                  {
-                    color: "green",
-                    children: (
-                      <div>
-                        <div className="font-medium">✅ Khách hàng đặt xe</div>
-                        <div className="text-xs text-gray-500">
-                          {formatDateTime(selectedBooking.createdAt)}
-                        </div>
-                      </div>
-                    ),
-                  },
-                  {
-                    color: "blue",
-                    children: (
-                      <div>
-                        <div className="font-medium">
-                          👀 Staff kiểm tra CCCD & GPLX
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Đang thực hiện...
-                        </div>
-                      </div>
-                    ),
-                  },
-                  {
-                    color: "gray",
-                    children: (
-                      <div>
-                        <div className="font-medium">
-                          📞 Staff gọi khách xác nhận
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Chưa thực hiện
-                        </div>
-                      </div>
-                    ),
-                  },
-                  {
-                    color: "gray",
-                    children: (
-                      <div>
-                        <div className="font-medium">✅ Staff xác nhận đơn</div>
-                        <div className="text-xs text-gray-500">
-                          Chờ xác nhận
-                        </div>
-                      </div>
-                    ),
-                  },
-                  {
-                    color: "gray",
-                    children: (
-                      <div>
-                        <div className="font-medium">
-                          📧 Gửi email xác nhận cho khách
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Tự động sau khi xác nhận
-                        </div>
-                      </div>
-                    ),
-                  },
-                ]}
-              />
-            </Card>
           </div>
         )}
       </Modal>
 
-      {/* Confirm/Reject Modal */}
+      {/* Action Modal - Cho tất cả các thao tác */}
       <Modal
         title={
           action === "confirm" ? (
-            <span className="text-green-600">
+            <span className="text-blue-600">
               <CheckCircleOutlined /> Xác nhận đơn thuê
             </span>
-          ) : (
+          ) : action === "reject" ? (
             <span className="text-red-600">
               <CloseCircleOutlined /> Từ chối đơn thuê
+            </span>
+          ) : action === "start" ? (
+            <span className="text-cyan-600">
+              <CarOutlined /> Bắt đầu thuê xe
+            </span>
+          ) : (
+            <span className="text-green-600">
+              <CheckCircleOutlined /> Hoàn thành đơn thuê
             </span>
           )
         }
         open={confirmModalOpen}
         onCancel={() => setConfirmModalOpen(false)}
-        footer={null}
-      >
-        <Form form={form} layout="vertical" onFinish={handleConfirmBooking}>
-          <Alert
-            message={
-              action === "confirm"
-                ? "Xác nhận đơn thuê này?"
-                : "Từ chối đơn thuê này?"
-            }
-            description={
-              action === "confirm" ? (
-                <div className="space-y-2">
-                  <p>Đơn thuê #{selectedBooking?.bookingCode}</p>
-                  <p>• Khách hàng: {selectedBooking?.renter.fullName}</p>
-                  <p>
-                    • Xe: {selectedBooking?.vehicle.name} (
-                    {selectedBooking?.vehicle.plateNumber})
-                  </p>
-                  <p>
-                    • Thời gian:{" "}
-                    {selectedBooking &&
-                      formatDateTime(selectedBooking.pickupTime)}
-                  </p>
-                  <p className="text-orange-600 font-medium mt-2">
-                    ⚠️ Sau khi xác nhận, email sẽ được tự động gửi cho khách
-                    hàng.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p>Đơn thuê #{selectedBooking?.bookingCode}</p>
-                  <p>• Khách hàng: {selectedBooking?.renter.fullName}</p>
-                  <p className="text-red-600 font-medium mt-2">
-                    ⚠️ Vui lòng ghi rõ lý do từ chối để thông báo cho khách
-                    hàng.
-                  </p>
-                </div>
-              )
-            }
-            type={action === "confirm" ? "info" : "warning"}
-            showIcon
-            className="mb-4"
-          />
-
-          {action === "confirm" && (
-            <Form.Item
-              name="verificationStatus"
-              label="Kết quả xác minh"
-              rules={[
-                { required: true, message: "Vui lòng chọn kết quả xác minh" },
-              ]}
-            >
-              <Radio.Group>
-                <Space direction="vertical">
-                  <Radio value="verified">
-                    ✅ CCCD & GPLX hợp lệ, đã xác minh
-                  </Radio>
-                  <Radio value="called">
-                    📞 Đã gọi điện xác nhận với khách hàng
-                  </Radio>
-                  <Radio value="vehicle_ready">
-                    🚗 Xe sẵn sàng, tình trạng tốt
-                  </Radio>
-                </Space>
-              </Radio.Group>
-            </Form.Item>
-          )}
-
-          <Form.Item
-            name="notes"
-            label={action === "confirm" ? "Ghi chú xác nhận" : "Lý do từ chối"}
-            rules={[
-              {
-                required: action === "reject",
-                message: "Vui lòng nhập lý do từ chối",
-              },
-            ]}
-          >
-            <TextArea
-              rows={4}
-              placeholder={
-                action === "confirm"
-                  ? "Ghi chú thêm về đơn thuê này (không bắt buộc)..."
-                  : "Nhập lý do từ chối (bắt buộc). VD: Xe không khả dụng, khách hàng không xác thực được, CCCD không hợp lệ..."
+        footer={
+          <Space className="w-full justify-end">
+            <Button onClick={() => setConfirmModalOpen(false)}>Hủy</Button>
+            <Button
+              type="primary"
+              danger={action === "reject"}
+              onClick={handleConfirmBooking}
+              loading={loading}
+              icon={
+                action === "confirm" ? (
+                  <CheckCircleOutlined />
+                ) : action === "reject" ? (
+                  <CloseCircleOutlined />
+                ) : action === "start" ? (
+                  <CarOutlined />
+                ) : (
+                  <CheckCircleOutlined />
+                )
               }
-            />
-          </Form.Item>
-
-          <Form.Item className="mb-0">
-            <Space className="w-full justify-end">
-              <Button onClick={() => setConfirmModalOpen(false)}>Hủy</Button>
-              <Button
-                type={action === "confirm" ? "primary" : "default"}
-                danger={action === "reject"}
-                htmlType="submit"
-                loading={loading}
-                icon={
-                  action === "confirm" ? (
-                    <CheckCircleOutlined />
-                  ) : (
-                    <CloseCircleOutlined />
-                  )
-                }
-              >
-                {action === "confirm" ? "Xác nhận đơn" : "Từ chối đơn"}
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
+              className={
+                action === "start"
+                  ? "bg-cyan-500 hover:bg-cyan-600"
+                  : action === "complete"
+                    ? "bg-green-500 hover:bg-green-600"
+                    : ""
+              }
+            >
+              {action === "confirm"
+                ? "Xác nhận"
+                : action === "reject"
+                  ? "Từ chối"
+                  : action === "start"
+                    ? "Bắt đầu"
+                    : "Hoàn thành"}
+            </Button>
+          </Space>
+        }
+      >
+        <Alert
+          message={
+            action === "confirm"
+              ? "Xác nhận đơn thuê này?"
+              : action === "reject"
+                ? "Từ chối đơn thuê này?"
+                : action === "start"
+                  ? "Bắt đầu cho thuê xe?"
+                  : "Hoàn thành đơn thuê này?"
+          }
+          description={
+            <div className="space-y-2">
+              <p>
+                <strong>Mã đơn:</strong> {selectedBooking?.bookingCode}
+              </p>
+              <p>
+                <strong>Khách hàng:</strong>{" "}
+                {selectedBooking?.renterName || "Khách hàng"}
+              </p>
+              <p>
+                <strong>Xe:</strong> {selectedBooking?.vehicleName || "Xe"} (
+                {selectedBooking?.licensePlate || "N/A"})
+              </p>
+              <p>
+                <strong>Thời gian:</strong>{" "}
+                {selectedBooking &&
+                  formatDateTime(getPickupTime(selectedBooking))}
+              </p>
+              <p>
+                <strong>Tổng tiền:</strong>{" "}
+                {selectedBooking &&
+                  formatCurrency(getTotalPrice(selectedBooking))}
+              </p>
+            </div>
+          }
+          type={
+            action === "confirm"
+              ? "info"
+              : action === "reject"
+                ? "warning"
+                : action === "start"
+                  ? "info"
+                  : "success"
+          }
+          showIcon
+        />
       </Modal>
     </div>
   );

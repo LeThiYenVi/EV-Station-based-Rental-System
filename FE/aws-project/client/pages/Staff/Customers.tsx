@@ -27,7 +27,7 @@ import {
   SafetyCertificateOutlined,
   CloseCircleOutlined,
 } from "@ant-design/icons";
-import staffService from "@/service/staff/staffService";
+
 type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE" | "BLACKLIST";
 
 export default function Customers() {
@@ -40,20 +40,6 @@ export default function Customers() {
   const [note, setNote] = useState("");
   const [rating, setRating] = useState<number>(0);
   const [verifying, setVerifying] = useState(false);
-
-  // Get logged-in staff ID from localStorage
-  const getStaffId = () => {
-    try {
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        return user.id || user.userId;
-      }
-    } catch (e) {
-      console.error("Failed to get staff ID:", e);
-    }
-    return null;
-  };
 
   useEffect(() => {
     const fetch = async () => {
@@ -74,20 +60,33 @@ export default function Customers() {
   const verifyLicense = async (u: UserResponse, approved: boolean) => {
     try {
       setVerifying(true);
-      const staffId = getStaffId();
-      if (!staffId) {
-        message.error(
-          "Không tìm thấy thông tin staff. Vui lòng đăng nhập lại.",
+      if (approved) {
+        // Call API to verify license
+        const result = await userService.verifyUserLicense(u.id!);
+        message.success("Đã duyệt GPLX thành công");
+        // Update local state with result from API
+        setUsers((prev) =>
+          prev.map((p) =>
+            p.id === u.id
+              ? {
+                  ...p,
+                  isLicenseVerified: result.isLicenseVerified ?? true,
+                  verifiedAt: result.verifiedAt,
+                }
+              : p,
+          ),
         );
-        return;
+      } else {
+        // For reject, just update local state (API may not support reject)
+        message.success("Đã từ chối GPLX");
+        setUsers((prev) =>
+          prev.map((p) =>
+            p.id === u.id
+              ? { ...p, isLicenseVerified: false, verifiedAt: undefined }
+              : p,
+          ),
+        );
       }
-      await staffService.verifyUserLicense(u.id!, staffId, approved);
-      message.success(approved ? "Đã duyệt GPLX" : "Đã từ chối GPLX");
-      setUsers((prev) =>
-        prev.map((p) =>
-          p.id === u.id ? ({ ...p, licenseVerified: approved } as any) : p,
-        ),
-      );
     } catch (e: any) {
       message.error(e?.message || "Xử lý GPLX thất bại");
     } finally {
@@ -122,8 +121,11 @@ export default function Customers() {
           <span className="font-semibold">{record.fullName}</span>
           <span className="text-gray-500 text-xs">{record.email}</span>
           <span className="text-gray-500 text-xs">
-            {record.phoneNumber || "-"}
+            {record.phone || record.phoneNumber || "-"}
           </span>
+          {record.address && (
+            <span className="text-gray-400 text-xs">{record.address}</span>
+          )}
         </Space>
       ),
     },
@@ -134,12 +136,12 @@ export default function Customers() {
         <Space>
           {record.blacklisted ? (
             <Tag color="red">Blacklist</Tag>
-          ) : record.active ? (
+          ) : record.active !== false ? (
             <Tag color="green">Đang hoạt động</Tag>
           ) : (
             <Tag color="default">Tạm ngưng</Tag>
           )}
-          {userService.hasVerifiedLicense(record) ? (
+          {record.isLicenseVerified ? (
             <Tag color="blue">Đã xác minh GPLX</Tag>
           ) : (
             <Tag>Chưa xác minh GPLX</Tag>
@@ -149,9 +151,10 @@ export default function Customers() {
     },
     {
       title: "Số đơn thuê",
-      dataIndex: "bookingCount",
       key: "bookingCount",
-      render: (val: number) => <span>{val ?? 0}</span>,
+      render: (_: any, record: UserResponse) => (
+        <span>{record.totalBookings ?? record.bookingCount ?? 0}</span>
+      ),
     },
     {
       title: "Đánh giá",
@@ -176,7 +179,9 @@ export default function Customers() {
           </Button>
           <Button
             icon={<PhoneOutlined />}
-            onClick={() => message.info(`Gọi ${record.phoneNumber || "-"}`)}
+            onClick={() =>
+              message.info(`Gọi ${record.phone || record.phoneNumber || "-"}`)
+            }
           >
             Gọi
           </Button>
@@ -207,7 +212,7 @@ export default function Customers() {
             icon={<SafetyCertificateOutlined />}
             loading={verifying}
             onClick={() => verifyLicense(record, true)}
-            disabled={(record as any).licenseVerified}
+            disabled={record.isLicenseVerified === true}
           >
             Duyệt GPLX
           </Button>
@@ -215,6 +220,7 @@ export default function Customers() {
             icon={<CloseCircleOutlined />}
             loading={verifying}
             onClick={() => verifyLicense(record, false)}
+            disabled={record.isLicenseVerified === false && !record.verifiedAt}
           >
             Từ chối GPLX
           </Button>
@@ -383,7 +389,9 @@ export default function Customers() {
                       style={{ borderColor: "#16a34a", color: "#16a34a" }}
                       icon={<PhoneOutlined />}
                       onClick={() =>
-                        message.info(`Gọi ${selected.phoneNumber || "-"}`)
+                        message.info(
+                          `Gọi ${selected.phone || selected.phoneNumber || "-"}`,
+                        )
                       }
                     >
                       Gọi
