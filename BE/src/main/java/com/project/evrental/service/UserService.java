@@ -77,7 +77,6 @@ public class UserService {
                 () -> new ResourceNotFoundException("User not found with id: " + id)
         );
 
-        // Calculate booking statistics
         Long totalBookings = bookingRepository.countByRenterId(id);
         Long completedBookings = bookingRepository.countByRenterIdAndStatus(id, BookingStatus.COMPLETED);
         Long activeBookings = bookingRepository.countByRenterIdAndStatus(id, BookingStatus.ONGOING);
@@ -129,7 +128,6 @@ public class UserService {
         userRepository.delete(loadedUser);
     }
 
-    @Cacheable(value = "users", key = "'all-page-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<UserResponse> getAllUsersPaged(Pageable pageable) {
         log.info("Fetching users - Page: {}, Size: {}", pageable.getPageNumber(), pageable.getPageSize());
         return userRepository.findAll(pageable).map(UserMapper::fromEntity);

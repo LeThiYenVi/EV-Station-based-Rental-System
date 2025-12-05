@@ -14,7 +14,7 @@ public class UpdateBlogRequest {
     @Size(min = 10, max = 200, message = "Title must be between 10 and 200 characters")
     String title;
 
-    @Size(min = 50, message = "Content must be at least 50 characters")
+    @Size(min = 50, max = 10000, message = "Content must be between 50 and 10000 characters")
     String content;
 
     String thumbnailUrl;

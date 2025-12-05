@@ -17,7 +17,7 @@ public class CreateBlogRequest {
     String title;
 
     @NotBlank(message = "Content is required")
-    @Size(min = 50, message = "Content must be at least 50 characters")
+    @Size(min = 50, max = 10000, message = "Content must be between 50 and 10000 characters")
     String content;
 
     String thumbnailUrl;

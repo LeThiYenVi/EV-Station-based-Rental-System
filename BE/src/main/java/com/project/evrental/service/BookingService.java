@@ -100,8 +100,8 @@ public class BookingService {
                     .add(vehicle.getHourlyRate().multiply(BigDecimal.valueOf(remainingHours)));
         }
 
-        BigDecimal depositPaid = vehicle.getDepositAmount();
-        BigDecimal totalAmount = basePrice.add(depositPaid);
+        BigDecimal depositAmount = vehicle.getDepositAmount();
+        BigDecimal totalAmount = basePrice.add(depositAmount);
 
         String bookingCode = generateBookingCode();
 
@@ -115,7 +115,7 @@ public class BookingService {
                 .status(BookingStatus.PENDING)
                 .checkedOutBy(renter)
                 .basePrice(basePrice)
-                .depositPaid(depositPaid)
+                .depositPaid(BigDecimal.ZERO)
                 .totalAmount(totalAmount)
                 .pickupNote(request.getPickupNote())
                 .paymentStatus(PaymentStatus.PENDING)
@@ -126,7 +126,7 @@ public class BookingService {
 
         Payment payment = Payment.builder()
                 .booking(savedBooking)
-                .amount(totalAmount)
+                .amount(depositAmount)
                 .paymentMethod(PaymentMethod.MOMO)
                 .status(PaymentStatus.PENDING)
                 .build();
@@ -134,8 +134,8 @@ public class BookingService {
 
         MoMoPaymentResponse moMoResponse = moMoService.createPayment(
                 savedBooking.getId(),
-                totalAmount,
-                "Thanh toan booking " + bookingCode
+                depositAmount,
+                "Thanh toan tien coc booking " + bookingCode
         );
 
         if ("0".equals(moMoResponse.getResultCode())) {
@@ -319,7 +319,7 @@ public class BookingService {
     }
 
     @Transactional
-    public BookingResponse completeBooking(UUID bookingId) {
+    public BookingWithPaymentResponse completeBooking(UUID bookingId) {
         log.info("Completing booking: {}", bookingId);
 
         String email = getEmailFromAuthentication();
@@ -333,8 +333,61 @@ public class BookingService {
             throw new IllegalStateException("Only ongoing bookings can be completed");
         }
 
+        LocalDateTime actualEndTime = LocalDateTime.now();
+        BigDecimal lateFee = BigDecimal.ZERO;
+
+        if (actualEndTime.isAfter(booking.getExpectedEndTime())) {
+            long lateHours = Duration.between(booking.getExpectedEndTime(), actualEndTime).toHours();
+            if (lateHours > 0) {
+                Vehicle vehicle = booking.getVehicle();
+                lateFee = vehicle.getHourlyRate().multiply(BigDecimal.valueOf(lateHours)).multiply(BigDecimal.valueOf(1.5));
+                log.warn("Late return detected - booking: {}, late hours: {}, late fee: {}", 
+                        booking.getBookingCode(), lateHours, lateFee);
+            }
+        }
+
+        BigDecimal remainingAmount = booking.getBasePrice();
+        if (booking.getExtraFee() != null && booking.getExtraFee().compareTo(BigDecimal.ZERO) > 0) {
+            remainingAmount = remainingAmount.add(booking.getExtraFee());
+        }
+        if (lateFee.compareTo(BigDecimal.ZERO) > 0) {
+            remainingAmount = remainingAmount.add(lateFee);
+            BigDecimal currentExtraFee = booking.getExtraFee() != null ? booking.getExtraFee() : BigDecimal.ZERO;
+            booking.setExtraFee(currentExtraFee.add(lateFee));
+            BigDecimal newTotal = booking.getBasePrice().add(booking.getDepositPaid()).add(booking.getExtraFee());
+            booking.setTotalAmount(newTotal);
+            log.info("Late fee added to booking - booking: {}, late fee: {}, new total: {}", 
+                    booking.getBookingCode(), lateFee, newTotal);
+        }
+
+        Payment remainingPayment = Payment.builder()
+                .booking(booking)
+                .amount(remainingAmount)
+                .paymentMethod(PaymentMethod.MOMO)
+                .status(PaymentStatus.PENDING)
+                .processedBy(staff.getId())
+                .build();
+        Payment savedRemainingPayment = paymentRepository.save(remainingPayment);
+
+        MoMoPaymentResponse moMoResponse = moMoService.createPayment(
+                booking.getId(),
+                remainingAmount,
+                "Thanh toan con lai booking " + booking.getBookingCode()
+        );
+
+        if ("0".equals(moMoResponse.getResultCode())) {
+            savedRemainingPayment.setTransactionId(moMoResponse.getOrderId());
+            paymentRepository.save(savedRemainingPayment);
+            log.info("MoMo payment for remaining amount created successfully - orderId: {}", moMoResponse.getOrderId());
+        } else {
+            savedRemainingPayment.setStatus(PaymentStatus.FAILED);
+            paymentRepository.save(savedRemainingPayment);
+            log.error("MoMo payment creation failed - resultCode: {}, message: {}", 
+                    moMoResponse.getResultCode(), moMoResponse.getMessage());
+        }
+
         booking.setStatus(BookingStatus.COMPLETED);
-        booking.setActualEndTime(LocalDateTime.now());
+        booking.setActualEndTime(actualEndTime);
         booking.setCheckedInBy(staff);
 
         Vehicle vehicle = booking.getVehicle();
@@ -343,9 +396,30 @@ public class BookingService {
         vehicleRepository.save(vehicle);
 
         Booking completedBooking = bookingRepository.save(booking);
-        log.info("Booking completed successfully: {}", bookingId);
+        log.info("Booking completed successfully: {}, remaining payment created: {}", bookingId, remainingAmount);
 
-        return bookingMapper.toResponse(completedBooking);
+        return BookingWithPaymentResponse.builder()
+                .id(completedBooking.getId())
+                .bookingCode(completedBooking.getBookingCode())
+                .renterId(completedBooking.getRenter().getId())
+                .renterName(completedBooking.getRenter().getFullName())
+                .renterEmail(completedBooking.getRenter().getEmail())
+                .vehicleId(vehicle.getId())
+                .vehicleName(vehicle.getName())
+                .licensePlate(vehicle.getLicensePlate())
+                .stationId(completedBooking.getStation().getId())
+                .stationName(completedBooking.getStation().getName())
+                .startTime(completedBooking.getStartTime())
+                .expectedEndTime(completedBooking.getExpectedEndTime())
+                .status(completedBooking.getStatus().toString())
+                .basePrice(completedBooking.getBasePrice())
+                .depositPaid(completedBooking.getDepositPaid())
+                .totalAmount(completedBooking.getTotalAmount())
+                .pickupNote(completedBooking.getPickupNote())
+                .paymentStatus(completedBooking.getPaymentStatus().toString())
+                .momoPayment(moMoResponse)
+                .createdAt(completedBooking.getCreatedAt())
+                .build();
     }
 
     @Transactional
