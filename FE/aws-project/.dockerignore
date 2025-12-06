@@ -1,23 +1,86 @@
-node_modules
-dist
-.git
-.gitignore
-README.md
-.env
-.env.local
-.env.development
-.env.test
-.env.production
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.DS_Store
-.vscode
-.idea
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+.vite/
+
+# Testing
+coverage/
+.nyc_output
+
+# IDE
+.vscode/
+.idea/
 *.swp
 *.swo
 *~
-.cursor
+.DS_Store
+.cursor/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+AGENTS.md
+API_*.md
+*_GUIDE.md
+*_SUMMARY.md
+CHECKLIST.md
+SETUP_GUIDE.md
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Mock data
+mocks/
+
+# Images (unless needed in build)
+image/
+
+# Config files not needed in container
+.prettierrc
+.npmrc
+components.json
+# Keep build config files
+# postcss.config.js - needed for build
+# tailwind.config.ts - needed for build  
+# tsconfig.json - needed for build
+# vite.config.ts - needed for build
 coverage
 .nyc_output
 .eslintcache
