@@ -78,12 +78,16 @@ export default function AdminLayout() {
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shrink-0">
                 <span className="text-green-700 font-bold text-xl">A</span>
               </div>
-              <div className="text-white">
-                <div className="font-bold text-lg">Admin Panel</div>
-                <div className="text-xs text-green-200">Management System</div>
+              <div className="text-white min-w-0">
+                <div className="font-bold text-base leading-tight">
+                  Admin Panel
+                </div>
+                <div className="text-xs text-green-200 leading-tight">
+                  Quản lý hệ thống
+                </div>
               </div>
             </div>
           )}
@@ -171,7 +175,7 @@ export default function AdminLayout() {
       <Layout>
         {/* Header */}
         <Header
-          className="!px-4 flex items-center justify-between shadow-md"
+          className="!px-4 !py-0 !h-16 flex items-center justify-between shadow-md"
           style={{ padding: 0, background: colorBgContainer }}
         >
           <Button
@@ -181,16 +185,16 @@ export default function AdminLayout() {
             className="!text-lg !w-16 !h-16 hover:!bg-green-50"
           />
 
-          <div className="flex items-center gap-3">
-            <div className="text-right mr-2 max-w-[200px] max-h-[100]">
-              <div className="font-semibold text-gray-700 truncate">
+          <div className="flex items-center gap-3 max-w-[50%]">
+            <div className="text-right mr-2 leading-tight">
+              <div className="font-semibold text-gray-700 truncate max-w-[220px]">
                 {userInfo.fullName}
               </div>
-              <div className="text-xs text-gray-500 truncate">
+              <div className="text-xs text-gray-500 truncate max-w-[220px]">
                 {userInfo.email}
               </div>
             </div>
-            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold shrink-0">
               {userInfo.fullName.charAt(0).toUpperCase()}
             </div>
           </div>
