@@ -269,14 +269,21 @@ export default function Login() {
         otpCode: otpCode,
       });
 
-      if (result && result.accessToken) {
-        showSuccess("Xác thực thành công! Đăng nhập tự động...");
+      // Backend returns {statusCode: 200/201, message: "verified account", data: null}
+      // Check for successful status codes
+      if (result && (result.statusCode === 200 || result.statusCode === 201)) {
+        showSuccess("Xác thực thành công! Vui lòng đăng nhập.");
 
-        // User is now logged in with tokens saved
-        // Redirect to home or dashboard
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 1500);
+        // Reset OTP form and switch to login tab
+        setShowOtpForm(false);
+        setOtpCode("");
+        setActiveTab("login");
+
+        // Pre-fill login username with registered email
+        setLoginData({
+          ...loginData,
+          username: registeredEmail,
+        });
       } else {
         showError("Mã OTP không đúng. Vui lòng thử lại.");
       }
@@ -488,7 +495,7 @@ export default function Login() {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-700 text-green-700">
+                  <p className="font-semibold text-green-700">
                     CỔNG THÔNG TIN ĐIỆN TỬ
                   </p>
                 </div>
@@ -686,18 +693,20 @@ export default function Login() {
                     <div className="text-center space-y-2">
                       <Link
                         to="/forgot-password"
-                        className="text-sm text-blue-600 hover:underline font-medium block"
+                        className="text-sm text-green-800
+                         hover:underline font-medium block"
                       >
                         Quên mật khẩu?
                       </Link>
                       <p className="text-sm text-gray-600">
                         Chưa có tài khoản?{" "}
-                        <Link
-                          to="/register"
-                          className="text-green-600 hover:text-green-700 font-semibold"
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("register")}
+                          className="text-green-600 hover:text-green-700 font-semibold hover:underline"
                         >
                           Đăng ký ngay
-                        </Link>
+                        </button>
                       </p>
                       <p className="text-xs text-gray-500">
                         Tài khoản test:{" "}

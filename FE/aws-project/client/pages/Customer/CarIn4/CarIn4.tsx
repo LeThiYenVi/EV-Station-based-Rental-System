@@ -74,7 +74,12 @@ export default function CarIn4() {
   // API hooks
   const { getVehicleById, loading: vehicleLoading } = useVehicle();
   const { createBooking, loading: bookingLoading } = useBooking();
-  const { getMyStats } = useUser();
+  const {
+    getMyStats,
+    uploadLicenseCardFront,
+    uploadLicenseCardBack,
+    loading: userLoading,
+  } = useUser();
 
   // Vehicle data from API
   const [vehicleData, setVehicleData] = useState<any>(null);
@@ -104,6 +109,11 @@ export default function CarIn4() {
   const [backImage, setBackImage] = useState<File | null>(null);
   const [frontPreview, setFrontPreview] = useState<string | null>(null);
   const [backPreview, setBackPreview] = useState<string | null>(null);
+  const [isUploadingLicense, setIsUploadingLicense] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{
+    front: boolean;
+    back: boolean;
+  }>({ front: false, back: false });
 
   // Booking form states
   const [pickupDate, setPickupDate] = useState("2025-10-08");
@@ -376,6 +386,35 @@ export default function CarIn4() {
   };
 
   const handleBookingClick = () => {
+    // Validate dates before proceeding
+    const pickupDateTime = new Date(`${pickupDate}T${pickupTime}`);
+    const returnDateTime = new Date(`${returnDate}T${returnTime}`);
+    const now = new Date();
+
+    // Check if pickup date/time is in the past
+    if (pickupDateTime < now) {
+      showError(
+        "Thời gian nhận xe không được trong quá khứ! Vui lòng chọn thời gian hợp lệ.",
+      );
+      return;
+    }
+
+    // Check if return date/time is before pickup
+    if (returnDateTime <= pickupDateTime) {
+      showError(
+        "Thời gian trả xe phải sau thời gian nhận xe! Vui lòng chọn lại.",
+      );
+      return;
+    }
+
+    // Check minimum rental duration (at least 1 hour)
+    const durationMs = returnDateTime.getTime() - pickupDateTime.getTime();
+    const durationHours = durationMs / (1000 * 60 * 60);
+    if (durationHours < 1) {
+      showError("Thời gian thuê tối thiểu là 1 giờ! Vui lòng chọn lại.");
+      return;
+    }
+
     // Generate booking ID once when starting booking process
     if (!currentBookingId) {
       const newBookingId = "BK" + Date.now();
@@ -397,46 +436,113 @@ export default function CarIn4() {
     side: "front" | "back",
   ) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (side === "front") {
-        setFrontImage(file);
-        setFrontPreview(URL.createObjectURL(file));
-      } else {
-        setBackImage(file);
-        setBackPreview(URL.createObjectURL(file));
-      }
-    }
-  };
+    if (!file) return;
 
-  const handleVerifySubmit = () => {
-    if (!frontImage || !backImage) {
-      toast({
-        title: "Lỗi",
-        description: "Vui lòng upload đầy đủ ảnh mặt trước và mặt sau GPLX",
-        variant: "destructive",
-      });
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/jpg"];
+    if (!validTypes.includes(file.type)) {
+      showError("Chỉ chấp nhận file ảnh định dạng JPG, PNG, JPEG!");
       return;
     }
 
-    // Simulate verification process
-    showInfo("Đang xác thực... Vui lòng đợi trong giây lát");
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      showError("Kích thước file không được vượt quá 5MB!");
+      return;
+    }
 
-    setTimeout(() => {
-      setIsVerified(true);
-      setShowVerifyDialog(false);
-      setShowPaymentDialog(true);
+    if (side === "front") {
+      setFrontImage(file);
+      setFrontPreview(URL.createObjectURL(file));
+    } else {
+      setBackImage(file);
+      setBackPreview(URL.createObjectURL(file));
+    }
+  };
 
-      showSuccess(
-        "Xác thực thành công! GPLX của bạn đã được xác thực. Bạn có thể đặt xe ngay.",
+  const handleVerifySubmit = async () => {
+    if (!frontImage || !backImage) {
+      showError("Vui lòng upload đầy đủ ảnh mặt trước và mặt sau GPLX!");
+      return;
+    }
+
+    if (!currentUserData?.id) {
+      showError("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!");
+      return;
+    }
+
+    setIsUploadingLicense(true);
+    showInfo("Đang upload và xác thực GPLX... Vui lòng đợi!");
+
+    try {
+      // Upload front image
+      setUploadProgress({ front: true, back: false });
+      const frontResult = await uploadLicenseCardFront(
+        currentUserData.id,
+        frontImage,
       );
-    }, 2000);
+
+      if (!frontResult.success) {
+        throw new Error(
+          frontResult.error || "Không thể upload ảnh mặt trước GPLX!",
+        );
+      }
+
+      // Upload back image
+      setUploadProgress({ front: true, back: true });
+      const backResult = await uploadLicenseCardBack(
+        currentUserData.id,
+        backImage,
+      );
+
+      if (!backResult.success) {
+        throw new Error(
+          backResult.error || "Không thể upload ảnh mặt sau GPLX!",
+        );
+      }
+
+      // Success - update user data
+      setCurrentUserData((prev: any) => ({
+        ...prev,
+        licenseCardFrontImageUrl:
+          frontResult.data?.licenseCardFrontImageUrl || "",
+        licenseCardBackImageUrl: backResult.data?.licenseCardBackImageUrl || "",
+      }));
+
+      // Close verify dialog and show payment dialog immediately
+      setShowVerifyDialog(false);
+      setIsVerified(true);
+
+      // Show success toast
+      showSuccess(
+        "Xác thực thành công! GPLX của bạn đã được upload. Vui lòng đợi Staff phê duyệt trước khi đặt xe.",
+      );
+
+      // Reset upload state
+      setFrontImage(null);
+      setBackImage(null);
+      setFrontPreview(null);
+      setBackPreview(null);
+
+      // Open payment dialog after a short delay to show toast first
+      setTimeout(() => {
+        setShowPaymentDialog(true);
+      }, 500);
+    } catch (error: any) {
+      console.error("Error uploading license:", error);
+      showError(error.message || "Có lỗi xảy ra khi upload GPLX!");
+    } finally {
+      setIsUploadingLicense(false);
+      setUploadProgress({ front: false, back: false });
+    }
   };
 
   // Create booking via API
-  const handleCreateBooking = async () => {
+  const handleCreateBooking = async (): Promise<boolean> => {
     if (!vehicleData?.id || !vehicleData?.stationId) {
       showError("Không tìm thấy thông tin xe hoặc trạm. Vui lòng thử lại.");
-      return;
+      return false;
     }
 
     setIsProcessing(true);
@@ -482,15 +588,56 @@ export default function CarIn4() {
           title: "Tạo đơn hàng thành công!",
           description: `Mã đơn hàng: ${result.bookingCode}. Vui lòng hoàn tất thanh toán.`,
         });
+        return true;
       } else {
         showError("Đặt xe thất bại. Vui lòng thử lại.");
+        return false;
       }
     } catch (error: any) {
       console.error("❌ Error creating booking:", error);
-      showError(error?.message || "Đặt xe thất bại. Vui lòng thử lại.");
+      console.log("📋 Full error object:", error);
+      console.log("📋 Error response:", error?.response);
+      console.log("📋 Error data:", error?.response?.data);
+
+      // Get error data from response
+      const errorData = error?.response?.data;
+      const errorText = errorData?.errors || errorData?.message || "";
+
+      console.log("📋 Error text to check:", errorText);
+
+      // Check for license verification error - comprehensive check
+      const isLicenseError =
+        errorText === "License number is required before booking" ||
+        errorText?.includes?.("License number is required") ||
+        errorText?.toLowerCase?.()?.includes?.("license");
+
+      console.log("📋 Is license error?", isLicenseError);
+
+      // Show error message to user
+      if (isLicenseError) {
+        console.log(
+          "✅ Detected license error - showing toast and closing dialog",
+        );
+        showError(
+          "Bằng lái xe chưa được xác thực! Vui lòng đợi Staff hoặc người có thẩm quyền phê duyệt GPLX của bạn trước khi đặt xe.",
+        );
+        setIsVerified(false);
+      } else {
+        console.log("❌ API error - showing error message and closing dialog");
+        // Show specific error from backend if available
+        const errorMessage = errorText || "Đặt xe thất bại. Vui lòng thử lại.";
+        showError(errorMessage);
+      }
+
+      // Close payment dialog immediately and reset state
+      setShowPaymentDialog(false);
+      setCurrentStep(1);
+
+      return false;
     } finally {
       setIsProcessing(false);
     }
+    return false;
   };
 
   const handlePayment = () => {
@@ -979,91 +1126,7 @@ export default function CarIn4() {
           {/* Right Column - Car Info (Same width as main image) */}
           <div className="lg:col-span-1">
             <div className="sticky top-8 space-y-6">
-              {/* Bảo hiểm thuê xe */}
-              <Card className="border-2 border-green-100 shadow-lg">
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Shield className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-bold text-gray-900 mb-1">
-                        Bảo hiểm thuê xe
-                      </h3>
-                      <p className="text-gray-600 text-xs mb-2">
-                        Chuyến đi có mua bảo hiểm. Khách thuê bồi thường tối đa{" "}
-                        <span className="font-semibold text-gray-900">
-                          2.000.000 VNĐ
-                        </span>{" "}
-                        trong trường hợp có sự cố ngoài ý muốn.
-                      </p>
-                      <button className="text-green-600 text-xs font-semibold hover:underline">
-                        Xem thêm ›
-                      </button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Bảo hiểm bổ sung */}
-              <Card className="border-2 shadow-lg">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-sm font-bold text-gray-900">
-                      Bảo hiểm bổ sung
-                    </h3>
-                    <Badge className="bg-red-500 text-white text-xs">MỚI</Badge>
-                  </div>
-
-                  <div className="space-y-3">
-                    {/* Insurance Option 1 */}
-                    <div
-                      className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                        additionalInsurance
-                          ? "border-green-500 bg-green-50"
-                          : "border-gray-200 hover:border-green-500"
-                      }`}
-                      onClick={() =>
-                        setAdditionalInsurance(!additionalInsurance)
-                      }
-                    >
-                      <input
-                        type="checkbox"
-                        checked={additionalInsurance}
-                        onChange={(e) =>
-                          setAdditionalInsurance(e.target.checked)
-                        }
-                        className="mt-0.5 w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-xs font-semibold text-gray-900">
-                            Bảo hiểm người trên xe
-                          </p>
-                          <p className="text-green-600 font-bold text-xs">
-                            40.000đ/ngày
-                          </p>
-                        </div>
-                        <p className="text-xs text-gray-600 mb-1">
-                          Trường hợp xảy ra sự cố đáng tiếc, tất cả người ngồi
-                          trên xe được bảo hiểm với giá trị lên đến{" "}
-                          <span className="font-semibold">
-                            300.000.000 VNĐ/người
-                          </span>
-                          .
-                        </p>
-                        <button
-                          className="text-green-600 text-xs font-semibold hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Xem thêm ›
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
               <Card className="shadow-lg border">
                 <CardContent className="p-5">
@@ -1150,6 +1213,7 @@ export default function CarIn4() {
                           type="date"
                           value={pickupDate}
                           onChange={(e) => setPickupDate(e.target.value)}
+                          min={new Date().toISOString().split("T")[0]}
                           className="h-9 text-sm"
                         />
                       </div>
@@ -1174,6 +1238,7 @@ export default function CarIn4() {
                           type="date"
                           value={returnDate}
                           onChange={(e) => setReturnDate(e.target.value)}
+                          min={pickupDate}
                           className="h-9 text-sm"
                         />
                       </div>
@@ -1323,6 +1388,31 @@ export default function CarIn4() {
                   >
                     {isLoggedIn ? "Chọn thuê" : "Đăng nhập để đặt xe"}
                   </Button>
+                </CardContent>
+              </Card>
+              {/* Bảo hiểm thuê xe */}
+              <Card className="border-2 border-green-100 shadow-lg">
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Shield className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-bold text-gray-900 mb-1">
+                        Bảo hiểm thuê xe
+                      </h3>
+                      <p className="text-gray-600 text-xs mb-2">
+                        Chuyến đi có mua bảo hiểm. Khách thuê bồi thường tối đa{" "}
+                        <span className="font-semibold text-gray-900">
+                          2.000.000 VNĐ
+                        </span>{" "}
+                        trong trường hợp có sự cố ngoài ý muốn.
+                      </p>
+                      <button className="text-green-600 text-xs font-semibold hover:underline">
+                        Xem thêm ›
+                      </button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -1643,10 +1733,23 @@ export default function CarIn4() {
               <Button
                 type="button"
                 onClick={handleVerifySubmit}
-                disabled={!frontImage || !backImage}
+                disabled={!frontImage || !backImage || isUploadingLicense}
                 className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-semibold text-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
-                Xác thực ngay
+                {isUploadingLicense ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>
+                      {uploadProgress.front && uploadProgress.back
+                        ? "Đang xác thực..."
+                        : uploadProgress.front
+                          ? "Đang upload mặt sau..."
+                          : "Đang upload mặt trước..."}
+                    </span>
+                  </div>
+                ) : (
+                  "Xác thực ngay"
+                )}
               </Button>
 
               <p className="text-xs text-center text-gray-500">
@@ -1739,6 +1842,7 @@ export default function CarIn4() {
                         value={bookingDetails.renterName}
                         placeholder="Chú bộ đội"
                         className="mb-3"
+                        readOnly
                       />
                     </div>
 
@@ -1750,6 +1854,7 @@ export default function CarIn4() {
                         <Input
                           value={bookingDetails.phone}
                           placeholder="Nhập 09xxxxx"
+                          readOnly
                         />
                         {/* <p className="text-xs text-red-500 mt-1">
                           Vui lòng xác thực số điện thoại để sử dụng các dịch vụ
@@ -1763,6 +1868,7 @@ export default function CarIn4() {
                         <Input
                           value={bookingDetails.email}
                           placeholder="Xác thực"
+                          readOnly
                         />
                       </div>
                     </div>
@@ -2041,8 +2147,11 @@ export default function CarIn4() {
                         }
 
                         // Create booking first to get booking code and payment info
-                        await handleCreateBooking();
-                        setCurrentStep(2);
+                        const success = await handleCreateBooking();
+                        // Only go to step 2 if booking was created successfully
+                        if (success) {
+                          setCurrentStep(2);
+                        }
                       }}
                       disabled={
                         isProcessing ||

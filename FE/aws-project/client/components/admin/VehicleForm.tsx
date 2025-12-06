@@ -107,7 +107,6 @@ interface VehicleFormProps {
   onOpenChange: (open: boolean) => void;
   vehicle?: VehicleData | null;
   onSubmit: (data: any) => Promise<void>;
-  onPhotoUpload?: (files: File[]) => Promise<void>;
 }
 
 interface FormErrors {
@@ -127,7 +126,6 @@ export default function VehicleForm({
   onOpenChange,
   vehicle,
   onSubmit,
-  onPhotoUpload,
 }: VehicleFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -146,16 +144,6 @@ export default function VehicleForm({
     dailyRate: 0,
     depositAmount: 0,
   });
-
-  // Photo upload state (only for editing)
-  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
-  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
-
-  // Photo upload state (only for editing)
-  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
-  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
 
   // Fetch stations on mount
   useEffect(() => {
@@ -221,12 +209,6 @@ export default function VehicleForm({
         depositAmount: vehicle.depositAmount || 0,
       });
       setErrors({});
-      setExistingPhotos(vehicle.photos || []);
-      setPhotoPreviews(vehicle.photos || []);
-      setErrors({});
-      setExistingPhotos(vehicle.photos || []);
-      setPhotoPreviews(vehicle.photos || []);
-      setPhotoFiles([]);
     } else if (!open) {
       setFormData({
         stationId: "",
@@ -241,12 +223,6 @@ export default function VehicleForm({
         depositAmount: 0,
       });
       setErrors({});
-      setPhotoFiles([]);
-      setPhotoPreviews([]);
-      setExistingPhotos([]);
-      setPhotoFiles([]);
-      setPhotoPreviews([]);
-      setExistingPhotos([]);
     }
   }, [vehicle, open]);
 
@@ -317,32 +293,13 @@ export default function VehicleForm({
         color: formData.color,
         fuelType: formData.fuelType,
         capacity: formData.capacity,
-        photos: [],
+        photos: [], // Empty photos for now
         hourlyRate: formData.hourlyRate,
         dailyRate: formData.dailyRate,
         depositAmount: formData.depositAmount,
       };
 
       await onSubmit(submitData);
-
-      // Upload photos if editing and has new photos
-      if (vehicle && photoFiles.length > 0 && onPhotoUpload) {
-        try {
-          await onPhotoUpload(photoFiles);
-          toast({
-            title: "Ảnh đã được tải lên",
-            description: `${photoFiles.length} ảnh mới đã được upload.`,
-          });
-        } catch (uploadError) {
-          console.error("Failed to upload photos:", uploadError);
-          toast({
-            title: "Cảnh báo",
-            description: "Xe đã được cập nhật nhưng có lỗi khi upload ảnh.",
-            variant: "destructive",
-          });
-        }
-      }
-
       onOpenChange(false);
     } catch (error: any) {
       const errorMessage =
@@ -356,110 +313,6 @@ export default function VehicleForm({
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const newFiles = Array.from(files);
-    setPhotoFiles((prev) => [...prev, ...newFiles]);
-
-    // Create preview URLs
-    const fileReaders = newFiles.map((file) => {
-      return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === "string") {
-            resolve(reader.result);
-          } else {
-            reject(new Error("Failed to read file"));
-          }
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    });
-
-    try {
-      const base64Images = await Promise.all(fileReaders);
-      setPhotoPreviews((prev) => [...prev, ...base64Images]);
-
-      toast({
-        title: "Ảnh đã được chọn",
-        description: `${newFiles.length} ảnh sẽ được upload khi lưu.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Lỗi",
-        description: "Không thể đọc file ảnh. Vui lòng thử lại.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const removePhoto = (index: number) => {
-    setPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
-    
-    const existingCount = existingPhotos.length;
-    if (index >= existingCount) {
-      const fileIndex = index - existingCount;
-      setPhotoFiles((prev) => prev.filter((_, i) => i !== fileIndex));
-    } else {
-      setExistingPhotos((prev) => prev.filter((_, i) => i !== index));
-    }
-  };
-
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const newFiles = Array.from(files);
-    setPhotoFiles((prev) => [...prev, ...newFiles]);
-
-    // Create preview URLs
-    const fileReaders = newFiles.map((file) => {
-      return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === "string") {
-            resolve(reader.result);
-          } else {
-            reject(new Error("Failed to read file"));
-          }
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    });
-
-    try {
-      const base64Images = await Promise.all(fileReaders);
-      setPhotoPreviews((prev) => [...prev, ...base64Images]);
-
-      toast({
-        title: "Ảnh đã được chọn",
-        description: `${newFiles.length} ảnh sẽ được upload khi lưu.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Lỗi",
-        description: "Không thể đọc file ảnh. Vui lòng thử lại.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const removePhoto = (index: number) => {
-    setPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
-    
-    const existingCount = existingPhotos.length;
-    if (index >= existingCount) {
-      const fileIndex = index - existingCount;
-      setPhotoFiles((prev) => prev.filter((_, i) => i !== fileIndex));
-    } else {
-      setExistingPhotos((prev) => prev.filter((_, i) => i !== index));
     }
   };
 
@@ -822,81 +675,6 @@ export default function VehicleForm({
               </div>
             </div>
           </div>
-
-          {/* Photo upload section - Only show when editing */}
-          {vehicle && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">
-                📸 Hình ảnh xe
-              </h3>
-
-              <div
-                onClick={() => document.getElementById("photo-upload-edit")?.click()}
-                className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer bg-muted/20 hover:bg-muted/40"
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                  id="photo-upload-edit"
-                />
-                <div className="flex flex-col items-center gap-3">
-                  <PlusOutlined className="text-4xl text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Chọn ảnh để tải lên</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Hỗ trợ nhiều ảnh cùng lúc (JPG, PNG, GIF)
-                    </p>
-                  </div>
-                  <div className="px-4 py-2 bg-primary/10 text-primary rounded-md text-sm font-medium">
-                    📁 Chọn file từ máy tính
-                  </div>
-                </div>
-              </div>
-
-              {photoPreviews.length > 0 && (
-                <div className="grid grid-cols-4 gap-3">
-                  {photoPreviews.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Ảnh ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "https://via.placeholder.com/150?text=Error";
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removePhoto(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <CloseOutlined style={{ fontSize: 12 }} />
-                      </button>
-                      {index < existingPhotos.length && (
-                        <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-2 py-0.5 rounded">
-                          Đã lưu
-                        </div>
-                      )}
-                      {index >= existingPhotos.length && (
-                        <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded">
-                          Mới
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {photoPreviews.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Chưa có hình ảnh nào. Nhấn vào khung để chọn ảnh.
-                </p>
-              )}
-            </div>
-          )}
 
           <DialogFooter>
             <Button

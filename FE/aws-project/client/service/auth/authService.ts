@@ -1,5 +1,5 @@
-import { apiClient } from '../api/apiClient';
-import { API_ENDPOINTS } from '../config/apiConfig';
+import { apiClient } from "../api/apiClient";
+import { API_ENDPOINTS } from "../config/apiConfig";
 import {
   RegisterRequest,
   VerifyOtpRequest,
@@ -10,7 +10,7 @@ import {
   VerifyAccountRequest,
   AuthResponse,
   GoogleAuthUrlResponse,
-} from '../types/auth.types';
+} from "../types/auth.types";
 
 class AuthService {
   /**
@@ -19,51 +19,50 @@ class AuthService {
    * Response format: {statusCode: 200, message: "created user!", data: {user: {...}, accessToken: null}}
    */
   async register(data: RegisterRequest): Promise<{ message: string }> {
-    console.log('AuthService.register called with data:', {
+    console.log("AuthService.register called with data:", {
       email: data.email,
       fullName: data.fullName,
       phone: data.phone,
       role: data.role,
     });
-    
+
     const response = await apiClient.post<any>(
       API_ENDPOINTS.AUTH.REGISTER,
-      data
+      data,
     );
-    
-    console.log('Register API response:', response);
-    
+
+    console.log("Register API response:", response);
+
     // Backend response format: {statusCode: 200, message: "created user!", data: {...}}
     // Return message to show user
-    return { 
-      message: response.message || 'User created! Please check your email for OTP code.' 
+    return {
+      message:
+        response.message ||
+        "User created! Please check your email for OTP code.",
     };
   }
 
   /**
    * Verify OTP after registration - Step 2: Confirm account with OTP
-   * This confirms the user account and returns auth tokens
-   * Response format: {statusCode: 200, data: {accessToken, refreshToken, user}}
+   * Backend returns: {statusCode: 200/201, message: "verified account", data: null}
+   * No tokens returned - user must login after verification
    */
-  async verifyOtp(data: VerifyOtpRequest): Promise<AuthResponse> {
-    console.log('AuthService.verifyOtp called with:', { email: data.email, otpCode: data.otpCode });
-    
-    const response = await apiClient.post<AuthResponse>(
+  async verifyOtp(data: VerifyOtpRequest): Promise<any> {
+    console.log("AuthService.verifyOtp called with:", {
+      email: data.email,
+      otpCode: data.otpCode,
+    });
+
+    const response = await apiClient.post<any>(
       API_ENDPOINTS.AUTH.CONFIRM,
-      data
+      data,
     );
-    
-    console.log('Verify OTP API response:', response);
-    
-    // Response format: {statusCode, message, data: {accessToken, refreshToken, user}}
-    // Extract the actual auth data from response.data
-    const authData = response.data!;
-    
-    // Save tokens to localStorage
-    this.saveTokens(authData);
-    this.updateLoginStatus(true);
-    
-    return authData;
+
+    console.log("Verify OTP API response:", response);
+
+    // Backend returns: {statusCode: 200/201, message: "verified account", data: null}
+    // Return the whole response so we can check statusCode
+    return response;
   }
 
   /**
@@ -72,17 +71,17 @@ class AuthService {
   async login(data: LoginRequest): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>(
       API_ENDPOINTS.AUTH.LOGIN,
-      data
+      data,
     );
-    
+
     const authData = response.data!;
-    
+
     // Store tokens in localStorage
     this.saveTokens(authData);
-    
+
     // Update login status
     this.updateLoginStatus(true);
-    
+
     return authData;
   }
 
@@ -91,17 +90,17 @@ class AuthService {
    */
   async loginWithGoogle(code: string, state: string): Promise<AuthResponse> {
     const response = await apiClient.get<AuthResponse>(
-      `${API_ENDPOINTS.AUTH.GOOGLE_CALLBACK}?code=${code}&state=${state}`
+      `${API_ENDPOINTS.AUTH.GOOGLE_CALLBACK}?code=${code}&state=${state}`,
     );
-    
+
     const authData = response.data!;
-    
+
     // Store tokens in localStorage
     this.saveTokens(authData);
-    
+
     // Update login status
     this.updateLoginStatus(true);
-    
+
     return authData;
   }
 
@@ -109,10 +108,11 @@ class AuthService {
    * Get Google OAuth authorization URL
    */
   async getGoogleAuthUrl(): Promise<GoogleAuthUrlResponse> {
-    const response = await apiClient.post<{ authorizationUrl: string; state: string }>(
-      API_ENDPOINTS.AUTH.GOOGLE_URL
-    );
-    
+    const response = await apiClient.post<{
+      authorizationUrl: string;
+      state: string;
+    }>(API_ENDPOINTS.AUTH.GOOGLE_URL);
+
     return response.data!;
   }
 
@@ -121,10 +121,10 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      const accessToken = localStorage.getItem('accessToken');
+      const accessToken = localStorage.getItem("accessToken");
       if (accessToken) {
         await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, accessToken, {
-          headers: { 'Content-Type': 'text/plain' }
+          headers: { "Content-Type": "text/plain" },
         });
       }
     } finally {
@@ -139,14 +139,14 @@ class AuthService {
    */
   async refreshToken(): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>(
-      API_ENDPOINTS.AUTH.REFRESH
+      API_ENDPOINTS.AUTH.REFRESH,
     );
-    
+
     const authData = response.data!;
-    
+
     // Update tokens in localStorage
     this.saveTokens(authData);
-    
+
     return authData;
   }
 
@@ -167,18 +167,21 @@ class AuthService {
   /**
    * Change password for logged-in user
    */
-  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
     const accessToken = this.getAccessToken();
     if (!accessToken) {
-      throw new Error('User is not authenticated');
+      throw new Error("User is not authenticated");
     }
-    
+
     const data: ChangePasswordRequest = {
       accessToken,
       currentPassword,
-      newPassword
+      newPassword,
     };
-    
+
     await apiClient.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, data);
   }
 
@@ -193,8 +196,8 @@ class AuthService {
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
-    const accessToken = localStorage.getItem('accessToken');
-    const idToken = localStorage.getItem('idToken');
+    const accessToken = localStorage.getItem("accessToken");
+    const idToken = localStorage.getItem("idToken");
     return !!(accessToken && idToken);
   }
 
@@ -202,7 +205,7 @@ class AuthService {
    * Get current user from stored tokens
    */
   getCurrentUser(): any | null {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem("user");
     if (userStr) {
       try {
         return JSON.parse(userStr);
@@ -217,38 +220,38 @@ class AuthService {
    * Get access token
    */
   getAccessToken(): string | null {
-    return localStorage.getItem('accessToken');
+    return localStorage.getItem("accessToken");
   }
 
   /**
    * Get ID token
    */
   getIdToken(): string | null {
-    return localStorage.getItem('idToken');
+    return localStorage.getItem("idToken");
   }
 
   // Private helper methods
   private saveTokens(authData: AuthResponse): void {
-    localStorage.setItem('accessToken', authData.accessToken);
-    localStorage.setItem('idToken', authData.idToken);
-    localStorage.setItem('user', JSON.stringify(authData.user));
-    localStorage.setItem('tokenType', authData.tokenType);
-    localStorage.setItem('expiresIn', authData.expiresIn.toString());
+    localStorage.setItem("accessToken", authData.accessToken);
+    localStorage.setItem("idToken", authData.idToken);
+    localStorage.setItem("user", JSON.stringify(authData.user));
+    localStorage.setItem("tokenType", authData.tokenType);
+    localStorage.setItem("expiresIn", authData.expiresIn.toString());
   }
 
   private clearTokens(): void {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('idToken');
-    localStorage.removeItem('user');
-    localStorage.removeItem('tokenType');
-    localStorage.removeItem('expiresIn');
-    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("idToken");
+    localStorage.removeItem("user");
+    localStorage.removeItem("tokenType");
+    localStorage.removeItem("expiresIn");
+    localStorage.removeItem("isLoggedIn");
   }
 
   private updateLoginStatus(isLoggedIn: boolean): void {
-    localStorage.setItem('isLoggedIn', isLoggedIn.toString());
+    localStorage.setItem("isLoggedIn", isLoggedIn.toString());
     // Dispatch custom event for other components to listen
-    window.dispatchEvent(new Event('loginStatusChanged'));
+    window.dispatchEvent(new Event("loginStatusChanged"));
   }
 }
 

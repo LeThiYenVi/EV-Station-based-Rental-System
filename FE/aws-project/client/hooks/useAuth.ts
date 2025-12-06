@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authService } from '@/service';
+import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { authService } from "@/service";
 import type {
   RegisterRequest,
   VerifyOtpRequest,
@@ -9,13 +9,13 @@ import type {
   ResetPasswordRequest,
   VerifyAccountRequest,
   AuthResponse,
-} from '@/service';
+} from "@/service";
 
 interface UseAuthReturn {
   // State
   loading: boolean;
   error: string | null;
-  
+
   // Methods
   register: (data: RegisterRequest) => Promise<{ message: string } | null>;
   verifyOtp: (data: VerifyOtpRequest) => Promise<AuthResponse | null>;
@@ -24,9 +24,12 @@ interface UseAuthReturn {
   logout: () => Promise<void>;
   forgotPassword: (data: ForgotPasswordRequest) => Promise<boolean>;
   resetPassword: (data: ResetPasswordRequest) => Promise<boolean>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<boolean>;
   verifyAccount: (data: VerifyAccountRequest) => Promise<boolean>;
-  
+
   // Helpers
   isAuthenticated: () => boolean;
   getCurrentUser: () => any;
@@ -35,11 +38,11 @@ interface UseAuthReturn {
 
 /**
  * Custom hook for authentication
- * 
+ *
  * Usage:
  * ```tsx
  * const { login, logout, loading, error } = useAuth();
- * 
+ *
  * const handleLogin = async () => {
  *   const result = await login({ email, password });
  *   if (result) {
@@ -57,76 +60,84 @@ export const useAuth = (): UseAuthReturn => {
     setError(null);
   }, []);
 
-  const register = useCallback(async (data: RegisterRequest): Promise<{ message: string } | null> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await authService.register(data);
-      
-      // Return message, don't navigate - component will show OTP form
-      return response;
-      
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Đăng ký thất bại';
-      setError(errorMessage);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const register = useCallback(
+    async (data: RegisterRequest): Promise<{ message: string } | null> => {
+      try {
+        setLoading(true);
+        setError(null);
 
-  const verifyOtp = useCallback(async (data: VerifyOtpRequest): Promise<AuthResponse | null> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await authService.verifyOtp(data);
-      
-      return response;
-      
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Xác thực OTP thất bại';
-      setError(errorMessage);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        const response = await authService.register(data);
 
-  const login = useCallback(async (data: LoginRequest): Promise<AuthResponse | null> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await authService.login(data);
-      
-      return response;
-      
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Login failed';
-      setError(errorMessage);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        // Return message, don't navigate - component will show OTP form
+        return response;
+      } catch (err: any) {
+        const errorMessage = err.response?.data?.message || "Đăng ký thất bại";
+        setError(errorMessage);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  const verifyOtp = useCallback(
+    async (data: VerifyOtpRequest): Promise<any> => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await authService.verifyOtp(data);
+
+        // Return response with statusCode for checking
+        return response;
+      } catch (err: any) {
+        const errorMessage =
+          err.response?.data?.message || "Xác thực OTP thất bại";
+        setError(errorMessage);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  const login = useCallback(
+    async (data: LoginRequest): Promise<AuthResponse | null> => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await authService.login(data);
+
+        return response;
+      } catch (err: any) {
+        const errorMessage = err.response?.data?.message || "Login failed";
+        setError(errorMessage);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   const loginWithGoogle = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { authorizationUrl, state } = await authService.getGoogleAuthUrl();
-      
+
       // Store state for validation
-      sessionStorage.setItem('oauth_state', state);
-      
+      sessionStorage.setItem("oauth_state", state);
+
       // Redirect to Google
       window.location.href = authorizationUrl;
-      
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to initiate Google login';
+      const errorMessage =
+        err.response?.data?.message || "Failed to initiate Google login";
       setError(errorMessage);
       setLoading(false);
     }
@@ -136,91 +147,104 @@ export const useAuth = (): UseAuthReturn => {
     try {
       setLoading(true);
       setError(null);
-      
+
       await authService.logout();
-      
+
       // Navigate to login page
-      navigate('/login');
-      
+      navigate("/login");
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Logout failed';
+      const errorMessage = err.response?.data?.message || "Logout failed";
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
   }, [navigate]);
 
-  const forgotPassword = useCallback(async (data: ForgotPasswordRequest): Promise<boolean> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      await authService.forgotPassword(data);
-      
-      return true;
-      
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to send reset code';
-      setError(errorMessage);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const forgotPassword = useCallback(
+    async (data: ForgotPasswordRequest): Promise<boolean> => {
+      try {
+        setLoading(true);
+        setError(null);
 
-  const resetPassword = useCallback(async (data: ResetPasswordRequest): Promise<boolean> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      await authService.resetPassword(data);
-      
-      return true;
-      
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to reset password';
-      setError(errorMessage);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        await authService.forgotPassword(data);
 
-  const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      await authService.changePassword(currentPassword, newPassword);
-      
-      return true;
-      
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.response?.data?.errors || 'Failed to change password';
-      setError(errorMessage);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        return true;
+      } catch (err: any) {
+        const errorMessage =
+          err.response?.data?.message || "Failed to send reset code";
+        setError(errorMessage);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
-  const verifyAccount = useCallback(async (data: VerifyAccountRequest): Promise<boolean> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      await authService.verifyAccount(data);
-      
-      return true;
-      
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Failed to verify account';
-      setError(errorMessage);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const resetPassword = useCallback(
+    async (data: ResetPasswordRequest): Promise<boolean> => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        await authService.resetPassword(data);
+
+        return true;
+      } catch (err: any) {
+        const errorMessage =
+          err.response?.data?.message || "Failed to reset password";
+        setError(errorMessage);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  const changePassword = useCallback(
+    async (currentPassword: string, newPassword: string): Promise<boolean> => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        await authService.changePassword(currentPassword, newPassword);
+
+        return true;
+      } catch (err: any) {
+        const errorMessage =
+          err.response?.data?.message ||
+          err.response?.data?.errors ||
+          "Failed to change password";
+        setError(errorMessage);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  const verifyAccount = useCallback(
+    async (data: VerifyAccountRequest): Promise<boolean> => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        await authService.verifyAccount(data);
+
+        return true;
+      } catch (err: any) {
+        const errorMessage =
+          err.response?.data?.message || "Failed to verify account";
+        setError(errorMessage);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   const isAuthenticated = useCallback(() => {
     return authService.isAuthenticated();

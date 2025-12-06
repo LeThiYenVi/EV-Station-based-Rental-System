@@ -252,11 +252,11 @@ export function Header() {
               </div>
 
               {/* Footer */}
-              <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+              {/* <div className="mt-4 pt-4 border-t border-gray-100 text-center">
                 <p className="text-xs text-gray-500">
                   🚗 Đa dạng dịch vụ thuê xe cho mọi nhu cầu
                 </p>
-              </div>
+              </div> */}
             </DropdownMenuContent>
           </DropdownMenu>
 
