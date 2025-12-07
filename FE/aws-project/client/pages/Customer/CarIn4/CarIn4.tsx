@@ -45,7 +45,9 @@ import {
 import { useVehicle } from "@/hooks/useVehicle";
 import { useBooking } from "@/hooks/useBooking";
 import { useUser } from "@/hooks/useUser";
+import feedbackService from "@/service/feedback/feedbackService";
 import type { BookingWithPaymentResponse } from "@/service/types/booking.types";
+import type { FeedbackResponse } from "@/service/types/feedback.types";
 
 // Default images when API returns null photos
 const defaultImages = [
@@ -143,6 +145,18 @@ export default function CarIn4() {
     captcha: "",
   });
   const [captchaText] = useState("6d7mp");
+
+  // Feedback states
+  const [feedbacks, setFeedbacks] = useState<FeedbackResponse[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [feedbackForm, setFeedbackForm] = useState({
+    vehicleRating: 5,
+    stationRating: 5,
+    comment: "",
+  });
+  const [feedbackPage, setFeedbackPage] = useState(0);
+  const [feedbackTotalPages, setFeedbackTotalPages] = useState(0);
 
   // Tài khoản test - giống Login.tsx
   const TEST_ACCOUNTS = {
@@ -283,6 +297,69 @@ export default function CarIn4() {
       window.removeEventListener("loginStatusChanged", checkLoginStatus);
     };
   }, []);
+
+  // Load feedbacks when vehicle ID changes
+  useEffect(() => {
+    if (id) {
+      loadFeedbacks();
+    }
+  }, [id, feedbackPage]);
+
+  const loadFeedbacks = async () => {
+    if (!id) return;
+
+    try {
+      setFeedbackLoading(true);
+      const response = await feedbackService.getFeedbacksByVehicle(
+        id,
+        feedbackPage,
+        10,
+      );
+      setFeedbacks(response.content || []);
+      setFeedbackTotalPages(response.page?.totalPages || 0);
+    } catch (error) {
+      console.error("Failed to load feedbacks:", error);
+      showError("Không thể tải đánh giá");
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  const handleCreateFeedback = async () => {
+    if (!currentBookingId) {
+      showError("Vui lòng đặt xe trước khi đánh giá");
+      return;
+    }
+
+    if (!feedbackForm.comment.trim()) {
+      showError("Vui lòng nhập nhận xét");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      await feedbackService.createFeedback({
+        bookingId: currentBookingId,
+        vehicleRating: feedbackForm.vehicleRating,
+        stationRating: feedbackForm.stationRating,
+        comment: feedbackForm.comment,
+      });
+
+      showSuccess("Gửi đánh giá thành công!");
+      setShowFeedbackDialog(false);
+      setFeedbackForm({
+        vehicleRating: 5,
+        stationRating: 5,
+        comment: "",
+      });
+      loadFeedbacks(); // Reload feedbacks
+    } catch (error: any) {
+      console.error("Create feedback error:", error);
+      showError(error?.response?.data?.message || "Không thể gửi đánh giá");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // Mock data thanh toán - tính toán động
   const rentalCalc = calculateRentalDetails();
@@ -1117,6 +1194,126 @@ export default function CarIn4() {
                         <Marker position={center} />
                       </GoogleMap>
                     </LoadScript>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Feedback Section */}
+            <Card className="shadow-sm border">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">
+                    Đánh giá từ khách hàng
+                  </h3>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowFeedbackDialog(true)}
+                    disabled={!isLoggedIn || !currentBookingId}
+                  >
+                    Viết đánh giá
+                  </Button>
+                </div>
+
+                {feedbackLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">
+                      Đang tải đánh giá...
+                    </p>
+                  </div>
+                ) : feedbacks.length > 0 ? (
+                  <div className="space-y-4">
+                    {feedbacks.map((feedback) => (
+                      <div
+                        key={feedback.id}
+                        className="border-b pb-4 last:border-b-0"
+                      >
+                        <div className="flex items-start gap-3 mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-gray-900">
+                                {feedback.renterName}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {feedback.createdAt
+                                  ? new Date(
+                                      feedback.createdAt,
+                                    ).toLocaleDateString("vi-VN")
+                                  : ""}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 mb-2">
+                              <div className="flex items-center gap-1">
+                                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                <span className="text-sm font-semibold">
+                                  {feedback.vehicleRating}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  (Xe)
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                <span className="text-sm font-semibold">
+                                  {feedback.stationRating}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  (Trạm)
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-700">
+                              {feedback.comment}
+                            </p>
+                            {feedback.response && (
+                              <div className="mt-2 pl-4 border-l-2 border-green-200 bg-green-50 p-2 rounded">
+                                <p className="text-xs font-semibold text-green-700 mb-1">
+                                  Phản hồi từ {feedback.respondedByName}:
+                                </p>
+                                <p className="text-sm text-gray-700">
+                                  {feedback.response}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {feedbackTotalPages > 1 && (
+                      <div className="flex justify-center gap-2 pt-4">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setFeedbackPage((p) => Math.max(0, p - 1))
+                          }
+                          disabled={feedbackPage === 0}
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <span className="text-sm text-gray-600 flex items-center px-3">
+                          {feedbackPage + 1} / {feedbackTotalPages}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setFeedbackPage((p) =>
+                              Math.min(feedbackTotalPages - 1, p + 1),
+                            )
+                          }
+                          disabled={feedbackPage >= feedbackTotalPages - 1}
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>Chưa có đánh giá nào</p>
                   </div>
                 )}
               </CardContent>
@@ -2537,6 +2734,116 @@ export default function CarIn4() {
                 }}
               />
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Feedback Dialog */}
+        <Dialog open={showFeedbackDialog} onOpenChange={setShowFeedbackDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Đánh giá chuyến đi</DialogTitle>
+              <DialogDescription>
+                Chia sẻ trải nghiệm của bạn với chiếc xe này
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div>
+                <Label className="mb-2 block">Đánh giá xe</Label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <button
+                      key={rating}
+                      onClick={() =>
+                        setFeedbackForm((prev) => ({
+                          ...prev,
+                          vehicleRating: rating,
+                        }))
+                      }
+                      className="transition-transform hover:scale-110"
+                    >
+                      <Star
+                        className={`w-8 h-8 ${
+                          rating <= feedbackForm.vehicleRating
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm font-semibold">
+                    {feedbackForm.vehicleRating}/5
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <Label className="mb-2 block">Đánh giá trạm</Label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <button
+                      key={rating}
+                      onClick={() =>
+                        setFeedbackForm((prev) => ({
+                          ...prev,
+                          stationRating: rating,
+                        }))
+                      }
+                      className="transition-transform hover:scale-110"
+                    >
+                      <Star
+                        className={`w-8 h-8 ${
+                          rating <= feedbackForm.stationRating
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm font-semibold">
+                    {feedbackForm.stationRating}/5
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="feedback-comment" className="mb-2 block">
+                  Nhận xét
+                </Label>
+                <textarea
+                  id="feedback-comment"
+                  value={feedbackForm.comment}
+                  onChange={(e) =>
+                    setFeedbackForm((prev) => ({
+                      ...prev,
+                      comment: e.target.value,
+                    }))
+                  }
+                  placeholder="Chia sẻ cảm nhận của bạn về chuyến đi..."
+                  className="w-full min-h-[120px] px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  maxLength={500}
+                />
+                <div className="text-xs text-gray-500 text-right mt-1">
+                  {feedbackForm.comment.length}/500
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowFeedbackDialog(false)}
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={handleCreateFeedback}
+                disabled={isProcessing || !feedbackForm.comment.trim()}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isProcessing ? "Đang gửi..." : "Gửi đánh giá"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

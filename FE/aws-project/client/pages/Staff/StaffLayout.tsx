@@ -105,13 +105,13 @@ export default function StaffLayout() {
             {
               key: "2",
               icon: <CheckCircleOutlined />,
-              label: "Xác nhận đơn",
+              label: "Quản lý đơn thuê",
               onClick: () => navigate("/staff/confirmations"),
             },
             {
               key: "3",
               icon: <ShoppingOutlined />,
-              label: "Quản lý đơn thuê",
+              label: "Quản lý đánh giá",
               onClick: () => navigate("/staff/bookings"),
             },
             {
