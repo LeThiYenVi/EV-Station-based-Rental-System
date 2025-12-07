@@ -18,6 +18,7 @@ const BLOG_ENDPOINTS = {
   CREATE: "/blogs",
   UPDATE: "/blogs/:blogId",
   DELETE: "/blogs/:blogId",
+  UPLOAD_THUMBNAIL: "/blogs/:blogId/thumbnail",
 };
 
 class BlogService {
@@ -111,6 +112,26 @@ class BlogService {
   async deleteBlog(blogId: string): Promise<void> {
     const url = BLOG_ENDPOINTS.DELETE.replace(":blogId", blogId);
     await apiClient.delete(url);
+  }
+
+  /**
+   * Upload thumbnail for blog
+   * @param blogId - Blog UUID
+   * @param file - Image file to upload
+   * @returns Updated blog response with thumbnail URL
+   */
+  async uploadThumbnail(blogId: string, file: File): Promise<BlogResponse> {
+    const url = BLOG_ENDPOINTS.UPLOAD_THUMBNAIL.replace(":blogId", blogId);
+    
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await apiClient.post(url, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
   }
 }
 
