@@ -23,9 +23,23 @@ import {
   Printer,
   MessageSquare,
   Loader2,
+  Star,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { useBooking } from "@/hooks/useBooking";
+import feedbackService from "@/service/feedback/feedbackService";
 import type { BookingDetailResponse } from "@/service";
+import type { FeedbackResponse } from "@/service/types/feedback.types";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useMessage } from "@/components/ui/message";
 
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +47,24 @@ export default function OrderDetail() {
   const [order, setOrder] = useState<BookingDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const { getBookingByCode } = useBooking();
+  const { contextHolder, showSuccess, showError } = useMessage();
+
+  // Feedback states
+  const [feedbacks, setFeedbacks] = useState<FeedbackResponse[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletingFeedbackId, setDeletingFeedbackId] = useState<string | null>(
+    null,
+  );
+  const [editingFeedback, setEditingFeedback] =
+    useState<FeedbackResponse | null>(null);
+  const [feedbackForm, setFeedbackForm] = useState({
+    vehicleRating: 5,
+    stationRating: 5,
+    comment: "",
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const loadBookingDetail = async () => {
@@ -156,6 +188,125 @@ export default function OrderDetail() {
     loadBookingDetail();
   }, [id, getBookingByCode]);
 
+  // Load feedbacks when vehicle changes
+  useEffect(() => {
+    if (order?.vehicleId) {
+      loadFeedbacks();
+    }
+  }, [order?.vehicleId]);
+
+  const loadFeedbacks = async () => {
+    if (!order?.id) return;
+
+    try {
+      setFeedbackLoading(true);
+      // Use getMyFeedbacks to get current user's feedbacks
+      const response = await feedbackService.getMyFeedbacks(0, 10);
+      // Filter feedbacks for current booking
+      const myFeedback = response.content.find((f) => f.bookingId === order.id);
+      setFeedbacks(myFeedback ? [myFeedback] : []);
+    } catch (error) {
+      console.error("Failed to load feedbacks:", error);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  const handleOpenFeedbackDialog = (feedback?: FeedbackResponse) => {
+    if (feedback) {
+      setEditingFeedback(feedback);
+      setFeedbackForm({
+        vehicleRating: feedback.vehicleRating,
+        stationRating: feedback.stationRating,
+        comment: feedback.comment,
+      });
+    } else {
+      setEditingFeedback(null);
+      setFeedbackForm({
+        vehicleRating: 5,
+        stationRating: 5,
+        comment: "",
+      });
+    }
+    setShowFeedbackDialog(true);
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!order?.id) {
+      showError("Không tìm thấy thông tin đơn hàng");
+      return;
+    }
+
+    if (!feedbackForm.comment.trim()) {
+      showError("Vui lòng nhập nhận xét");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+
+      if (editingFeedback) {
+        // Update existing feedback
+        await feedbackService.updateFeedback(editingFeedback.id, {
+          vehicleRating: feedbackForm.vehicleRating,
+          stationRating: feedbackForm.stationRating,
+          comment: feedbackForm.comment,
+        });
+        showSuccess("Cập nhật đánh giá thành công!");
+      } else {
+        // Create new feedback
+        await feedbackService.createFeedback({
+          bookingId: order.id,
+          vehicleRating: feedbackForm.vehicleRating,
+          stationRating: feedbackForm.stationRating,
+          comment: feedbackForm.comment,
+        });
+        showSuccess("Gửi đánh giá thành công!");
+      }
+
+      setShowFeedbackDialog(false);
+      setEditingFeedback(null);
+      loadFeedbacks(); // Reload feedbacks
+    } catch (error: any) {
+      console.error("Submit feedback error:", error);
+      // Extract error message from response
+      const errorMessage =
+        error?.response?.data?.errors ||
+        error?.response?.data?.message ||
+        "Không thể gửi đánh giá";
+      showError(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteFeedback = (feedbackId: string) => {
+    setDeletingFeedbackId(feedbackId);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteFeedback = async () => {
+    if (!deletingFeedbackId) return;
+
+    try {
+      setIsProcessing(true);
+      await feedbackService.deleteFeedback(deletingFeedbackId);
+      showSuccess("Xóa đánh giá thành công!");
+      setShowDeleteDialog(false);
+      setDeletingFeedbackId(null);
+      loadFeedbacks(); // Reload feedbacks
+    } catch (error: any) {
+      console.error("Delete feedback error:", error);
+      const errorMessage =
+        error?.response?.data?.errors ||
+        error?.response?.data?.message ||
+        "Không thể xóa đánh giá";
+      showError(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // Helper functions
   const formatDateTime = (dateTimeStr: string) => {
     if (!dateTimeStr) return { date: "", time: "" };
@@ -275,7 +426,7 @@ export default function OrderDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8 mt-[50px]">
       <div className="mx-auto px-6 sm:px-12 md:px-24 lg:px-[150px]">
         {/* Back Button */}
         <button
@@ -310,6 +461,14 @@ export default function OrderDetail() {
               <Button variant="outline" className="text-gray-600">
                 <Download className="w-4 h-4 mr-2 text-gray-600" />
                 Tải xuống
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleOpenFeedbackDialog()}
+                className="text-blue-600 border-blue-300"
+              >
+                <Star className="w-4 h-4 mr-2 text-blue-600" />
+                Viết đánh giá
               </Button>
             </div>
           </div>
@@ -646,6 +805,101 @@ export default function OrderDetail() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Feedbacks Section */}
+            <Card className="shadow-sm mt-6">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Star className="w-5 h-5" />
+                  Đánh giá của bạn
+                </h3>
+                <Separator className="mb-4" />
+
+                {feedbackLoading ? (
+                  <div className="text-center py-8 text-gray-500">
+                    Đang tải đánh giá...
+                  </div>
+                ) : feedbacks.length > 0 ? (
+                  <div className="space-y-4">
+                    {feedbacks.map((feedback) => (
+                      <div
+                        key={feedback.id}
+                        className="border rounded-lg p-4 bg-gray-50"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-4 mb-2">
+                              <div className="flex items-center gap-1">
+                                <span className="text-sm font-medium text-gray-700">
+                                  Xe:
+                                </span>
+                                <div className="flex">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`w-4 h-4 ${
+                                        i < feedback.vehicleRating
+                                          ? "fill-yellow-400 text-yellow-400"
+                                          : "text-gray-300"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-sm font-medium text-gray-700">
+                                  Trạm:
+                                </span>
+                                <div className="flex">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`w-4 h-4 ${
+                                        i < feedback.stationRating
+                                          ? "fill-yellow-400 text-yellow-400"
+                                          : "text-gray-300"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-gray-700">{feedback.comment}</p>
+                            {feedback.isEdit && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                (Đã chỉnh sửa)
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleOpenFeedbackDialog(feedback)}
+                              disabled={isProcessing}
+                            >
+                              <Edit className="w-4 h-4 text-blue-600" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteFeedback(feedback.id)}
+                              disabled={isProcessing}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    Chưa có đánh giá. Hãy viết đánh giá của bạn!
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Right Column - Payment Summary */}
@@ -919,6 +1173,151 @@ export default function OrderDetail() {
           </div>
         </div>
       </div>
+
+      {/* Feedback Dialog */}
+      <Dialog open={showFeedbackDialog} onOpenChange={setShowFeedbackDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingFeedback ? "Chỉnh sửa đánh giá" : "Viết đánh giá"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {/* Vehicle Rating */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Đánh giá xe ({feedbackForm.vehicleRating}/5)
+              </Label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <button
+                    key={rating}
+                    type="button"
+                    onClick={() =>
+                      setFeedbackForm((prev) => ({
+                        ...prev,
+                        vehicleRating: rating,
+                      }))
+                    }
+                    className="hover:scale-110 transition-transform"
+                  >
+                    <Star
+                      className={`w-8 h-8 ${
+                        rating <= feedbackForm.vehicleRating
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Station Rating */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Đánh giá trạm ({feedbackForm.stationRating}/5)
+              </Label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <button
+                    key={rating}
+                    type="button"
+                    onClick={() =>
+                      setFeedbackForm((prev) => ({
+                        ...prev,
+                        stationRating: rating,
+                      }))
+                    }
+                    className="hover:scale-110 transition-transform"
+                  >
+                    <Star
+                      className={`w-8 h-8 ${
+                        rating <= feedbackForm.stationRating
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Comment */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Nhận xét</Label>
+              <textarea
+                className="w-full min-h-[120px] p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Chia sẻ trải nghiệm của bạn..."
+                value={feedbackForm.comment}
+                onChange={(e) =>
+                  setFeedbackForm((prev) => ({
+                    ...prev,
+                    comment: e.target.value,
+                  }))
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowFeedbackDialog(false)}
+              disabled={isProcessing}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleSubmitFeedback}
+              disabled={isProcessing}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isProcessing
+                ? "Đang xử lý..."
+                : editingFeedback
+                  ? "Cập nhật"
+                  : "Gửi đánh giá"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="w-5 h-5" />
+              Xác nhận xóa đánh giá
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-700">
+              Bạn có chắc chắn muốn xóa đánh giá này không? Hành động này không
+              thể hoàn tác.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeletingFeedbackId(null);
+              }}
+              disabled={isProcessing}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={confirmDeleteFeedback}
+              disabled={isProcessing}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isProcessing ? "Đang xóa..." : "Xóa đánh giá"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
