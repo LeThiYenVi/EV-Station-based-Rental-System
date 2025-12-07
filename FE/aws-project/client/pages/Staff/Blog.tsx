@@ -12,13 +12,16 @@ import {
   Tag,
   Avatar,
   Tooltip,
+  Upload,
 } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
+import type { UploadFile } from "antd/es/upload/interface";
 import type { ColumnsType } from "antd/es/table";
 import blogService from "@/service/blog/blogService";
 import type { BlogResponse } from "@/service/types/blog.types";
@@ -33,6 +36,8 @@ export default function Blog() {
   const [editingBlog, setEditingBlog] = useState<BlogResponse | null>(null);
   const [viewingBlog, setViewingBlog] = useState<BlogResponse | null>(null);
   const [form] = Form.useForm();
+  const [thumbnailFile, setThumbnailFile] = useState<UploadFile | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
 
   // Pagination state
   const [pageNumber, setPageNumber] = useState(0);
@@ -70,6 +75,8 @@ export default function Blog() {
   const handleCreate = () => {
     setEditingBlog(null);
     form.resetFields();
+    setThumbnailFile(null);
+    setThumbnailPreview("");
     setModalVisible(true);
   };
 
@@ -78,9 +85,10 @@ export default function Blog() {
     form.setFieldsValue({
       title: blog.title,
       content: blog.content,
-      thumbnailUrl: blog.thumbnailUrl,
       published: blog.published,
     });
+    setThumbnailPreview(blog.thumbnailUrl || "");
+    setThumbnailFile(null);
     setModalVisible(true);
   };
 
@@ -104,28 +112,50 @@ export default function Blog() {
     try {
       const values = await form.validateFields();
 
-      // Ensure published is boolean (default false if not set)
+      // Prepare payload without thumbnail first
       const payload = {
         title: values.title,
         content: values.content,
-        thumbnailUrl: values.thumbnailUrl || "",
+        thumbnailUrl: "", // Empty initially, will be updated after upload
         published: values.published ?? false,
       };
 
-      console.log("📝 Creating blog with payload:", payload);
+      console.log("📝 Creating/Updating blog with payload:", payload);
+
+      let blogResult: BlogResponse;
 
       if (editingBlog) {
         // Update existing blog
-        await blogService.updateBlog(editingBlog.id, payload);
+        blogResult = await blogService.updateBlog(editingBlog.id, payload);
         message.success("Cập nhật blog thành công");
       } else {
         // Create new blog
-        await blogService.createBlog(payload);
+        blogResult = await blogService.createBlog(payload);
         message.success("Tạo blog thành công");
+      }
+
+      // Upload thumbnail if a new file was selected
+      if (thumbnailFile && thumbnailFile.originFileObj) {
+        try {
+          console.log("📸 Uploading thumbnail for blog:", blogResult.id);
+          await blogService.uploadThumbnail(
+            blogResult.id,
+            thumbnailFile.originFileObj,
+          );
+          message.success("Tải lên hình ảnh thành công");
+        } catch (uploadError: any) {
+          console.error("Upload thumbnail error:", uploadError);
+          message.warning(
+            "Blog đã tạo nhưng tải ảnh lên thất bại: " +
+              (uploadError?.response?.data?.message || uploadError?.message),
+          );
+        }
       }
 
       setModalVisible(false);
       form.resetFields();
+      setThumbnailFile(null);
+      setThumbnailPreview("");
       loadBlogs();
     } catch (error: any) {
       console.error("Submit blog error:", error);
@@ -135,6 +165,34 @@ export default function Blog() {
         "Có lỗi xảy ra";
       message.error(errorMsg);
     }
+  };
+
+  // Handle thumbnail upload
+  const handleThumbnailChange = (info: any) => {
+    const file = info.file;
+    if (file.status !== "uploading") {
+      setThumbnailFile(file);
+      // Generate preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setThumbnailPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file.originFileObj);
+    }
+  };
+
+  const beforeUpload = (file: File) => {
+    const isImage = file.type.startsWith("image/");
+    if (!isImage) {
+      message.error("Chỉ được tải lên file ảnh!");
+      return false;
+    }
+    const isLt5M = file.size / 1024 / 1024 < 5;
+    if (!isLt5M) {
+      message.error("Ảnh phải nhỏ hơn 5MB!");
+      return false;
+    }
+    return false; // Prevent auto upload, we'll handle manually
   };
 
   const columns: ColumnsType<BlogResponse> = [
@@ -317,8 +375,38 @@ export default function Blog() {
             />
           </Form.Item>
 
-          <Form.Item name="thumbnailUrl" label="URL Hình ảnh (Tùy chọn)">
-            <Input placeholder="https://example.com/image.jpg" />
+          <Form.Item label="Hình ảnh thu nhỏ">
+            <Upload
+              listType="picture-card"
+              maxCount={1}
+              beforeUpload={beforeUpload}
+              onChange={handleThumbnailChange}
+              onRemove={() => {
+                setThumbnailFile(null);
+                setThumbnailPreview("");
+              }}
+              fileList={thumbnailFile ? [thumbnailFile] : []}
+            >
+              {!thumbnailFile && (
+                <div>
+                  <UploadOutlined />
+                  <div style={{ marginTop: 8 }}>Chọn ảnh</div>
+                </div>
+              )}
+            </Upload>
+            {thumbnailPreview && (
+              <div className="mt-2">
+                <img
+                  src={thumbnailPreview}
+                  alt="Preview"
+                  style={{ maxWidth: "200px", maxHeight: "200px" }}
+                  className="rounded border"
+                />
+              </div>
+            )}
+            <div className="text-gray-500 text-sm mt-2">
+              Tải lên ảnh từ thiết bị (tối đa 5MB, định dạng: JPG, PNG, GIF)
+            </div>
           </Form.Item>
 
           <Form.Item

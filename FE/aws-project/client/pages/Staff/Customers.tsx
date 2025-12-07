@@ -27,6 +27,7 @@ import {
   SafetyCertificateOutlined,
   CloseCircleOutlined,
 } from "@ant-design/icons";
+import staffService from "@/service/staff/staffService";
 
 type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE" | "BLACKLIST";
 
@@ -40,6 +41,20 @@ export default function Customers() {
   const [note, setNote] = useState("");
   const [rating, setRating] = useState<number>(0);
   const [verifying, setVerifying] = useState(false);
+
+  // Get logged-in staff ID from localStorage
+  const getStaffId = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.id || user.userId;
+      }
+    } catch (e) {
+      console.error("Failed to get staff ID:", e);
+    }
+    return null;
+  };
 
   useEffect(() => {
     const fetch = async () => {
@@ -60,33 +75,34 @@ export default function Customers() {
   const verifyLicense = async (u: UserResponse, approved: boolean) => {
     try {
       setVerifying(true);
-      if (approved) {
-        // Call API to verify license
-        const result = await userService.verifyUserLicense(u.id!);
-        message.success("Đã duyệt GPLX thành công");
-        // Update local state with result from API
-        setUsers((prev) =>
-          prev.map((p) =>
-            p.id === u.id
-              ? {
-                  ...p,
-                  isLicenseVerified: result.isLicenseVerified ?? true,
-                  verifiedAt: result.verifiedAt,
-                }
-              : p,
-          ),
+      const staffId = getStaffId();
+      if (!staffId) {
+        message.error(
+          "Không tìm thấy thông tin staff. Vui lòng đăng nhập lại.",
         );
-      } else {
-        // For reject, just update local state (API may not support reject)
-        message.success("Đã từ chối GPLX");
-        setUsers((prev) =>
-          prev.map((p) =>
-            p.id === u.id
-              ? { ...p, isLicenseVerified: false, verifiedAt: undefined }
-              : p,
-          ),
-        );
+        return;
       }
+      // Call API with staffId and approved params
+      const result = await staffService.verifyUserLicense(
+        u.id!,
+        staffId,
+        approved,
+      );
+      message.success(
+        approved ? "Đã duyệt GPLX thành công" : "Đã từ chối GPLX",
+      );
+      // Update local state with result from API
+      setUsers((prev) =>
+        prev.map((p) =>
+          p.id === u.id
+            ? {
+                ...p,
+                isLicenseVerified: result.isLicenseVerified ?? approved,
+                verifiedAt: result.verifiedAt,
+              }
+            : p,
+        ),
+      );
     } catch (e: any) {
       message.error(e?.message || "Xử lý GPLX thất bại");
     } finally {
