@@ -1,7 +1,37 @@
 import { useEffect, useState } from "react";
+import apiClient from "@/service/api/apiClient";
+import { API_ENDPOINTS } from "@/service/config/apiConfig";
+
+interface NearbyStationResponse {
+  id: string;
+  name: string;
+  address: string;
+  rating: number;
+  latitude: number;
+  longitude: number;
+  hotline: string;
+  status: string;
+  photo: string;
+  distanceKm: number;
+  startTime: string;
+  endTime: string;
+  availableVehiclesCount: number;
+}
+
+interface NearbyStationsPageResponse {
+  stations: NearbyStationResponse[];
+  userLocation: {
+    latitude: number;
+    longitude: number;
+  };
+  metadata: {
+    totalFound: number;
+    searchRadius: number;
+  };
+}
 
 export default function NearlyStations() {
-  const [stations, setStations] = useState<any[]>([]);
+  const [stations, setStations] = useState<NearbyStationResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(
@@ -23,18 +53,28 @@ export default function NearlyStations() {
         setCoords({ lat: latitude, lon: longitude });
 
         try {
-          const response = await fetch("/api/stations/nearby", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ latitude, longitude, radius: 10000 }),
-          });
+          const response = await apiClient.get<NearbyStationsPageResponse>(
+            API_ENDPOINTS.LOCATIONS.NEARBY_STATIONS,
+            {
+              params: {
+                latitude,
+                longitude,
+                radiusKm: 10,
+                limit: 20,
+              },
+            }
+          );
 
-          if (!response.ok) throw new Error("Không thể lấy danh sách trạm.");
-          const data = await response.json();
-          setStations(data);
-          setError(null);
+          if (response.data?.stations) {
+            setStations(response.data.stations);
+            setError(null);
+          } else {
+            setStations([]);
+          }
         } catch (err: any) {
-          setError(err.message || "Lỗi khi lấy dữ liệu trạm.");
+          const errorMsg = err.response?.data?.message || "Lỗi khi lấy dữ liệu trạm.";
+          setError(errorMsg);
+          console.error("Error fetching nearby stations:", err);
         } finally {
           setLoading(false);
         }
@@ -91,8 +131,7 @@ export default function NearlyStations() {
 
         {coords && !loading && !error && (
           <p className="text-gray-600 text-sm mt-4">
-            console.log({coords.lat.toFixed(6)}, {coords.lon.toFixed(6)}) 📍 Vị
-            trí hiện tại: ({coords.lat.toFixed(6)}, {coords.lon.toFixed(6)})
+            📍 Vị trí hiện tại: ({coords.lat.toFixed(6)}, {coords.lon.toFixed(6)})
           </p>
         )}
       </section>
