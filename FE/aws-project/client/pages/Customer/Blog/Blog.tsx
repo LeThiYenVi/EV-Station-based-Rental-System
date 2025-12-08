@@ -6,12 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AvatarDemo from "@/components/ui/AvatarDemo";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Calendar,
   Clock,
   User,
   Search,
   ArrowRight,
   Loader2,
+  Filter,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useBlog } from "@/hooks/useBlog";
@@ -39,6 +47,8 @@ const estimateReadTime = (content: string): string => {
 export default function Blog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
+  const [selectedAuthor, setSelectedAuthor] = useState("all");
+  const [sortBy, setSortBy] = useState("createdAt");
   const { loading, error, blogs, pagination, getAllBlogs } = useBlog();
 
   // Fetch blogs on component mount and when page changes
@@ -53,11 +63,40 @@ export default function Blog() {
 
   // Filter blogs based on search query (client-side filtering)
   const filteredBlogs = blogs.filter((blog) => {
+    // Chỉ hiển thị blog đã xuất bản
+    if (!blog.published) return false;
+
     const matchesSearch =
       blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       blog.content.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+
+    const matchesAuthor =
+      selectedAuthor === "all" || blog.authorName === selectedAuthor;
+
+    return matchesSearch && matchesAuthor;
   });
+
+  // Sort filtered blogs
+  const sortedBlogs = [...filteredBlogs].sort((a, b) => {
+    if (sortBy === "viewCount") {
+      return b.viewCount - a.viewCount;
+    } else if (sortBy === "createdAt") {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    } else if (sortBy === "title") {
+      return a.title.localeCompare(b.title);
+    }
+    return 0;
+  });
+
+  // Get unique authors for filter
+  const uniqueAuthors = Array.from(
+    new Set(blogs.map((blog) => blog.authorName)),
+  );
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchQuery, selectedAuthor, sortBy]);
 
   return (
     <div className="min-h-screen bg-gray-50 mt-[50px]">
@@ -96,6 +135,91 @@ export default function Blog() {
       </div>
 
       <div className="container mx-auto px-6 py-12">
+        {/* Filter Section */}
+        <Card className="mb-8">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-5 h-5 text-gray-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Bộ lọc</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Author Filter */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Tác giả
+                </label>
+                <Select
+                  value={selectedAuthor}
+                  onValueChange={setSelectedAuthor}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn tác giả" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả tác giả</SelectItem>
+                    {uniqueAuthors.map((author) => (
+                      <SelectItem key={author} value={author}>
+                        {author}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sort By */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Sắp xếp theo
+                </label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sắp xếp" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="createdAt">Mới nhất</SelectItem>
+                    <SelectItem value="viewCount">Xem nhiều nhất</SelectItem>
+                    <SelectItem value="title">Theo tên (A-Z)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Active Filters Display */}
+            {(selectedAuthor !== "all" || sortBy !== "createdAt") && (
+              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
+                <span className="text-sm text-gray-600">Đang lọc:</span>
+                {selectedAuthor !== "all" && (
+                  <Badge
+                    variant="secondary"
+                    className="cursor-pointer"
+                    onClick={() => setSelectedAuthor("all")}
+                  >
+                    Tác giả: {selectedAuthor} ×
+                  </Badge>
+                )}
+                {sortBy !== "createdAt" && (
+                  <Badge variant="secondary">
+                    {sortBy === "viewCount"
+                      ? "Xem nhiều nhất"
+                      : "Theo tên (A-Z)"}
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedAuthor("all");
+                    setSortBy("createdAt");
+                  }}
+                  className="text-xs h-6 text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  Xóa tất cả bộ lọc
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Loading State */}
         {loading && (
           <div className="flex justify-center items-center py-12">
@@ -125,9 +249,9 @@ export default function Blog() {
         )}
 
         {/* Blog Grid */}
-        {!loading && !error && filteredBlogs.length > 0 ? (
+        {!loading && !error && sortedBlogs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredBlogs.map((blog) => (
+            {sortedBlogs.map((blog) => (
               <Card
                 key={blog.id}
                 className="overflow-hidden hover:shadow-xl transition-shadow duration-300 group"
@@ -144,11 +268,6 @@ export default function Blog() {
                           "/mocks/city/hanoi.webp";
                       }}
                     />
-                    {!blog.published && (
-                      <Badge className="absolute top-4 left-4 bg-yellow-500 hover:bg-yellow-600">
-                        Nháp
-                      </Badge>
-                    )}
                   </div>
 
                   <CardHeader>

@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  Link,
+  useSearchParams,
+} from "react-router-dom";
 import {
   MapPin,
   Car,
@@ -34,6 +39,7 @@ import { useVehicle } from "@/hooks/useVehicle";
 
 export default function PlaceSefDrive() {
   const { location } = useParams<{ location: string }>(); // location is now station ID
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [priceRange, setPriceRange] = useState("all");
@@ -49,26 +55,29 @@ export default function PlaceSefDrive() {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<any[]>([]);
 
+  // Get stationId from either params or query string
+  const stationId = location || searchParams.get("station");
+
   // Load station info từ API
   useEffect(() => {
     const loadStationInfo = async () => {
-      if (!location) return;
+      if (!stationId) return;
 
-      const result = await getStationById(location);
+      const result = await getStationById(stationId);
       if (result.success && result.data) {
         setStationInfo(result.data);
       }
     };
 
     loadStationInfo();
-  }, [location]);
+  }, [stationId]);
 
   // Load vehicles theo station ID từ API
   useEffect(() => {
     const loadVehicles = async () => {
-      if (!location) return;
+      if (!stationId) return;
 
-      const result = await getVehiclesByStation(location);
+      const result = await getVehiclesByStation(stationId);
       if (result.success && result.data) {
         setVehicles(result.data);
         setFilteredVehicles(result.data);
@@ -76,7 +85,7 @@ export default function PlaceSefDrive() {
     };
 
     loadVehicles();
-  }, [location]);
+  }, [stationId]);
 
   // Filter vehicles
   useEffect(() => {

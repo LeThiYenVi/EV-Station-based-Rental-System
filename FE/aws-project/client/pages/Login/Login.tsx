@@ -644,12 +644,12 @@ export default function Login() {
                           Đăng ký ngay
                         </button>
                       </p>
-                      <p className="text-xs text-gray-500">
+                      {/* <p className="text-xs text-gray-500">
                         Tài khoản test:{" "}
                         <span className="font-semibold">admin/admin123</span>,{" "}
                         <span className="font-semibold">staff/staff123</span>{" "}
                         hoặc <span className="font-semibold">user/user123</span>
-                      </p>
+                      </p> */}
                     </div>
                   </form>
                 </TabsContent>

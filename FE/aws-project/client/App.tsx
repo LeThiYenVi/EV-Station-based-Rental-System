@@ -17,6 +17,7 @@ import SelfDrive from "./pages/Customer/SelfDrive/SelfDrive";
 import PlaceSefDrive from "./pages/Customer/SelfDrive/PlaceSefDrive";
 import UserProfile from "./pages/Customer/User/in4";
 import Login from "./pages/Login/Login";
+import ForgotPassword from "./pages/Login/ForgotPassword";
 import AdminLayout from "./pages/Admin/AdminLayout";
 import StaffLayout from "./pages/Staff/StaffLayout";
 import Unauthorized from "./pages/Unauthorized";
@@ -125,6 +126,7 @@ const App = () => (
             }
           />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/admin/*" element={<AdminLayout />} />
           <Route path="/staff/*" element={<StaffLayout />} />
           <Route path="/401" element={<Unauthorized />} />
