@@ -14,6 +14,7 @@ import {
   InputNumber,
   Row,
   Col,
+  Tabs,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -31,6 +32,7 @@ import type {
   UpdateStationRequest,
 } from "@/service/types/report-staff-station.types";
 import dayjs from "dayjs";
+import StationMap from "@/components/station_map";
 
 // Interface cho form với địa chỉ tách
 interface StationFormValues {
@@ -148,6 +150,13 @@ export default function Stations() {
       endTime: parseTime(record.endTime),
     });
     setModalOpen(true);
+  };
+
+  const handleLocationSelect = (lat: number, lng: number) => {
+    form.setFieldsValue({
+      latitude: lat,
+      longitude: lng,
+    });
   };
 
   const onSubmit = async () => {
@@ -368,112 +377,159 @@ export default function Stations() {
         okText={editing ? "Lưu" : "Tạo"}
         cancelText="Hủy"
         confirmLoading={loading}
-        width={600}
+        width={800}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="name"
-            label="Tên trạm"
-            rules={[{ required: true, message: "Vui lòng nhập tên trạm" }]}
-          >
-            <Input placeholder="VD: Trạm Quận 1" />
-          </Form.Item>
+        <Tabs
+          defaultActiveKey="1"
+          items={[
+            {
+              key: "1",
+              label: "Thông tin cơ bản",
+              children: (
+                <Form form={form} layout="vertical">
+                  <Form.Item
+                    name="name"
+                    label="Tên trạm"
+                    rules={[
+                      { required: true, message: "Vui lòng nhập tên trạm" },
+                    ]}
+                  >
+                    <Input placeholder="VD: Trạm Quận 1" />
+                  </Form.Item>
 
-          {/* Địa chỉ tách thành 2 ô */}
-          <Row gutter={16}>
-            <Col span={14}>
-              <Form.Item
-                name="ward"
-                label="Địa chỉ chi tiết (Số nhà, đường, phường/xã)"
-                rules={[
-                  { required: true, message: "Vui lòng nhập địa chỉ chi tiết" },
-                ]}
-              >
-                <Input placeholder="VD: 123 Nguyễn Huệ, Phường Bến Nghé" />
-              </Form.Item>
-            </Col>
-            <Col span={10}>
-              <Form.Item
-                name="city"
-                label="Tỉnh/Thành phố"
-                rules={[
-                  { required: true, message: "Vui lòng nhập tỉnh/thành phố" },
-                ]}
-              >
-                <Input placeholder="VD: TP. Hồ Chí Minh" />
-              </Form.Item>
-            </Col>
-          </Row>
+                  {/* Địa chỉ tách thành 2 ô */}
+                  <Row gutter={16}>
+                    <Col span={14}>
+                      <Form.Item
+                        name="ward"
+                        label="Địa chỉ chi tiết (Số nhà, đường, phường/xã)"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Vui lòng nhập địa chỉ chi tiết",
+                          },
+                        ]}
+                      >
+                        <Input placeholder="VD: 123 Nguyễn Huệ, Phường Bến Nghé" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={10}>
+                      <Form.Item
+                        name="city"
+                        label="Tỉnh/Thành phố"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Vui lòng nhập tỉnh/thành phố",
+                          },
+                        ]}
+                      >
+                        <Input placeholder="VD: TP. Hồ Chí Minh" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
 
-          {/* Tọa độ */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="latitude"
-                label="Vĩ độ (Latitude)"
-                rules={[{ required: true, message: "Vui lòng nhập vĩ độ" }]}
-              >
-                <InputNumber
-                  style={{ width: "100%" }}
-                  placeholder="VD: 10.7769"
-                  step={0.0001}
-                  precision={6}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="longitude"
-                label="Kinh độ (Longitude)"
-                rules={[{ required: true, message: "Vui lòng nhập kinh độ" }]}
-              >
-                <InputNumber
-                  style={{ width: "100%" }}
-                  placeholder="VD: 106.7009"
-                  step={0.0001}
-                  precision={6}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+                  {/* Hotline */}
+                  <Form.Item name="hotline" label="Hotline">
+                    <Input
+                      placeholder="VD: 0901234567"
+                      prefix={<PhoneOutlined />}
+                    />
+                  </Form.Item>
 
-          {/* Hotline */}
-          <Form.Item name="hotline" label="Hotline">
-            <Input placeholder="VD: 0901234567" prefix={<PhoneOutlined />} />
-          </Form.Item>
+                  {/* Ảnh đại diện */}
+                  <Form.Item name="photo" label="Ảnh đại diện (URL)">
+                    <Input
+                      placeholder="VD: https://example.com/station.jpg"
+                      prefix={<PictureOutlined />}
+                    />
+                  </Form.Item>
 
-          {/* Ảnh đại diện */}
-          <Form.Item name="photo" label="Ảnh đại diện (URL)">
-            <Input
-              placeholder="VD: https://example.com/station.jpg"
-              prefix={<PictureOutlined />}
-            />
-          </Form.Item>
-
-          {/* Giờ hoạt động */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="startTime" label="Giờ mở cửa">
-                <TimePicker
-                  style={{ width: "100%" }}
-                  format="HH:mm"
-                  placeholder="Chọn giờ mở cửa"
-                  minuteStep={15}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="endTime" label="Giờ đóng cửa">
-                <TimePicker
-                  style={{ width: "100%" }}
-                  format="HH:mm"
-                  placeholder="Chọn giờ đóng cửa"
-                  minuteStep={15}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
+                  {/* Giờ hoạt động */}
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item name="startTime" label="Giờ mở cửa">
+                        <TimePicker
+                          style={{ width: "100%" }}
+                          format="HH:mm"
+                          placeholder="Chọn giờ mở cửa"
+                          minuteStep={15}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item name="endTime" label="Giờ đóng cửa">
+                        <TimePicker
+                          style={{ width: "100%" }}
+                          format="HH:mm"
+                          placeholder="Chọn giờ đóng cửa"
+                          minuteStep={15}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </Form>
+              ),
+            },
+            {
+              key: "2",
+              label: (
+                <span>
+                  <EnvironmentOutlined /> Chọn vị trí trên bản đồ
+                </span>
+              ),
+              children: (
+                <div className="space-y-4">
+                  <div className="text-sm text-gray-600">
+                    Click vào bản đồ để chọn vị trí trạm. Tọa độ sẽ được điền
+                    tự động.
+                  </div>
+                  <StationMap onLocationSelect={handleLocationSelect} />
+                  <Form form={form} layout="vertical">
+                    {/* Tọa độ */}
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          name="latitude"
+                          label="Vĩ độ (Latitude)"
+                          rules={[
+                            { required: true, message: "Vui lòng nhập vĩ độ" },
+                          ]}
+                        >
+                          <InputNumber
+                            style={{ width: "100%" }}
+                            placeholder="VD: 10.7769"
+                            step={0.0001}
+                            precision={6}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          name="longitude"
+                          label="Kinh độ (Longitude)"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Vui lòng nhập kinh độ",
+                            },
+                          ]}
+                        >
+                          <InputNumber
+                            style={{ width: "100%" }}
+                            placeholder="VD: 106.7009"
+                            step={0.0001}
+                            precision={6}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </Form>
+                </div>
+              ),
+            },
+          ]}
+        />
       </Modal>
     </div>
   );

@@ -48,8 +48,12 @@ public class StationService {
         log.info("Creating station with name: {}", request.getName());
 
         Point location = geometryFactory.createPoint(
-                new Coordinate(request.getLongitude().doubleValue(), request.getLatitude().doubleValue())
+                new Coordinate(
+                        request.getLongitude().doubleValue(), // X = lon
+                        request.getLatitude().doubleValue()   // Y = lat
+                )
         );
+        location.setSRID(4326); // Ensure SRID for location calculation
 
         Station station = Station.builder()
                 .name(request.getName())
