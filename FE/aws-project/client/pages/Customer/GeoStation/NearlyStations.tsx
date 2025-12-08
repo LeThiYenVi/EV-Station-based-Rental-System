@@ -1,6 +1,28 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import apiClient from "@/service/api/apiClient";
 import { API_ENDPOINTS } from "@/service/config/apiConfig";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  MapPin,
+  Phone,
+  Clock,
+  Star,
+  Car,
+  Navigation,
+  Calendar,
+  MapPinned,
+  Search,
+} from "lucide-react";
 
 interface NearbyStationResponse {
   id: string;
@@ -30,13 +52,37 @@ interface NearbyStationsPageResponse {
   };
 }
 
+interface StationDetailResponse {
+  id: string;
+  name: string;
+  address: string;
+  rating: number;
+  latitude: number;
+  longitude: number;
+  hotline: string;
+  status: string;
+  photo: string;
+  startTime: string;
+  endTime: string;
+  totalVehicles: number;
+  availableVehicles: number;
+  vehicles: any[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function NearlyStations() {
+  const navigate = useNavigate();
   const [stations, setStations] = useState<NearbyStationResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(
     null,
   );
+  const [selectedStation, setSelectedStation] =
+    useState<StationDetailResponse | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     // Gọi tự động khi component mount
@@ -62,7 +108,7 @@ export default function NearlyStations() {
                 radiusKm: 10,
                 limit: 20,
               },
-            }
+            },
           );
 
           if (response.data?.stations) {
@@ -72,7 +118,8 @@ export default function NearlyStations() {
             setStations([]);
           }
         } catch (err: any) {
-          const errorMsg = err.response?.data?.message || "Lỗi khi lấy dữ liệu trạm.";
+          const errorMsg =
+            err.response?.data?.message || "Lỗi khi lấy dữ liệu trạm.";
           setError(errorMsg);
           console.error("Error fetching nearby stations:", err);
         } finally {
@@ -85,6 +132,32 @@ export default function NearlyStations() {
       },
     );
   }, []);
+
+  const fetchStationDetail = async (stationId: string) => {
+    try {
+      setDetailLoading(true);
+      const response = await apiClient.get<StationDetailResponse>(
+        `/stations/${stationId}`,
+      );
+
+      if (response.data) {
+        setSelectedStation(response.data);
+        setShowDetailDialog(true);
+      }
+    } catch (err: any) {
+      console.error("Error fetching station detail:", err);
+      alert("Không thể tải thông tin chi tiết trạm");
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleFindVehicles = (stationId: string) => {
+    // Đóng modal trước
+    setShowDetailDialog(false);
+    // Chuyển đến trang PlaceSefDrive với stationId
+    navigate(`/place/${stationId}`);
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -128,23 +201,22 @@ export default function NearlyStations() {
             )}
           </div>
         )}
-
       </section>
 
       {/* Danh sách trạm gần */}
-      {
-        <section className="py-10 bg-white">
-          <div className="max-w-5xl mx-auto px-5">
-            <h3 className="text-2xl font-bold mb-8 text-center text-black">
-              Các trạm gần vị trí của bạn
-            </h3>
+      <section className="py-10 bg-gray-50">
+        <div className="max-w-5xl mx-auto px-5">
+          <h3 className="text-2xl font-bold mb-8 text-center text-gray-900">
+            Các trạm gần vị trí của bạn
+          </h3>
 
-            <div className="flex flex-col space-y-5">
-              {stations.map((station) => (
-                <div
-                  key={station.id}
-                  className="flex flex-col md:flex-row bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-all duration-300"
-                >
+          <div className="grid gap-6">
+            {stations.map((station) => (
+              <Card
+                key={station.id}
+                className="overflow-hidden hover:shadow-lg transition-shadow duration-300"
+              >
+                <div className="flex flex-col md:flex-row">
                   {/* Ảnh đại diện */}
                   <div className="relative md:w-1/3">
                     <img
@@ -152,85 +224,323 @@ export default function NearlyStations() {
                       alt={station.name}
                       className="w-full h-48 md:h-full object-cover"
                     />
-                    <div className="absolute top-2 right-2 bg-white/80 text-xs px-2 py-1 rounded-md font-semibold text-gray-800 shadow-sm">
-                      ⭐ {station.rating?.toFixed(1) || "N/A"}
-                    </div>
+                    <Badge
+                      className="absolute top-3 right-3 bg-white/90 text-gray-800 hover:bg-white/90"
+                      variant="secondary"
+                    >
+                      <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
+                      {station.rating?.toFixed(1) || "N/A"}
+                    </Badge>
                   </div>
 
                   {/* Thông tin chi tiết */}
-                  <div className="flex-1 p-5 flex flex-col justify-between">
-                    <div>
+                  <CardContent className="flex-1 p-6">
+                    <div className="space-y-4">
                       <div className="flex items-start justify-between">
-                        <h3 className="text-lg font-bold text-gray-900">
+                        <h3 className="text-xl font-bold text-gray-900">
                           {station.name}
                         </h3>
-                        <span
-                          className={`text-xs font-medium px-2 py-1 rounded-md ${
+                        <Badge
+                          variant={
                             station.status === "ACTIVE"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
+                              ? "default"
+                              : "destructive"
+                          }
+                          className={
+                            station.status === "ACTIVE" ? "bg-green-500" : ""
+                          }
                         >
                           {station.status === "ACTIVE"
                             ? "Hoạt động"
                             : "Đóng cửa"}
-                        </span>
+                        </Badge>
                       </div>
 
-                      <p className="text-sm text-gray-600 mt-1 flex items-center">
-                        📍 <span className="ml-1">{station.address}</span>
-                      </p>
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-2 text-sm text-gray-600">
+                          <MapPin className="w-4 h-4 mt-0.5 text-green-600 flex-shrink-0" />
+                          <span>{station.address}</span>
+                        </div>
 
-                      <p className="text-sm text-gray-600">
-                        ☎️{" "}
-                        <span className="font-medium">{station.hotline}</span>
-                      </p>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Phone className="w-4 h-4 text-blue-600" />
+                          <span className="font-medium">{station.hotline}</span>
+                        </div>
 
-                      <div className="flex items-center justify-between text-sm mt-3">
-                        <span className="text-gray-600">
-                          🚘 <strong>{station.availableVehiclesCount}</strong>{" "}
-                          xe khả dụng
-                        </span>
-                        <span className="text-blue-600 font-semibold">
-                          📏 {station.distanceKm?.toFixed(1)} km
-                        </span>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Clock className="w-4 h-4 text-orange-600" />
+                          <span>
+                            {new Date(station.startTime).toLocaleTimeString(
+                              "vi-VN",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
+                            {" - "}
+                            {new Date(station.endTime).toLocaleTimeString(
+                              "vi-VN",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Car className="w-4 h-4 text-purple-600" />
+                          <span className="font-semibold text-gray-900">
+                            {station.availableVehiclesCount}
+                          </span>
+                          <span className="text-gray-600">xe khả dụng</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm">
+                          <Navigation className="w-4 h-4 text-blue-600" />
+                          <span className="font-semibold text-blue-600">
+                            {station.distanceKm?.toFixed(1)} km
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={() => fetchStationDetail(station.id)}
+                          disabled={detailLoading}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          {detailLoading ? "Đang tải..." : "Xem chi tiết"}
+                        </Button>
+
+                        <Button
+                          onClick={() => handleFindVehicles(station.id)}
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                        >
+                          <Search className="w-4 h-4 mr-2" />
+                          Tìm xe tại trạm
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="flex items-center justify-between text-xs text-gray-500 mt-3">
-                      <span>
-                        🕐{" "}
-                        <strong>
-                          {new Date(station.startTime).toLocaleTimeString(
-                            "vi-VN",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
-                          )}
-                        </strong>{" "}
-                        -{" "}
-                        <strong>
-                          {new Date(station.endTime).toLocaleTimeString(
-                            "vi-VN",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
-                          )}
-                        </strong>
-                      </span>
-                      <button className="text-blue-600 font-medium hover:underline">
-                        Xem chi tiết →
-                      </button>
-                    </div>
-                  </div>
+                  </CardContent>
                 </div>
-              ))}
-            </div>
+              </Card>
+            ))}
           </div>
-        </section>
-      }
+        </div>
+      </section>
+
+      {/* Station Detail Dialog */}
+      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              {selectedStation?.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedStation && (
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Left Side - Station Photo */}
+              <div className="md:w-2/5 flex-shrink-0">
+                <div className="relative w-full h-full min-h-[400px] rounded-lg overflow-hidden">
+                  <img
+                    src={selectedStation.photo || "/placeholder.jpg"}
+                    alt={selectedStation.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <Badge
+                    className="absolute top-3 right-3 bg-white/90 text-gray-800 hover:bg-white/90"
+                    variant="secondary"
+                  >
+                    <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
+                    {selectedStation.rating?.toFixed(1) || "N/A"}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Right Side - Station Information */}
+              <div className="md:w-3/5 space-y-4">
+                {/* Basic Information */}
+                <Card>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <MapPinned className="w-5 h-5 text-green-600" />
+                        Thông tin cơ bản
+                      </h3>
+                      <Badge
+                        variant={
+                          selectedStation.status === "ACTIVE"
+                            ? "default"
+                            : "destructive"
+                        }
+                        className={
+                          selectedStation.status === "ACTIVE"
+                            ? "bg-green-500"
+                            : ""
+                        }
+                      >
+                        {selectedStation.status === "ACTIVE"
+                          ? "Hoạt động"
+                          : "Đóng cửa"}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-3">
+                        <MapPin className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500">Địa chỉ</p>
+                          <p className="font-medium text-gray-900 text-sm">
+                            {selectedStation.address}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <Phone className="w-5 h-5 text-blue-600 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500">Hotline</p>
+                          <p className="font-medium text-blue-600 text-sm">
+                            {selectedStation.hotline}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <Clock className="w-5 h-5 text-orange-600 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500">Giờ hoạt động</p>
+                          <p className="font-medium text-gray-900 text-sm">
+                            {new Date(
+                              selectedStation.startTime,
+                            ).toLocaleTimeString("vi-VN", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}{" "}
+                            -{" "}
+                            {new Date(
+                              selectedStation.endTime,
+                            ).toLocaleTimeString("vi-VN", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <Navigation className="w-5 h-5 text-purple-600 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500">Tọa độ</p>
+                          <p className="font-medium text-gray-900 text-sm">
+                            {selectedStation.latitude.toFixed(6)},{" "}
+                            {selectedStation.longitude.toFixed(6)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Vehicle Statistics */}
+                <Card>
+                  <CardContent className="p-4 space-y-3">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                      <Car className="w-5 h-5 text-purple-600" />
+                      Thống kê xe
+                    </h3>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Card className="bg-blue-50 border-blue-200">
+                        <CardContent className="p-3">
+                          <p className="text-xs text-gray-600 mb-1">
+                            Tổng số xe
+                          </p>
+                          <p className="text-xl font-bold text-blue-600">
+                            {selectedStation.totalVehicles}
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-green-50 border-green-200">
+                        <CardContent className="p-3">
+                          <p className="text-xs text-gray-600 mb-1">
+                            Xe khả dụng
+                          </p>
+                          <p className="text-xl font-bold text-green-600">
+                            {selectedStation.availableVehicles}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Metadata */}
+                <Card className="bg-gray-50">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                      <Calendar className="w-3 h-3" />
+                      <p>
+                        <strong>Tạo lúc:</strong>{" "}
+                        {new Date(selectedStation.createdAt).toLocaleString(
+                          "vi-VN",
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <Calendar className="w-3 h-3" />
+                      <p>
+                        <strong>Cập nhật:</strong>{" "}
+                        {new Date(selectedStation.updatedAt).toLocaleString(
+                          "vi-VN",
+                        )}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    onClick={() => setShowDetailDialog(false)}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Đóng
+                  </Button>
+                  <Button
+                    onClick={() => handleFindVehicles(selectedStation.id)}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    Tìm xe tại trạm
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      window.open(
+                        `https://www.google.com/maps?q=${selectedStation.latitude},${selectedStation.longitude}`,
+                        "_blank",
+                      );
+                    }}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Xem trên bản đồ
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

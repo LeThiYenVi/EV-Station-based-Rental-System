@@ -224,7 +224,7 @@ export default function Index() {
       {/* Hero with Video Background */}
       <section className="relative bg-black overflow-visible pb-32 md:pb-10 -mt-16 pt-16">
         {/* Video Background - Full width */}
-        <div className="absolute inset-0 w-full h-[810px] overflow-hidden">
+        <div className="absolute inset-0 w-full h-[875px] overflow-hidden">
           <video
             autoPlay
             loop

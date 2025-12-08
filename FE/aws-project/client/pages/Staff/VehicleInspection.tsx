@@ -404,19 +404,13 @@ export default function VehicleInspection() {
       );
 
       message.success({
-        content: (
-          <div>
-            <div>Đã hoàn tất kiểm tra xe {selectedVehicle.plateNumber}</div>
-            <div className="mt-1">
-              Trạng thái mới:{" "}
-              {newStatus === "available"
-                ? "✅ Sẵn sàng"
-                : newStatus === "maintenance"
-                  ? "⚠️ Cần bảo trì"
-                  : "❌ Ngừng hoạt động"}
-            </div>
-          </div>
-        ),
+        content: `Xe ${selectedVehicle.plateNumber}: ${
+          newStatus === "available"
+            ? "✅ Sẵn sàng"
+            : newStatus === "maintenance"
+              ? "⚠️ Cần bảo trì"
+              : "❌ Ngừng hoạt động"
+        }`,
         duration: 5,
       });
 
