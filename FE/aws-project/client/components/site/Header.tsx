@@ -151,18 +151,16 @@ export function Header() {
       {contextHolder}
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <div
-            className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl ${
-              isTransparent
-                ? "bg-white/20 backdrop-blur-sm text-white"
-                : "bg-green-500 text-white"
-            }`}
-          >
-            M
+          <div className="w-14 h-12 rounded-lg overflow-hidden flex items-center justify-center">
+            <img 
+              src="/voltgo_logo.jpg" 
+              alt="VoltGo Logo" 
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="flex flex-col leading-tight">
             <span
-              className={`text-xl font-bold ${isTransparent ? "text-white" : "text-black"}`}
+              className={`text-xl ${isTransparent ? "text-white" : "text-black"}`}
             >
               VoltGo
             </span>

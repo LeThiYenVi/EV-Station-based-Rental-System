@@ -6,11 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="426a8776-3f1b-4992-9558-b4db87dfc39e" name="Changes" comment="fix (be): fix class not found exception in OauthStateService">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/aws-project/.env" beforeDir="false" afterPath="$PROJECT_DIR$/FE/aws-project/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/aws-project/client/components/station_map.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/aws-project/client/pages/Admin/Stations.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/aws-project/client/pages/Admin/Stations.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/aws-project/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/FE/aws-project/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/aws-project/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/FE/aws-project/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/aws-project/client/components/site/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/aws-project/client/components/site/Header.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
