@@ -33,7 +33,7 @@ import type {
   UpdateStationRequest,
 } from "@/service/types/report-staff-station.types";
 import dayjs from "dayjs";
-import StationMap from "@/components/station_map";
+import StationMap from "@/components/MapWithPlaces";
 
 // Interface cho form với địa chỉ tách
 interface StationFormValues {
@@ -157,11 +157,22 @@ export default function Stations() {
     setModalOpen(true);
   };
 
-  const handleLocationSelect = (lat: number, lng: number) => {
+  const handleLocationSelect = (lat: number, lng: number, address?: string) => {
     form.setFieldsValue({
       latitude: lat,
       longitude: lng,
     });
+    
+    // If address is provided from Places search, auto-fill ward and city
+    if (address) {
+      const parts = address.split(",").map((p) => p.trim());
+      if (parts.length >= 2) {
+        form.setFieldsValue({
+          ward: parts.slice(0, -1).join(", "),
+          city: parts[parts.length - 1],
+        });
+      }
+    }
   };
 
   const onSubmit = async () => {
