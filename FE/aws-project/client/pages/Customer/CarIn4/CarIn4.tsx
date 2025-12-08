@@ -45,6 +45,7 @@ import {
 import { useVehicle } from "@/hooks/useVehicle";
 import { useBooking } from "@/hooks/useBooking";
 import { useUser } from "@/hooks/useUser";
+import { useStation } from "@/hooks/useStation";
 import feedbackService from "@/service/feedback/feedbackService";
 import type { BookingWithPaymentResponse } from "@/service/types/booking.types";
 import type { FeedbackResponse } from "@/service/types/feedback.types";
@@ -82,9 +83,13 @@ export default function CarIn4() {
     uploadLicenseCardBack,
     loading: userLoading,
   } = useUser();
+  const { getStationById, loading: stationLoading } = useStation();
 
   // Vehicle data from API
   const [vehicleData, setVehicleData] = useState<any>(null);
+
+  // Station data from API
+  const [stationData, setStationData] = useState<any>(null);
 
   // Current user data from API
   const [currentUserData, setCurrentUserData] = useState<any>(null);
@@ -97,6 +102,7 @@ export default function CarIn4() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [showGalleryDialog, setShowGalleryDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -181,6 +187,20 @@ export default function CarIn4() {
 
     loadVehicleData();
   }, [id]);
+
+  // Load station data when vehicle is loaded
+  useEffect(() => {
+    const loadStationData = async () => {
+      if (!vehicleData?.stationId) return;
+
+      const result = await getStationById(vehicleData.stationId);
+      if (result.success && result.data) {
+        setStationData(result.data);
+      }
+    };
+
+    loadStationData();
+  }, [vehicleData]);
 
   // Helper function to get vehicle images
   const getVehicleImages = () => {
@@ -763,7 +783,7 @@ export default function CarIn4() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 mt-[60px] pb-12">
       {contextHolder}
       <div className="mx-auto px-6 sm:px-12 md:px-24 lg:px-[150px] py-8">
         {/* Back Button */}
@@ -780,7 +800,7 @@ export default function CarIn4() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Main Large Image */}
             <div className="lg:col-span-2">
-              <div className="relative rounded-2xl overflow-hidden bg-gray-200 aspect-[16/10]">
+              <div className="relative rounded-2xl overflow-hidden bg-gray-200 h-[600px] text-black">
                 <img
                   src={vehicleImages[selectedImage]}
                   alt={vehicleData?.name}
@@ -815,18 +835,30 @@ export default function CarIn4() {
               </div>
             </div>
 
-            {/* Thumbnail Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+            {/* Thumbnail Grid - 3 images with total height = main image height */}
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-4 lg:h-[600px]">
               {getVehicleImages()
                 .slice(0, 3)
                 .map((image, index) => (
                   <div
                     key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`relative rounded-xl overflow-hidden cursor-pointer aspect-[16/10] ${
+                    onClick={() => {
+                      if (index === 2 && getVehicleImages().length > 3) {
+                        setShowGalleryDialog(true);
+                      } else {
+                        setSelectedImage(index);
+                      }
+                    }}
+                    className={`relative rounded-xl overflow-hidden cursor-pointer ${
                       selectedImage === index
                         ? "ring-4 ring-green-500"
                         : "ring-2 ring-gray-200 hover:ring-gray-300"
+                    } ${
+                      index === 0
+                        ? "lg:h-[192px]"
+                        : index === 1
+                          ? "lg:h-[192px]"
+                          : "lg:h-[192px]"
                     }`}
                   >
                     <img
@@ -835,9 +867,12 @@ export default function CarIn4() {
                       className="w-full h-full object-cover"
                     />
                     {index === 2 && getVehicleImages().length > 3 && (
-                      <button className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-semibold hover:bg-black/60">
-                        Xem tất cả ảnh
-                      </button>
+                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white hover:bg-black/60 transition-colors">
+                        <span className="font-semibold text-lg">
+                          +{getVehicleImages().length - 3}
+                        </span>
+                        <span className="text-sm mt-1">Xem tất cả ảnh</span>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -904,8 +939,8 @@ export default function CarIn4() {
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Mô tả</h3>
                 <div className="space-y-3 text-gray-700 text-sm leading-relaxed">
                   <p>
-                    - Ngoài các ưu đãi về giá VoltGo còn hỗ trợ thêm cho
-                    Quý Khách hàng các Chính sách như sau:
+                    - Ngoài các ưu đãi về giá VoltGo còn hỗ trợ thêm cho Quý
+                    Khách hàng các Chính sách như sau:
                   </p>
                   <p>* Hoàn Tiền do xăng dư.</p>
                   <p>* Miễn phí vượt dưới 1h.</p>
@@ -1133,8 +1168,8 @@ export default function CarIn4() {
                   </p>
                   <p>
                     * Tiền giữ chỗ & bồi thường do chủ xe hủy chuyến (nếu có) sẽ
-                    được VoltGo hoàn trả đến khách thuê bằng chuyển khoản
-                    ngân hàng trong vòng 1-3 ngày làm việc kể tiếp. Xem thêm{" "}
+                    được VoltGo hoàn trả đến khách thuê bằng chuyển khoản ngân
+                    hàng trong vòng 1-3 ngày làm việc kể tiếp. Xem thêm{" "}
                     <button className="text-green-600 font-semibold hover:underline">
                       Thủ tục hoàn tiền & bồi thường hủy chuyến
                     </button>
@@ -1147,7 +1182,10 @@ export default function CarIn4() {
             <Card className="shadow-sm border">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">Vị trí xe</h3>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    Vị trí xe - Trạm{" "}
+                    {stationData?.name || vehicleData?.stationName}
+                  </h3>
                   <button
                     onClick={() => setShowMap(!showMap)}
                     className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
@@ -1162,38 +1200,101 @@ export default function CarIn4() {
                   </button>
                 </div>
 
-                <div className="flex items-start gap-3 mb-3">
-                  <MapPin className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      Phường Linh Đông, TP Thủ Đức
+                {stationLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">
+                      Đang tải thông tin trạm...
                     </p>
                   </div>
-                </div>
+                ) : stationData ? (
+                  <>
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-start gap-3">
+                        <MapPin className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-gray-500 mb-1">
+                            Địa chỉ trạm
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            {stationData.address}
+                          </p>
+                        </div>
+                      </div>
 
-                <p className="text-sm text-blue-600 mb-4">
-                  Địa chỉ cụ thể sẽ được hiển thị sau khi thanh toán giữ chỗ
-                </p>
+                      <div className="flex items-start gap-3">
+                        <Clock className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-gray-500 mb-1">
+                            Giờ hoạt động
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            {new Date(stationData.startTime).toLocaleTimeString(
+                              "vi-VN",
+                              { hour: "2-digit", minute: "2-digit" },
+                            )}{" "}
+                            -{" "}
+                            {new Date(stationData.endTime).toLocaleTimeString(
+                              "vi-VN",
+                              { hour: "2-digit", minute: "2-digit" },
+                            )}
+                          </p>
+                        </div>
+                      </div>
 
-                {/* Google Map */}
-                {showMap && (
-                  <div className="mt-4 rounded-lg overflow-hidden border-2 border-gray-200">
-                    {/* Google Map api */}
-                    <LoadScript googleMapsApiKey="AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8">
-                      <GoogleMap
-                        mapContainerStyle={mapContainerStyle}
-                        center={center}
-                        zoom={15}
-                        options={{
-                          zoomControl: true,
-                          streetViewControl: true,
-                          mapTypeControl: true,
-                          fullscreenControl: true,
-                        }}
-                      >
-                        <Marker position={center} />
-                      </GoogleMap>
-                    </LoadScript>
+                      <div className="flex items-start gap-3">
+                        <Star className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-gray-500 mb-1">
+                            Đánh giá trạm
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            {stationData.rating?.toFixed(1) || "N/A"}/5
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-blue-600 mb-4">
+                      📍 Địa chỉ chi tiết sẽ được hiển thị sau khi thanh toán
+                      giữ chỗ
+                    </p>
+
+                    {/* Google Map */}
+                    {showMap && (
+                      <div className="mt-4 rounded-lg overflow-hidden border-2 border-gray-200">
+                        <LoadScript googleMapsApiKey="AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8">
+                          <GoogleMap
+                            mapContainerStyle={mapContainerStyle}
+                            center={{
+                              lat: stationData.latitude,
+                              lng: stationData.longitude,
+                            }}
+                            zoom={15}
+                            options={{
+                              zoomControl: true,
+                              streetViewControl: true,
+                              mapTypeControl: true,
+                              fullscreenControl: true,
+                            }}
+                          >
+                            <Marker
+                              position={{
+                                lat: stationData.latitude,
+                                lng: stationData.longitude,
+                              }}
+                              title={stationData.name}
+                            />
+                          </GoogleMap>
+                        </LoadScript>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-600">
+                      Không tìm thấy thông tin trạm
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -1206,13 +1307,13 @@ export default function CarIn4() {
                   <h3 className="text-lg font-bold text-gray-900">
                     Đánh giá từ khách hàng
                   </h3>
-                  <Button
+                  {/* <Button
                     size="sm"
                     onClick={() => setShowFeedbackDialog(true)}
                     disabled={!isLoggedIn || !currentBookingId}
                   >
                     Viết đánh giá
-                  </Button>
+                  </Button> */}
                 </div>
 
                 {feedbackLoading ? (
@@ -1353,7 +1454,17 @@ export default function CarIn4() {
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                       <span className="font-semibold text-sm">
-                        {vehicleData?.rating || 0}
+                        {feedbacks.length > 0
+                          ? (
+                              feedbacks.reduce(
+                                (sum, f) => sum + f.vehicleRating,
+                                0,
+                              ) / feedbacks.length
+                            ).toFixed(1)
+                          : vehicleData?.rating?.toFixed(1) || "N/A"}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({feedbacks.length} đánh giá)
                       </span>
                     </div>
                     <span className="text-gray-400">•</span>
@@ -2423,9 +2534,7 @@ export default function CarIn4() {
                                     Số tiền thanh toán:
                                   </span>
                                   <span className="text-xl font-bold text-pink-600">
-                                    {bookingResponse.totalAmount?.toLocaleString() ||
-                                      bookingDetails.deposit.toLocaleString()}
-                                    đ
+                                    {bookingDetails.deposit.toLocaleString()}đ
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
@@ -2844,6 +2953,47 @@ export default function CarIn4() {
                 {isProcessing ? "Đang gửi..." : "Gửi đánh giá"}
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Gallery Dialog - View All Images */}
+        <Dialog open={showGalleryDialog} onOpenChange={setShowGalleryDialog}>
+          <DialogContent className="sm:max-w-[90vw] max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>
+                Tất cả hình ảnh xe ({getVehicleImages().length})
+              </DialogTitle>
+              <DialogDescription>
+                Xem toàn bộ hình ảnh của {vehicleData?.name}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto max-h-[70vh] p-4">
+              {getVehicleImages().map((image, index) => (
+                <div
+                  key={index}
+                  onClick={() => {
+                    setSelectedImage(index);
+                    setShowGalleryDialog(false);
+                  }}
+                  className={`relative rounded-lg overflow-hidden cursor-pointer aspect-[4/3] ${
+                    selectedImage === index
+                      ? "ring-4 ring-green-500"
+                      : "ring-2 ring-gray-200 hover:ring-gray-400"
+                  }`}
+                >
+                  <img
+                    src={image}
+                    alt={`${vehicleData?.name} - Ảnh ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {selectedImage === index && (
+                    <div className="absolute top-2 right-2 bg-green-500 rounded-full p-1">
+                      <CheckCircle2 className="w-5 h-5 text-white" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </DialogContent>
         </Dialog>
       </div>

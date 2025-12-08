@@ -38,6 +38,7 @@ import {
   Tooltip,
   Avatar,
   Alert,
+  Divider,
 } from "antd";
 import {
   CheckCircleOutlined,
@@ -50,6 +51,9 @@ import {
   ClockCircleOutlined,
   FileTextOutlined,
   MailOutlined,
+  QrcodeOutlined,
+  LinkOutlined,
+  MobileOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { useBooking } from "@/hooks/useBooking";
@@ -93,6 +97,19 @@ interface BookingData {
   pickupStationName?: string;
   returnStationId?: string;
   returnStationName?: string;
+  // Momo Payment
+  momoPayment?: {
+    partnerCode: string;
+    orderId: string;
+    requestId: string;
+    amount: number;
+    responseTime: number;
+    message: string;
+    resultCode: string;
+    payUrl: string;
+    deeplink: string;
+    qrCodeUrl: string;
+  };
 }
 
 export default function Confirmations() {
@@ -112,6 +129,13 @@ export default function Confirmations() {
     "confirm" | "reject" | "start" | "complete"
   >("confirm");
   const [loading, setLoading] = useState(false);
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [completedBooking, setCompletedBooking] = useState<BookingData | null>(
+    null,
+  );
+  const [completedBookingHistory, setCompletedBookingHistory] = useState<
+    BookingData[]
+  >([]);
 
   // Use booking hook
   const {
@@ -279,6 +303,7 @@ export default function Confirmations() {
 
     setLoading(true);
     try {
+      let result;
       switch (action) {
         case "confirm":
           await confirmBooking(selectedBooking.id);
@@ -293,8 +318,22 @@ export default function Confirmations() {
           message.success(`Đã bắt đầu đơn thuê ${selectedBooking.bookingCode}`);
           break;
         case "complete":
-          await completeBooking(selectedBooking.id);
-          message.success(`Đã hoàn thành đơn ${selectedBooking.bookingCode}`);
+          result = await completeBooking(selectedBooking.id);
+          if (result) {
+            message.success(`Đã hoàn thành đơn ${selectedBooking.bookingCode}`);
+            // Set completed booking data and show invoice modal
+            const completedData = result as BookingData;
+            setCompletedBooking(completedData);
+            setInvoiceModalOpen(true);
+            // Add to history if not already exists
+            setCompletedBookingHistory((prev) => {
+              const exists = prev.find((b) => b.id === completedData.id);
+              if (!exists) {
+                return [completedData, ...prev];
+              }
+              return prev;
+            });
+          }
           break;
       }
 
@@ -317,6 +356,12 @@ export default function Confirmations() {
   const handleSendEmail = (email: string) => {
     window.open(`mailto:${email}`);
     message.info(`Đang soạn email đến ${email}...`);
+  };
+
+  // View invoice for completed booking
+  const handleViewInvoice = (booking: BookingData) => {
+    setCompletedBooking(booking);
+    setInvoiceModalOpen(true);
   };
 
   // Table columns - Updated for new API structure
@@ -418,7 +463,7 @@ export default function Confirmations() {
     {
       title: "Thanh toán",
       key: "payment",
-      width: 150,
+      width: 180,
       render: (_: any, record: BookingData) => (
         <div>
           <div className="font-semibold text-green-600">
@@ -435,6 +480,19 @@ export default function Confirmations() {
               ? "Chờ thanh toán"
               : "Đã thanh toán"}
           </Tag>
+          {record.momoPayment && (
+            <div className="mt-1">
+              <Tooltip title="Có link thanh toán MoMo">
+                <Tag
+                  color="purple"
+                  icon={<QrcodeOutlined />}
+                  className="text-xs"
+                >
+                  MoMo
+                </Tag>
+              </Tooltip>
+            </div>
+          )}
         </div>
       ),
     },
@@ -496,6 +554,18 @@ export default function Confirmations() {
               className="bg-green-500 hover:bg-green-600"
             >
               Hoàn thành
+            </Button>
+          )}
+          {/* Nút Xem hóa đơn cho đơn COMPLETED */}
+          {record.status === "COMPLETED" && (
+            <Button
+              type="default"
+              size="small"
+              icon={<FileTextOutlined />}
+              onClick={() => handleViewInvoice(record)}
+              className="text-green-600 border-green-300"
+            >
+              Xem hóa đơn
             </Button>
           )}
         </Space>
@@ -783,6 +853,78 @@ export default function Confirmations() {
                 </Descriptions.Item>
               </Descriptions>
             </Card>
+
+            {/* Momo Payment Information */}
+            {selectedBooking.momoPayment && (
+              <Card
+                title={
+                  <>
+                    <DollarOutlined /> Thông tin thanh toán MoMo
+                  </>
+                }
+                size="small"
+              >
+                <Descriptions column={2} bordered>
+                  <Descriptions.Item label="Mã giao dịch" span={1}>
+                    <span className="font-mono text-sm">
+                      {selectedBooking.momoPayment.orderId}
+                    </span>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Request ID" span={1}>
+                    <span className="font-mono text-sm">
+                      {selectedBooking.momoPayment.requestId}
+                    </span>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Số tiền" span={1}>
+                    <span className="font-semibold text-lg text-green-600">
+                      {formatCurrency(selectedBooking.momoPayment.amount)}
+                    </span>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Trạng thái" span={1}>
+                    <Tag
+                      color={
+                        selectedBooking.momoPayment.resultCode === "0"
+                          ? "green"
+                          : "orange"
+                      }
+                    >
+                      {selectedBooking.momoPayment.message}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Link thanh toán" span={2}>
+                    <Space direction="vertical" className="w-full">
+                      <Button
+                        type="link"
+                        icon={<LinkOutlined />}
+                        href={selectedBooking.momoPayment.payUrl}
+                        target="_blank"
+                        className="p-0"
+                      >
+                        Mở link thanh toán web
+                      </Button>
+                      <Button
+                        type="link"
+                        icon={<MobileOutlined />}
+                        href={selectedBooking.momoPayment.deeplink}
+                        target="_blank"
+                        className="p-0"
+                      >
+                        Mở ứng dụng MoMo
+                      </Button>
+                      <Button
+                        type="link"
+                        icon={<QrcodeOutlined />}
+                        href={selectedBooking.momoPayment.qrCodeUrl}
+                        target="_blank"
+                        className="p-0"
+                      >
+                        Xem mã QR
+                      </Button>
+                    </Space>
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
+            )}
           </div>
         )}
       </Modal>
@@ -894,6 +1036,290 @@ export default function Confirmations() {
           }
           showIcon
         />
+      </Modal>
+
+      {/* Invoice Modal - Hiển thị hóa đơn sau khi hoàn thành */}
+      <Modal
+        title={
+          <div className="text-center">
+            <CheckCircleOutlined className="text-green-500 text-4xl mb-2" />
+            <div className="text-2xl font-bold text-gray-800">
+              Hóa đơn thanh toán
+            </div>
+            <div className="text-sm text-gray-500 mt-1">
+              Đơn thuê đã hoàn thành thành công
+            </div>
+          </div>
+        }
+        open={invoiceModalOpen}
+        onCancel={() => {
+          setInvoiceModalOpen(false);
+          setCompletedBooking(null);
+        }}
+        width={700}
+        footer={[
+          <Button
+            key="print"
+            type="primary"
+            icon={<FileTextOutlined />}
+            onClick={() => window.print()}
+          >
+            In hóa đơn
+          </Button>,
+          <Button
+            key="close"
+            onClick={() => {
+              setInvoiceModalOpen(false);
+              setCompletedBooking(null);
+            }}
+          >
+            Đóng
+          </Button>,
+        ]}
+      >
+        {completedBooking && (
+          <div className="space-y-4 p-4">
+            {/* Header */}
+            <div className="text-center border-b pb-4">
+              <h2 className="text-xl font-bold">HÓA ĐƠN THUÊ XE</h2>
+              <p className="text-gray-600 mt-1">
+                Mã đơn:{" "}
+                <span className="font-mono font-semibold">
+                  {completedBooking.bookingCode}
+                </span>
+              </p>
+              <p className="text-sm text-gray-500">
+                Ngày hoàn thành: {formatDateTime(new Date().toISOString())}
+              </p>
+            </div>
+
+            {/* Customer & Vehicle Info */}
+            <Row gutter={16}>
+              <Col span={12}>
+                <Card size="small" title="Thông tin khách hàng">
+                  <p>
+                    <strong>Họ tên:</strong>{" "}
+                    {completedBooking.renterName || "Khách hàng"}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {getRenterEmail(completedBooking)}
+                  </p>
+                </Card>
+              </Col>
+              <Col span={12}>
+                <Card size="small" title="Thông tin xe">
+                  <p>
+                    <strong>Xe:</strong> {completedBooking.vehicleName || "Xe"}
+                  </p>
+                  <p>
+                    <strong>Biển số:</strong>{" "}
+                    <span className="font-mono">
+                      {completedBooking.licensePlate || "N/A"}
+                    </span>
+                  </p>
+                </Card>
+              </Col>
+            </Row>
+
+            {/* Rental Period */}
+            <Card size="small" title="Thời gian thuê">
+              <Row gutter={16}>
+                <Col span={12}>
+                  <p className="text-green-600">
+                    <CalendarOutlined className="mr-2" />
+                    <strong>Bắt đầu:</strong>
+                  </p>
+                  <p className="ml-6">
+                    {formatDateTime(getPickupTime(completedBooking))}
+                  </p>
+                </Col>
+                <Col span={12}>
+                  <p className="text-orange-600">
+                    <CalendarOutlined className="mr-2" />
+                    <strong>Kết thúc:</strong>
+                  </p>
+                  <p className="ml-6">
+                    {completedBooking.actualEndTime
+                      ? formatDateTime(completedBooking.actualEndTime)
+                      : formatDateTime(getReturnTime(completedBooking))}
+                  </p>
+                </Col>
+              </Row>
+              <p className="mt-2 text-gray-600">
+                <strong>Tổng thời gian:</strong>{" "}
+                {calculateDays(
+                  getPickupTime(completedBooking),
+                  completedBooking.actualEndTime ||
+                    getReturnTime(completedBooking),
+                )}{" "}
+                ngày
+              </p>
+            </Card>
+
+            {/* Payment Details */}
+            <Card size="small" title="Chi tiết thanh toán">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Giá cơ bản:</span>
+                  <span className="font-semibold">
+                    {formatCurrency(completedBooking.basePrice || 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tiền đặt cọc:</span>
+                  <span className="font-semibold text-blue-600">
+                    {formatCurrency(completedBooking.depositPaid || 0)}
+                  </span>
+                </div>
+                {completedBooking.extraFee && completedBooking.extraFee > 0 && (
+                  <div className="flex justify-between text-orange-600">
+                    <span>Phí phát sinh:</span>
+                    <span className="font-semibold">
+                      {formatCurrency(completedBooking.extraFee)}
+                    </span>
+                  </div>
+                )}
+                <Divider className="my-2" />
+                <div className="flex justify-between text-lg">
+                  <span className="font-bold">Tổng cộng:</span>
+                  <span className="font-bold text-green-600 text-xl">
+                    {formatCurrency(getTotalPrice(completedBooking))}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <span>Trạng thái thanh toán:</span>
+                  <Tag
+                    color={
+                      completedBooking.paymentStatus === "PAID"
+                        ? "green"
+                        : "orange"
+                    }
+                  >
+                    {completedBooking.paymentStatus === "PAID"
+                      ? "Đã thanh toán"
+                      : "Chờ thanh toán"}
+                  </Tag>
+                </div>
+              </div>
+            </Card>
+
+            {/* Notes */}
+            {(completedBooking.returnNote || completedBooking.pickupNote) && (
+              <Card size="small" title="Ghi chú">
+                {completedBooking.pickupNote && (
+                  <p className="text-sm">
+                    <strong>Nhận xe:</strong> {completedBooking.pickupNote}
+                  </p>
+                )}
+                {completedBooking.returnNote && (
+                  <p className="text-sm mt-1">
+                    <strong>Trả xe:</strong> {completedBooking.returnNote}
+                  </p>
+                )}
+              </Card>
+            )}
+
+            {/* Momo Payment Links */}
+            {completedBooking.momoPayment && (
+              <Card size="small" title="Thông tin thanh toán MoMo">
+                <Row gutter={16}>
+                  <Col span={14}>
+                    <Space direction="vertical" className="w-full">
+                      <div>
+                        <strong>Mã giao dịch:</strong>{" "}
+                        <span className="font-mono text-sm">
+                          {completedBooking.momoPayment.orderId}
+                        </span>
+                      </div>
+                      <div>
+                        <strong>Số tiền:</strong>{" "}
+                        <span className="font-semibold text-green-600 text-lg">
+                          {formatCurrency(completedBooking.momoPayment.amount)}
+                        </span>
+                      </div>
+                      <div>
+                        <strong>Trạng thái:</strong>{" "}
+                        <Tag
+                          color={
+                            completedBooking.momoPayment.resultCode === "0"
+                              ? "green"
+                              : "orange"
+                          }
+                        >
+                          {completedBooking.momoPayment.message}
+                        </Tag>
+                      </div>
+                      <Divider className="my-2" />
+                      <Space direction="vertical" className="w-full">
+                        <Button
+                          type="primary"
+                          icon={<LinkOutlined />}
+                          href={completedBooking.momoPayment.payUrl}
+                          target="_blank"
+                          block
+                          size="small"
+                        >
+                          Mở link thanh toán web
+                        </Button>
+                        <Button
+                          icon={<MobileOutlined />}
+                          href={completedBooking.momoPayment.deeplink}
+                          target="_blank"
+                          block
+                          size="small"
+                        >
+                          Mở ứng dụng MoMo
+                        </Button>
+                      </Space>
+                    </Space>
+                  </Col>
+                  <Col span={10}>
+                    <div className="text-center">
+                      <div className="text-sm font-semibold mb-2 text-gray-700">
+                        <QrcodeOutlined className="mr-1" />
+                        Quét mã QR để thanh toán
+                      </div>
+                      <div className="border-2 border-dashed border-gray-300 p-2 rounded-lg bg-white">
+                        <img
+                          src={completedBooking.momoPayment.qrCodeUrl}
+                          alt="MoMo QR Code"
+                          className="w-full h-auto max-w-[200px] mx-auto"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "none";
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.innerHTML = `
+                                <div class="flex items-center justify-center h-[200px] text-gray-400">
+                                  <div class="text-center">
+                                    <QrcodeOutlined style="font-size: 48px" />
+                                    <p class="mt-2 text-sm">Không thể tải mã QR</p>
+                                  </div>
+                                </div>
+                              `;
+                            }
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Quét bằng app MoMo
+                      </p>
+                    </div>
+                  </Col>
+                </Row>
+              </Card>
+            )}
+
+            {/* Footer */}
+            <div className="text-center text-sm text-gray-500 border-t pt-4">
+              <p>Cảm ơn quý khách đã sử dụng dịch vụ!</p>
+              <p>
+                Nhân viên xử lý:{" "}
+                {completedBooking.checkedInByName || "Hệ thống"}
+              </p>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
