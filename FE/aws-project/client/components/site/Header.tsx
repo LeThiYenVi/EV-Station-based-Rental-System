@@ -164,7 +164,7 @@ export function Header() {
             <span
               className={`text-xl font-bold ${isTransparent ? "text-white" : "text-black"}`}
             >
-              BF Car Rental
+              VoltGo
             </span>
             <span
               className={`text-xs ${isTransparent ? "text-white/80" : "text-gray-600"}`}

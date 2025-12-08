@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Layout, Menu, Button, theme } from "antd";
+import { useState, useEffect, useRef } from "react";
+import { Layout, Menu, Button, theme, message } from "antd";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -13,6 +13,7 @@ import {
   LogoutOutlined,
   EnvironmentOutlined,
   FileTextOutlined,
+  CameraOutlined,
 } from "@ant-design/icons";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import "./AdminLayout.css";
@@ -34,6 +35,8 @@ export default function AdminLayout() {
     fullName: "Admin User",
     email: "admin@example.com",
   });
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -50,10 +53,50 @@ export default function AdminLayout() {
           email: user.email || user.username || "admin@example.com",
         });
       }
+
+      // Load saved avatar from localStorage
+      const savedAvatar = localStorage.getItem("adminAvatar");
+      if (savedAvatar) {
+        setAvatarUrl(savedAvatar);
+      }
     } catch (error) {
       console.error("Failed to load user info:", error);
     }
   }, []);
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
+    if (!validTypes.includes(file.type)) {
+      message.error("Chỉ chấp nhận file ảnh định dạng JPG, PNG, GIF!");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      message.error("Kích thước file không được vượt quá 5MB!");
+      return;
+    }
+
+    // Read and preview image
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imageUrl = event.target?.result as string;
+      setAvatarUrl(imageUrl);
+      // Save to localStorage
+      localStorage.setItem("adminAvatar", imageUrl);
+      message.success("Cập nhật ảnh đại diện thành công!");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleLogout = () => {
     // Handle logout logic
@@ -83,10 +126,10 @@ export default function AdminLayout() {
               </div>
               <div className="text-white min-w-0">
                 <div className="font-bold text-base leading-tight">
-                  Admin Panel
+                  VoltGo Admin
                 </div>
                 <div className="text-xs text-green-200 leading-tight">
-                  Quản lý hệ thống
+                  EV Rental Management
                 </div>
               </div>
             </div>
@@ -194,9 +237,31 @@ export default function AdminLayout() {
                 {userInfo.email}
               </div>
             </div>
-            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold shrink-0">
-              {userInfo.fullName.charAt(0).toUpperCase()}
+            <div
+              className="relative w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold shrink-0 cursor-pointer hover:opacity-80 transition-opacity group"
+              onClick={handleAvatarClick}
+              title="Click để thay đổi ảnh đại diện"
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                userInfo.fullName.charAt(0).toUpperCase()
+              )}
+              <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <CameraOutlined className="text-white text-lg" />
+              </div>
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
           </div>
         </Header>
 

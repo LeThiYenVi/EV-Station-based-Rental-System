@@ -53,7 +53,7 @@ export default function About() {
       {/* Hero Section */}
       <section className="about-hero">
         <div className="about-hero-content">
-          <h1>BF Car Rental</h1>
+          <h1>Volt Go</h1>
           <p>
             Đối tác đáng tin cậy cho mọi hành trình của bạn. Với hơn 5 năm kinh
             nghiệm, chúng tôi cam kết mang đến dịch vụ cho thuê xe chất lượng
@@ -87,7 +87,7 @@ export default function About() {
           <div className="company-text">
             <h2>
               Công ty Cổ phần Thương mại và Dịch vụ{" "}
-              <span className="highlight">Green Future</span>
+              <span className="highlight">VOLT GO</span>
             </h2>
             <p>
               Được thành lập với sứ mệnh cung cấp dịch vụ cho thuê xe chuyên
@@ -120,7 +120,7 @@ export default function About() {
                   <Mail className="info-icon" />
                   Email
                 </h3>
-                <p>support@greenfuture.tech</p>
+                <p>support@voltgo.com</p>
               </div>
             </div>
           </div>
@@ -370,10 +370,10 @@ export default function About() {
               </p>
 
               <p className="description">
-                BF Car Rental đặt mục tiêu trở thành cộng đồng người dùng ô tô
-                Văn minh & Uy tín #1 tại Việt Nam, nhằm mang lại những giá trị
-                thiết thực cho tất cả những thành viên hướng đến một cuộc sống
-                tốt đẹp hơn.
+                Volt Go đặt mục tiêu trở thành cộng đồng người dùng ô tô Văn
+                minh & Uy tín #1 tại Việt Nam, nhằm mang lại những giá trị thiết
+                thực cho tất cả những thành viên hướng đến một cuộc sống tốt đẹp
+                hơn.
               </p>
 
               <p className="mission">
@@ -428,7 +428,7 @@ export default function About() {
             </div>
 
             <div className="journey-text-right">
-              <h2>BF Car Rental - Cùng bạn đến mọi hành trình</h2>
+              <h2>Volt Go - Cùng bạn đến mọi hành trình</h2>
 
               <p className="journey-intro">
                 Mỗi chuyến đi là một hành trình khám phá cuộc sống và thế giới

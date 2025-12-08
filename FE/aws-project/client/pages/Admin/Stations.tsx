@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Table,
   Button,
@@ -14,6 +14,7 @@ import {
   InputNumber,
   Row,
   Col,
+  Upload,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -22,6 +23,7 @@ import {
   ReloadOutlined,
   PhoneOutlined,
   PictureOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { stationService } from "@/service";
 import type {
@@ -53,6 +55,8 @@ export default function Stations() {
   const [form] = Form.useForm<StationFormValues>();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<StationResponse | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const statusOptions = [
     { label: "Hoạt động", value: "ACTIVE" },
@@ -130,6 +134,7 @@ export default function Stations() {
   const handleCreate = () => {
     setEditing(null);
     form.resetFields();
+    setPhotoPreview("");
     setModalOpen(true);
   };
 
@@ -147,7 +152,37 @@ export default function Stations() {
       startTime: parseTime(record.startTime),
       endTime: parseTime(record.endTime),
     });
+    setPhotoPreview(record.photo || "");
     setModalOpen(true);
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
+    if (!validTypes.includes(file.type)) {
+      message.error("Chỉ chấp nhận file ảnh định dạng JPG, PNG, GIF!");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      message.error("Kích thước file không được vượt quá 5MB!");
+      return;
+    }
+
+    // Read and preview image
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imageUrl = event.target?.result as string;
+      setPhotoPreview(imageUrl);
+      form.setFieldsValue({ photo: imageUrl });
+      message.success("Upload ảnh thành công!");
+    };
+    reader.readAsDataURL(file);
   };
 
   const onSubmit = async () => {
@@ -411,7 +446,26 @@ export default function Stations() {
               <Form.Item
                 name="latitude"
                 label="Vĩ độ (Latitude)"
-                rules={[{ required: true, message: "Vui lòng nhập vĩ độ" }]}
+                rules={[
+                  { required: true, message: "Vui lòng nhập vĩ độ" },
+                  {
+                    validator: (_, value) => {
+                      if (
+                        value === undefined ||
+                        value === null ||
+                        value === ""
+                      ) {
+                        return Promise.resolve();
+                      }
+                      if (value < -90 || value > 90) {
+                        return Promise.reject(
+                          new Error("Vĩ độ phải nằm trong khoảng -90 đến 90"),
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
               >
                 <InputNumber
                   style={{ width: "100%" }}
@@ -425,7 +479,28 @@ export default function Stations() {
               <Form.Item
                 name="longitude"
                 label="Kinh độ (Longitude)"
-                rules={[{ required: true, message: "Vui lòng nhập kinh độ" }]}
+                rules={[
+                  { required: true, message: "Vui lòng nhập kinh độ" },
+                  {
+                    validator: (_, value) => {
+                      if (
+                        value === undefined ||
+                        value === null ||
+                        value === ""
+                      ) {
+                        return Promise.resolve();
+                      }
+                      if (value < -180 || value > 180) {
+                        return Promise.reject(
+                          new Error(
+                            "Kinh độ phải nằm trong khoảng -180 đến 180",
+                          ),
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
               >
                 <InputNumber
                   style={{ width: "100%" }}
@@ -443,11 +518,48 @@ export default function Stations() {
           </Form.Item>
 
           {/* Ảnh đại diện */}
-          <Form.Item name="photo" label="Ảnh đại diện (URL)">
-            <Input
-              placeholder="VD: https://example.com/station.jpg"
-              prefix={<PictureOutlined />}
-            />
+          <Form.Item name="photo" label="Ảnh đại diện">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="VD: https://example.com/station.jpg hoặc upload file"
+                  prefix={<PictureOutlined />}
+                  value={form.getFieldValue("photo")}
+                  onChange={(e) => {
+                    form.setFieldsValue({ photo: e.target.value });
+                    setPhotoPreview(e.target.value);
+                  }}
+                />
+                <Button
+                  icon={<UploadOutlined />}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Upload
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  style={{ display: "none" }}
+                />
+              </div>
+              {photoPreview && (
+                <div className="mt-2">
+                  <img
+                    src={photoPreview}
+                    alt="Preview"
+                    style={{
+                      maxWidth: "200px",
+                      maxHeight: "150px",
+                      objectFit: "cover",
+                      borderRadius: "8px",
+                      border: "1px solid #d9d9d9",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </Form.Item>
 
           {/* Giờ hoạt động */}

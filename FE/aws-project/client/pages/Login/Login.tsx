@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMessage } from "@/components/ui/message";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,7 +43,6 @@ export default function Login() {
   const [loginData, setLoginData] = useState({
     username: "",
     password: "",
-    captcha: "",
   });
 
   const [registerData, setRegisterData] = useState({
@@ -52,10 +51,7 @@ export default function Login() {
     phone: "",
     password: "",
     confirmPassword: "",
-    captcha: "",
   });
-
-  const [captchaText] = useState("6d7mp");
 
   useEffect(() => {
     const mode = searchParams.get("mode");
@@ -74,12 +70,6 @@ export default function Login() {
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Kiểm tra captcha
-    if (loginData.captcha.toLowerCase() !== captchaText.toLowerCase()) {
-      showError("Captcha không đúng!");
-      return;
-    }
 
     try {
       // Gọi API login thực tế
@@ -161,12 +151,6 @@ export default function Login() {
     e.preventDefault();
 
     console.log("=== REGISTER SUBMIT START ===");
-
-    // Kiểm tra captcha
-    if (registerData.captcha.toLowerCase() !== captchaText.toLowerCase()) {
-      showError("Captcha không đúng!");
-      return;
-    }
 
     // Kiểm tra mật khẩu khớp
     if (registerData.password !== registerData.confirmPassword) {
@@ -308,10 +292,6 @@ export default function Login() {
     setOtpCode("");
   };
 
-  const refreshCaptcha = () => {
-    showWarning("Captcha đã được làm mới: " + captchaText);
-  };
-
   const handleGoogleLogin = async () => {
     try {
       await loginWithGoogle();
@@ -409,10 +389,10 @@ export default function Login() {
 
               <div>
                 <CardTitle className="text-3xl font-bold text-green-700 tracking-wide">
-                  BF Car Rental
+                  VoltGo
                 </CardTitle>
                 <CardDescription className="text-green-700 font-medium mt-2">
-                  Thuê xe dễ, đi chơi mê!
+                  Xe điện thông minh - Tương lai xanh!
                 </CardDescription>
               </div>
             </CardHeader>
@@ -512,7 +492,9 @@ export default function Login() {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-700">BF Car Rental</p>
+                  <p className="font-semibold text-gray-700">
+                    VoltGo EV Rental
+                  </p>
                 </div>
               </div>
             </div>
@@ -589,52 +571,6 @@ export default function Login() {
                         className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
                         required
                       />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label
-                        htmlFor="login-captcha"
-                        className="text-gray-700 font-medium text-sm"
-                      >
-                        Captcha<span className="text-red-500">*</span>
-                      </Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="login-captcha"
-                          type="text"
-                          placeholder="Nhập captcha"
-                          value={loginData.captcha}
-                          onChange={(e) =>
-                            setLoginData({
-                              ...loginData,
-                              captcha: e.target.value,
-                            })
-                          }
-                          className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                          required
-                        />
-                        <div className="flex items-center gap-1">
-                          <div
-                            className="h-10 px-4 bg-white border-2 border-gray-300 rounded-md flex items-center justify-center font-bold text-lg tracking-widest select-none"
-                            style={{
-                              fontFamily: "monospace",
-                              letterSpacing: "0.2em",
-                              textDecoration: "line-through",
-                            }}
-                          >
-                            {captchaText}
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={refreshCaptcha}
-                            className="h-10 w-10 hover:bg-green-50"
-                          >
-                            <RefreshCw className="h-4 w-4 text-gray-600" />
-                          </Button>
-                        </div>
-                      </div>
                     </div>
 
                     <Button
@@ -899,52 +835,6 @@ export default function Login() {
                           className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
                           required
                         />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label
-                          htmlFor="register-captcha"
-                          className="text-gray-700 font-medium text-sm"
-                        >
-                          Captcha<span className="text-red-500">*</span>
-                        </Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="register-captcha"
-                            type="text"
-                            placeholder="Nhập captcha"
-                            value={registerData.captcha}
-                            onChange={(e) =>
-                              setRegisterData({
-                                ...registerData,
-                                captcha: e.target.value,
-                              })
-                            }
-                            className="h-10 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                            required
-                          />
-                          <div className="flex items-center gap-1">
-                            <div
-                              className="h-10 px-4 bg-white border-2 border-gray-300 rounded-md flex items-center justify-center font-bold text-lg tracking-widest select-none"
-                              style={{
-                                fontFamily: "monospace",
-                                letterSpacing: "0.2em",
-                                textDecoration: "line-through",
-                              }}
-                            >
-                              {captchaText}
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={refreshCaptcha}
-                              className="h-10 w-10 hover:bg-green-50"
-                            >
-                              <RefreshCw className="h-4 w-4 text-gray-600" />
-                            </Button>
-                          </div>
-                        </div>
                       </div>
 
                       <Button
