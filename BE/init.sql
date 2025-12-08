@@ -90,7 +90,7 @@ CREATE TABLE bookings (
     checked_out_by UUID NOT NULL,
     checked_in_by UUID,
     base_price NUMERIC(10, 2),
-    deposit_paid NUMERIC(10, 2),
+    PARTIALLY_PAID NUMERIC(10, 2),
     extra_fee NUMERIC(10, 2),
     total_amount NUMERIC(10, 2),
     pickup_note TEXT,
@@ -104,9 +104,9 @@ CREATE TABLE bookings (
     CONSTRAINT fk_booking_checked_out_by FOREIGN KEY (checked_out_by) REFERENCES users(id) ON DELETE RESTRICT,
     CONSTRAINT fk_booking_checked_in_by FOREIGN KEY (checked_in_by) REFERENCES users(id) ON DELETE RESTRICT,
     CONSTRAINT chk_booking_status CHECK (status IN ('PENDING', 'CONFIRMED', 'ONGOING', 'COMPLETED', 'CANCELLED')),
-    CONSTRAINT chk_booking_payment_status CHECK (payment_status IN ('PENDING', 'PAID', 'FAILED', 'DEPOSIT_PAID')),
+    CONSTRAINT chk_booking_payment_status CHECK (payment_status IN ('PENDING', 'PAID', 'FAILED', 'PARTIALLY_PAID')),
     CONSTRAINT chk_booking_times CHECK (expected_end_time > start_time),
-    CONSTRAINT chk_booking_amounts CHECK (base_price >= 0 AND deposit_paid >= 0 AND extra_fee >= 0 AND total_amount >= 0)
+    CONSTRAINT chk_booking_amounts CHECK (base_price >= 0 AND PARTIALLY_PAID >= 0 AND extra_fee >= 0 AND total_amount >= 0)
 );
 
 CREATE TABLE payments (
@@ -122,7 +122,7 @@ CREATE TABLE payments (
     CONSTRAINT fk_payment_booking FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL,
     CONSTRAINT fk_payment_processed_by FOREIGN KEY (processed_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT chk_payment_method CHECK (payment_method IN ('CASH', 'MOMO')),
-    CONSTRAINT chk_payment_status CHECK (status IN ('PENDING', 'PAID', 'FAILED', 'DEPOSIT_PAID')),
+    CONSTRAINT chk_payment_status CHECK (status IN ('PENDING', 'PAID', 'FAILED', 'PARTIALLY_PAID')),
     CONSTRAINT chk_payment_amount CHECK (amount >= 0)
 );
 

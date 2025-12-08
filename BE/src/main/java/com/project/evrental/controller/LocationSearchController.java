@@ -4,16 +4,15 @@ import com.project.evrental.domain.ApiResponse;
 import com.project.evrental.domain.dto.request.NearbyStationSearchRequest;
 import com.project.evrental.domain.dto.response.NearbyStationsPageResponse;
 import com.project.evrental.service.search.LocationSearchService;
-import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,8 +24,28 @@ public class LocationSearchController {
 
     @GetMapping("/stations/nearby")
     public ResponseEntity<ApiResponse<NearbyStationsPageResponse>> findNearbyStations(
-            @Valid @RequestBody NearbyStationSearchRequest request
-            ) {
+            @RequestParam BigDecimal latitude,
+            @RequestParam BigDecimal longitude,
+            @RequestParam(required = false, defaultValue = "10") Integer radiusKm,
+            @RequestParam(required = false, defaultValue = "10") Integer limit,
+            @RequestParam(required = false) Double minRating,
+            @RequestParam(required = false) String fuelType,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) LocalDateTime startTime,
+            @RequestParam(required = false) LocalDateTime endTime
+    ) {
+        NearbyStationSearchRequest request = NearbyStationSearchRequest.builder()
+                .latitude(latitude)
+                .longitude(longitude)
+                .radiusKm(radiusKm)
+                .limit(limit)
+                .minRating(minRating)
+                .fuelType(fuelType)
+                .brand(brand)
+                .startTime(startTime)
+                .endTime(endTime)
+                .build();
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.<NearbyStationsPageResponse>builder()
                         .statusCode(200)

@@ -2,7 +2,6 @@ package com.project.evrental.service.auth;
 
 import com.project.evrental.domain.dto.response.OauthState;
 import com.project.evrental.exception.custom.InvalidStateException;
-import com.sun.jdi.request.InvalidRequestStateException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -49,7 +48,7 @@ public class OauthStateService {
 
     public OauthState validateAndConsumeState(String stateValue) {
         if(stateValue == null || stateValue.isBlank()) {
-            throw new InvalidRequestStateException("State parameter is missing");
+            throw new InvalidStateException("State parameter is missing");
         }
 
         String key = state_prefix + stateValue;

@@ -59,6 +59,9 @@ export const API_ENDPOINTS = {
     CONFIRM_BOOKING: "/staff/bookings/:bookingId/confirm",
     VERIFY_LICENSE: "/staff/users/:userId/verify-license",
   },
+  LOCATIONS: {
+    NEARBY_STATIONS: "/locations/stations/nearby",
+  },
   STATIONS: {
     CREATE: "/stations",
     UPDATE: "/stations/:stationId",
