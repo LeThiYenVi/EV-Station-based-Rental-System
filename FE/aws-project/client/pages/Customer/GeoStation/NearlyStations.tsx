@@ -110,7 +110,7 @@ export default function NearlyStations() {
       </section>
 
       {/* Trạng thái tải hoặc lỗi */}
-      <section className="bg-gray-50 py-12 border-b text-center">
+      <section className="bg-white py-7 text-center">
         {loading && (
           <p className="text-gray-700 font-medium">
             Đang xác định vị trí của bạn...
@@ -129,11 +129,6 @@ export default function NearlyStations() {
           </div>
         )}
 
-        {coords && !loading && !error && (
-          <p className="text-gray-600 text-sm mt-4">
-            📍 Vị trí hiện tại: ({coords.lat.toFixed(6)}, {coords.lon.toFixed(6)})
-          </p>
-        )}
       </section>
 
       {/* Danh sách trạm gần */}

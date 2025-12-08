@@ -173,7 +173,6 @@ const MapWithPlaces = ({
       {/* Display selected coordinates */}
       {selectedCoord && (
         <div className="text-sm text-gray-600">
-          📍 Vị trí đã chọn: {selectedCoord.lat.toFixed(6)}, {selectedCoord.lng.toFixed(6)}
           {selectedAddress && (
             <div className="mt-1 text-gray-500">
               📌 Địa chỉ: {selectedAddress}
