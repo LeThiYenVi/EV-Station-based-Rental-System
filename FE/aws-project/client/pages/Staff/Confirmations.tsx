@@ -299,8 +299,13 @@ export default function Confirmations() {
       }
 
       setConfirmModalOpen(false);
-      // Reload bookings để cập nhật trạng thái mới
-      loadBookings(pagination.current - 1, pagination.pageSize);
+      setDetailModalOpen(false);
+
+      // Reload về trang đầu tiên để thấy thay đổi ngay lập tức
+      await loadBookings(0, pagination.pageSize);
+
+      // Reset về page 1
+      setPagination((prev) => ({ ...prev, current: 1 }));
     } catch (error: any) {
       message.error(error?.message || "Có lỗi xảy ra, vui lòng thử lại!");
     } finally {
@@ -713,7 +718,7 @@ export default function Confirmations() {
                   </span>
                 </Descriptions.Item>
                 <Descriptions.Item label="Trạng thái" span={1}>
-                  <Tag color="orange">Chờ xác nhận</Tag>
+                  {getStatusTag(selectedBooking.status)}
                 </Descriptions.Item>
                 <Descriptions.Item label="Thời gian bắt đầu" span={1}>
                   <span className="text-green-600 font-medium">
