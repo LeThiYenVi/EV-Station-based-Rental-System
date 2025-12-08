@@ -79,8 +79,8 @@ export default function StaffLayout() {
                 <span className="text-blue-700 font-bold text-xl">S</span>
               </div>
               <div className="text-white">
-                <div className="font-bold text-lg">Staff Panel</div>
-                <div className="text-xs text-blue-200">Quản lý vận hành</div>
+                <div className="font-bold text-lg">VoltGo Staff</div>
+                <div className="text-xs text-blue-200">EV Operations</div>
               </div>
             </div>
           )}

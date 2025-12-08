@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Table,
   Button,
@@ -23,6 +23,7 @@ import {
   ReloadOutlined,
   PhoneOutlined,
   PictureOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { stationService } from "@/service";
 import type {
@@ -55,6 +56,8 @@ export default function Stations() {
   const [form] = Form.useForm<StationFormValues>();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<StationResponse | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const statusOptions = [
     { label: "Hoạt động", value: "ACTIVE" },
@@ -132,6 +135,7 @@ export default function Stations() {
   const handleCreate = () => {
     setEditing(null);
     form.resetFields();
+    setPhotoPreview("");
     setModalOpen(true);
   };
 
@@ -149,6 +153,7 @@ export default function Stations() {
       startTime: parseTime(record.startTime),
       endTime: parseTime(record.endTime),
     });
+    setPhotoPreview(record.photo || "");
     setModalOpen(true);
   };
 

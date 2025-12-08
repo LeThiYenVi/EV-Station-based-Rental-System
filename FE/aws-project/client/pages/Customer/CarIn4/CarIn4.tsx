@@ -904,7 +904,7 @@ export default function CarIn4() {
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Mô tả</h3>
                 <div className="space-y-3 text-gray-700 text-sm leading-relaxed">
                   <p>
-                    - Ngoài các ưu đãi về giá BF Car Rental còn hỗ trợ thêm cho
+                    - Ngoài các ưu đãi về giá VoltGo còn hỗ trợ thêm cho
                     Quý Khách hàng các Chính sách như sau:
                   </p>
                   <p>* Hoàn Tiền do xăng dư.</p>
@@ -912,7 +912,7 @@ export default function CarIn4() {
                   <p>* Miễn phí vượt dưới 10Km.</p>
                   <p className="text-gray-500">
                     - Sử dụng miễn phí: Nước- Đồ ăn vặt, Khăn giấy có trong gói
-                    MICAR KIT khi thuê xe
+                    VoltGo Kit khi thuê xe
                   </p>
                   <p className="text-gray-500">
                     - Mazda 2 là mẫu dòng xe Sedan hạng B. Xe được thiết kế thể
@@ -1133,7 +1133,7 @@ export default function CarIn4() {
                   </p>
                   <p>
                     * Tiền giữ chỗ & bồi thường do chủ xe hủy chuyến (nếu có) sẽ
-                    được BF Car Rental hoàn trả đến khách thuê bằng chuyển khoản
+                    được VoltGo hoàn trả đến khách thuê bằng chuyển khoản
                     ngân hàng trong vòng 1-3 ngày làm việc kể tiếp. Xem thêm{" "}
                     <button className="text-green-600 font-semibold hover:underline">
                       Thủ tục hoàn tiền & bồi thường hủy chuyến

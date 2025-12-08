@@ -59,7 +59,7 @@ export default function Settings() {
                   layout="vertical"
                   initialValues={
                     initial || {
-                      siteName: "GreenFuture Admin",
+                      siteName: "VoltGo Admin",
                       defaultLanguage: "vi",
                       enableNotifications: true,
                     }

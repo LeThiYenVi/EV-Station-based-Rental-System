@@ -253,7 +253,7 @@ export default function Index() {
                 ref={title1Ref}
                 className="text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg"
               >
-                BF Car Rental - Cùng Bạn
+                VoltGo - Cùng Bạn
               </h1>
               <h2
                 ref={title2Ref}
@@ -788,12 +788,12 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Ưu Điểm Của BF Car Rental */}
+      {/* Ưu Điểm Của VoltGo */}
       <section className="py-16 bg-white">
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
-              Ưu Điểm Của BF Car Rental
+              Ưu Điểm Của VoltGo
             </h2>
             <p className="text-gray-600 text-base">
               Những tính năng giúp bạn dễ dàng hơn khi thuê xe trên BF Car
@@ -804,9 +804,9 @@ export default function Index() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {[
               {
-                title: "Lái xe an toàn cùng BF Car Rental",
+                title: "Lái xe an toàn cùng VoltGo",
                 description:
-                  "Chuyến đi trên BF Car Rental được bảo vệ với Gói bảo hiểm thuê xe tự lái MIC & ĐBV (VNI). Khách thuê xe còn bồi thường tối đa 2.000.000VND trong trường hợp có sự cố ngoài ý muốn.",
+                  "Chuyến đi trên VoltGo được bảo vệ với Gói bảo hiểm thuê xe tự lái MIC & ĐBV (VNI). Khách thuê xe còn bồi thường tối đa 2.000.000VND trong trường hợp có sự cố ngoài ý muốn.",
                 image: "/mocks/uudiem/Screenshot 2025-10-02 132842.png",
               },
               {
@@ -818,7 +818,7 @@ export default function Index() {
               {
                 title: "Thủ tục đơn giản",
                 description:
-                  "Chỉ cần có CCCD gắn chip (Hoặc Passport) & Giấy phép lái xe là bạn đã đủ điều kiện thuê xe trên BF Car Rental.",
+                  "Chỉ cần có CCCD gắn chip (Hoặc Passport) & Giấy phép lái xe là bạn đã đủ điều kiện thuê xe trên VoltGo.",
                 image: "/mocks/uudiem/Screenshot 2025-10-02 132830.png",
               },
               {
@@ -873,7 +873,7 @@ export default function Index() {
               Hướng Dẫn Thuê Xe
             </h2>
             <p className="text-gray-600 text-base">
-              Chỉ với 4 bước đơn giản để trải nghiệm thuê xe BF Car Rental một
+              Chỉ với 4 bước đơn giản để trải nghiệm thuê xe VoltGo một
               cách nhanh chóng
             </p>
           </div>
@@ -882,7 +882,7 @@ export default function Index() {
             {[
               {
                 step: "01",
-                title: "Đặt xe trên app/web BF Car Rental",
+                title: "Đặt xe trên app/web VoltGo",
                 image: "/mocks/huongdan/Screenshot 2025-10-02 132938.png",
                 color: "text-green-500",
               },
@@ -932,8 +932,8 @@ export default function Index() {
         </div>
       </section>
 
-      {/* CTA Section 1 - Bạn muốn biết thêm về BF Car Rental */}
-      {/* CTA Section 1 - Bạn muốn biết thêm về BF Car Rental */}
+      {/* CTA Section 1 - Bạn muốn biết thêm về VoltGo */}
+      {/* CTA Section 1 - Bạn muốn biết thêm về VoltGo */}
       <section className="py-16 bg-white">
         <div className="bg-gradient-to-br from-green-50 to-green-100 max-w-[80%] mx-auto rounded-3xl p-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
@@ -942,7 +942,7 @@ export default function Index() {
               <div className="relative rounded-3xl overflow-hidden shadow-2xl">
                 <img
                   src="/mocks/thue_xe_co_tai_xe_tphcm_gia_re.84f8483d.png"
-                  alt="Về BF Car Rental"
+                  alt="Về VoltGo"
                   className="w-full h-auto object-cover"
                 />
               </div>
@@ -970,10 +970,10 @@ export default function Index() {
               <h2 className="text-3xl md:text-4xl font-bold text-black mb-6">
                 Bạn muốn biết thêm
                 <br />
-                về BF Car Rental?
+                về VoltGo?
               </h2>
               <p className="text-gray-700 text-base mb-8 leading-relaxed max-w-md">
-                BF Car Rental kết nối khách hàng có nhu cầu thuê xe với hàng
+                VoltGo kết nối khách hàng có nhu cầu thuê xe với hàng
                 ngàn chủ xe ô tô ở TPHCM, Hà Nội & các tỉnh thành khác. BF Car
                 Rental hướng đến việc xây dựng cộng đồng người dùng ô tô văn
                 minh & uy tín tại Việt Nam.
@@ -1007,7 +1007,7 @@ export default function Index() {
                   thuê xe?
                 </h2>
                 <p className="text-gray-700 text-base mb-8 leading-relaxed max-w-md">
-                  Hơn 10.000 chủ xe đang cho thuê hiệu quả trên BF Car Rental
+                  Hơn 10.000 chủ xe đang cho thuê hiệu quả trên VoltGo
                   <br />
                   Đăng ký trở thành đối tác của chúng tôi ngay hôm nay để gia
                   <br />
@@ -1044,7 +1044,7 @@ export default function Index() {
       <section className="cta-section-new">
         <div className="container max-w-[90%] mx-auto">
           <div className="cta-header">
-            <h2>Dịch Vụ Của BF Car Rental</h2>
+            <h2>Dịch Vụ Của VoltGo</h2>
           </div>
 
           <div className="cta-cards-grid">
