@@ -43,7 +43,6 @@ interface StationFormValues {
   latitude?: number;
   longitude?: number;
   hotline?: string;
-  photo?: string;
   startTime?: dayjs.Dayjs;
   endTime?: dayjs.Dayjs;
 }
@@ -58,6 +57,11 @@ export default function Stations() {
   const [editing, setEditing] = useState<StationResponse | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // State for upload flow
+  const [activeTab, setActiveTab] = useState("1");
+  const [createdStationId, setCreatedStationId] = useState<string | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
 
   const statusOptions = [
     { label: "Hoạt động", value: "ACTIVE" },
@@ -136,6 +140,9 @@ export default function Stations() {
     setEditing(null);
     form.resetFields();
     setPhotoPreview("");
+    setActiveTab("1");
+    setCreatedStationId(null);
+    setUploadFile(null);
     setModalOpen(true);
   };
 
@@ -149,11 +156,13 @@ export default function Stations() {
       latitude: record.latitude,
       longitude: record.longitude,
       hotline: record.hotline,
-      photo: record.photo,
       startTime: parseTime(record.startTime),
       endTime: parseTime(record.endTime),
     });
     setPhotoPreview(record.photo || "");
+    setActiveTab("1");
+    setCreatedStationId(null);
+    setUploadFile(null);
     setModalOpen(true);
   };
 
@@ -162,7 +171,7 @@ export default function Stations() {
       latitude: lat,
       longitude: lng,
     });
-    
+
     // If address is provided from Places search, auto-fill ward and city
     if (address) {
       const parts = address.split(",").map((p) => p.trim());
@@ -188,7 +197,6 @@ export default function Stations() {
         latitude: values.latitude || 0,
         longitude: values.longitude || 0,
         hotline: values.hotline || undefined,
-        photo: values.photo || undefined,
       };
 
       // Chỉ thêm time nếu có giá trị hợp lệ
@@ -208,17 +216,56 @@ export default function Stations() {
           requestData as UpdateStationRequest,
         );
         message.success("Đã cập nhật trạm");
+        setModalOpen(false);
+        await load();
       } else {
-        await stationService.createStation(requestData);
+        const response = await stationService.createStation(requestData);
         message.success("Đã tạo trạm mới");
+
+        // Store station ID and move to upload tab
+        setCreatedStationId(response.id);
+        setActiveTab("3");
       }
-      setModalOpen(false);
-      await load();
     } catch (e: any) {
       message.error(e?.response?.data?.message || "Lưu trạm thất bại");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUploadPhoto = async () => {
+    if (!createdStationId || !uploadFile) {
+      message.warning("Vui lòng chọn ảnh để upload");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await stationService.uploadStationPhoto(createdStationId, uploadFile);
+      message.success("Upload ảnh thành công");
+      setModalOpen(false);
+      await load();
+
+      // Reset states
+      setCreatedStationId(null);
+      setUploadFile(null);
+      setActiveTab("1");
+    } catch (e: any) {
+      message.error(e?.response?.data?.message || "Upload ảnh thất bại");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkipUpload = async () => {
+    message.info("Đã bỏ qua upload ảnh");
+    setModalOpen(false);
+    await load();
+
+    // Reset states
+    setCreatedStationId(null);
+    setUploadFile(null);
+    setActiveTab("1");
   };
 
   const handleDelete = async (id: string) => {
@@ -389,14 +436,32 @@ export default function Stations() {
         title={editing ? "Cập nhật trạm" : "Tạo trạm mới"}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
-        onOk={onSubmit}
-        okText={editing ? "Lưu" : "Tạo"}
-        cancelText="Hủy"
-        confirmLoading={loading}
+        footer={
+          activeTab === "3" ? (
+            <Space>
+              <Button onClick={handleSkipUpload}>Bỏ qua</Button>
+              <Button
+                type="primary"
+                onClick={handleUploadPhoto}
+                loading={loading}
+              >
+                Upload ảnh
+              </Button>
+            </Space>
+          ) : (
+            <Space>
+              <Button onClick={() => setModalOpen(false)}>Hủy</Button>
+              <Button type="primary" onClick={onSubmit} loading={loading}>
+                {editing ? "Lưu" : "Tạo"}
+              </Button>
+            </Space>
+          )
+        }
         width={800}
       >
         <Tabs
-          defaultActiveKey="1"
+          activeKey={activeTab}
+          onChange={setActiveTab}
           items={[
             {
               key: "1",
@@ -453,14 +518,6 @@ export default function Stations() {
                     />
                   </Form.Item>
 
-                  {/* Ảnh đại diện */}
-                  <Form.Item name="photo" label="Ảnh đại diện (URL)">
-                    <Input
-                      placeholder="VD: https://example.com/station.jpg"
-                      prefix={<PictureOutlined />}
-                    />
-                  </Form.Item>
-
                   {/* Giờ hoạt động */}
                   <Row gutter={16}>
                     <Col span={12}>
@@ -497,8 +554,8 @@ export default function Stations() {
               children: (
                 <div className="space-y-4">
                   <div className="text-sm text-gray-600">
-                    Click vào bản đồ để chọn vị trí trạm. Tọa độ sẽ được điền
-                    tự động.
+                    Click vào bản đồ để chọn vị trí trạm. Tọa độ sẽ được điền tự
+                    động.
                   </div>
                   <StationMap onLocationSelect={handleLocationSelect} />
                   <Form form={form} layout="vertical">
@@ -541,6 +598,52 @@ export default function Stations() {
                       </Col>
                     </Row>
                   </Form>
+                </div>
+              ),
+            },
+            {
+              key: "3",
+              label: (
+                <span>
+                  <UploadOutlined /> Upload ảnh trạm
+                </span>
+              ),
+              disabled: !createdStationId,
+              children: (
+                <div className="space-y-4">
+                  <div className="text-sm text-gray-600">
+                    Tải lên ảnh đại diện cho trạm vừa tạo
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setUploadFile(file);
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setPhotoPreview(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100"
+                  />
+                  {photoPreview && (
+                    <div className="mt-4">
+                      <img
+                        src={photoPreview}
+                        alt="Preview"
+                        className="w-full h-64 object-cover rounded-lg"
+                      />
+                    </div>
+                  )}
                 </div>
               ),
             },
