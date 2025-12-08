@@ -57,7 +57,7 @@ export default function Stations() {
   const [editing, setEditing] = useState<StationResponse | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // State for upload flow
   const [activeTab, setActiveTab] = useState("1");
   const [createdStationId, setCreatedStationId] = useState<string | null>(null);
@@ -171,7 +171,7 @@ export default function Stations() {
       latitude: lat,
       longitude: lng,
     });
-    
+
     // If address is provided from Places search, auto-fill ward and city
     if (address) {
       const parts = address.split(",").map((p) => p.trim());
@@ -221,7 +221,7 @@ export default function Stations() {
       } else {
         const response = await stationService.createStation(requestData);
         message.success("Đã tạo trạm mới");
-        
+
         // Store station ID and move to upload tab
         setCreatedStationId(response.id);
         setActiveTab("3");
@@ -245,7 +245,7 @@ export default function Stations() {
       message.success("Upload ảnh thành công");
       setModalOpen(false);
       await load();
-      
+
       // Reset states
       setCreatedStationId(null);
       setUploadFile(null);
@@ -261,7 +261,7 @@ export default function Stations() {
     message.info("Đã bỏ qua upload ảnh");
     setModalOpen(false);
     await load();
-    
+
     // Reset states
     setCreatedStationId(null);
     setUploadFile(null);
@@ -440,7 +440,11 @@ export default function Stations() {
           activeTab === "3" ? (
             <Space>
               <Button onClick={handleSkipUpload}>Bỏ qua</Button>
-              <Button type="primary" onClick={handleUploadPhoto} loading={loading}>
+              <Button
+                type="primary"
+                onClick={handleUploadPhoto}
+                loading={loading}
+              >
                 Upload ảnh
               </Button>
             </Space>
@@ -550,8 +554,8 @@ export default function Stations() {
               children: (
                 <div className="space-y-4">
                   <div className="text-sm text-gray-600">
-                    Click vào bản đồ để chọn vị trí trạm. Tọa độ sẽ được điền
-                    tự động.
+                    Click vào bản đồ để chọn vị trí trạm. Tọa độ sẽ được điền tự
+                    động.
                   </div>
                   <StationMap onLocationSelect={handleLocationSelect} />
                   <Form form={form} layout="vertical">
