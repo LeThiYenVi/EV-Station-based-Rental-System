@@ -380,11 +380,11 @@ export default function Login() {
             <CardHeader className="space-y-4 text-center pb-6 px-0">
               {/* Logo */}
               <div className="flex justify-center mb-2">
-                <div className="w-20 h-20 rounded-full bg-green-700 flex items-center justify-center shadow-lg">
-                  <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center">
-                    <span className="text-green-700 font-bold text-2xl">S</span>
-                  </div>
-                </div>
+                <img
+                  src="/voltgo_logo.png"
+                  alt="VoltGo Logo"
+                  className="w-32 h-32 object-contain"
+                />
               </div>
 
               <div>

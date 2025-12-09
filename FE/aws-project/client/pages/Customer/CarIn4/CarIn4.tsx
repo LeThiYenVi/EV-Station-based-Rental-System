@@ -355,18 +355,22 @@ export default function CarIn4() {
             if (result.success && result.data) {
               setCurrentUserData(result.data);
 
-              // Check if user has uploaded GPLX (both front and back)
-              const hasGPLX = !!(
-                result.data.licenseCardFrontImageUrl &&
-                result.data.licenseCardBackImageUrl
-              );
+              // Check if license is verified from backend
+              const isLicenseVerified =
+                result.data.licenseVerified ||
+                result.data.isLicenseVerified ||
+                false;
+
               console.log("📄 GPLX Check:", {
+                licenseVerified: result.data.licenseVerified,
+                isLicenseVerified: result.data.isLicenseVerified,
+                licenseNumber: result.data.licenseNumber,
                 front: result.data.licenseCardFrontImageUrl,
                 back: result.data.licenseCardBackImageUrl,
-                hasGPLX,
+                finalVerified: isLicenseVerified,
               });
 
-              setIsVerified(hasGPLX);
+              setIsVerified(isLicenseVerified);
             }
           } catch (error) {
             console.error("Error fetching user data for GPLX check:", error);
@@ -584,7 +588,7 @@ export default function CarIn4() {
 
     if (!isLoggedIn) {
       setShowLoginDialog(true);
-    } else if (!currentUserData?.licenseVerified) {
+    } else if (!isVerified) {
       // Show alert asking user to update license in profile
       setShowLicenseAlert(true);
     } else {
