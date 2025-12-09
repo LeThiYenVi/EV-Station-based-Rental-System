@@ -483,4 +483,69 @@ public class BookingService {
         }
         return authentication != null ? authentication.getName() : null;
     }
+
+    public MoMoPaymentResponse payRemainder(UUID bookingId) {
+        log.info("Processing remainder payment for booking: {}", bookingId);
+        String email = getEmailFromAuthentication();
+        if (email == null || email.isBlank()) {
+            throw new IllegalStateException("Unauthenticated user");
+        }
+
+        User renter = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with ID: " + bookingId));
+
+        // Ensure the booking belongs to the current renter
+        if (!booking.getRenter().getId().equals(renter.getId())) {
+            throw new IllegalStateException("You are not authorized to pay for this booking");
+        }
+
+        // Only allow payment when booking is COMPLETED
+        if (booking.getStatus() != BookingStatus.COMPLETED) {
+            throw new IllegalStateException("Remainder payment is only available for completed bookings");
+        }
+
+        // Compute the remaining amount: totalAmount - depositPaid
+        // If extra fees were added, they should already be reflected in totalAmount
+        // Prevent negative or zero payment attempts
+        BigDecimal remaining = booking.getTotalAmount().subtract(
+                booking.getDepositPaid() != null ? booking.getDepositPaid() : BigDecimal.ZERO
+        );
+        if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException("No remaining amount to pay for this booking");
+        }
+
+        // Create a Payment record for the remainder, consistent with completeBooking
+        Payment remainingPayment = Payment.builder()
+                .booking(booking)
+                .amount(remaining)
+                .paymentMethod(PaymentMethod.MOMO)
+                .status(PaymentStatus.PENDING)
+                .processedBy(renter.getId())
+                .build();
+        Payment savedPayment = paymentRepository.save(remainingPayment);
+
+        MoMoPaymentResponse moMoResponse = moMoService.createPayment(
+                booking.getId(),
+                remaining,
+                "Thanh toán phần còn lại booking " + booking.getBookingCode(),
+                false
+        );
+
+        // Update payment record based on MoMo response for traceability
+        if ("0".equals(moMoResponse.getResultCode())) {
+            savedPayment.setTransactionId(moMoResponse.getOrderId());
+            paymentRepository.save(savedPayment);
+            log.info("MoMo remainder payment created successfully - orderId: {}", moMoResponse.getOrderId());
+        } else {
+            savedPayment.setStatus(PaymentStatus.FAILED);
+            paymentRepository.save(savedPayment);
+            log.error("MoMo remainder payment creation failed - resultCode: {}, message: {}",
+                    moMoResponse.getResultCode(), moMoResponse.getMessage());
+        }
+
+        return moMoResponse;
+    }
 }

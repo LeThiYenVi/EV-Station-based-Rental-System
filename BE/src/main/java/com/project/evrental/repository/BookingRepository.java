@@ -47,4 +47,6 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
     // Count bookings by multiple statuses
     long countByStatusIn(List<BookingStatus> statuses);
+    @Query("SELECT b FROM Booking b WHERE b.id=:id AND b.status = 'COMPLETED'")
+    Booking findBookingByIdAndStatusCompleted(UUID bookingId);
 }

@@ -7,7 +7,9 @@ import com.project.evrental.domain.dto.request.UpdateBookingRequest;
 import com.project.evrental.domain.dto.response.BookingDetailResponse;
 import com.project.evrental.domain.dto.response.BookingResponse;
 import com.project.evrental.domain.dto.response.BookingWithPaymentResponse;
+import com.project.evrental.domain.dto.response.MoMoPaymentResponse;
 import com.project.evrental.service.BookingService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -224,6 +226,20 @@ public class BookingController {
                 .body(ApiResponse.<Void>builder()
                         .statusCode(200)
                         .message("Booking deleted successfully")
+                        .build());
+    }
+    @GetMapping("/{bookingId}/payRemainder")
+    @PreAuthorize("hasRole('RENTER')")
+    @Operation(summary = "Pay the Reminder ", description = "Pay the remaining amount for a booking")
+    public ResponseEntity<ApiResponse<MoMoPaymentResponse>> payRemainder(
+            @PathVariable UUID bookingId
+    ) {
+        log.info("Request to purchase booking: {}", bookingId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.<MoMoPaymentResponse>builder()
+                        .statusCode(200)
+                        .message("Booking purchased successfully")
+                        .data(bookingService.payRemainder(bookingId))
                         .build());
     }
 }
