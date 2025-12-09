@@ -27,6 +27,8 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+#      username: ${REDIS_USERNAME:default}
+#      password: ${REDIS_PASSWORD:}
       timeout: 2000ms
       time-to-live: 10m
 #      ssl:
@@ -36,6 +38,10 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: https://cognito-idp.${AWS_REGION}.amazonaws.com/${AWS_COGNITO_USER_POOL_ID}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}
 
 aws:
   cognito:

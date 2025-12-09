@@ -5,6 +5,9 @@ export const API_CONFIG = {
   TIMEOUT: 30000, // 30 seconds
 };
 
+console.log("API_CONFIG.BASE_URL =", API_CONFIG.BASE_URL);
+
+
 export const API_ENDPOINTS = {
   AUTH: {
     REGISTER: "/auth/register",
