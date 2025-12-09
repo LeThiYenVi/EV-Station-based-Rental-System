@@ -83,6 +83,8 @@ export default function NearlyStations() {
     useState<StationDetailResponse | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [locationPermissionDenied, setLocationPermissionDenied] =
+    useState(false);
 
   useEffect(() => {
     // Gọi tự động khi component mount
@@ -92,8 +94,20 @@ export default function NearlyStations() {
       return;
     }
 
+    // Set timeout để tránh chờ quá lâu
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setError(
+          "Yêu cầu vị trí đang mất quá nhiều thời gian. Vui lòng cho phép truy cập vị trí hoặc thử lại.",
+        );
+        setLoading(false);
+        setLocationPermissionDenied(true);
+      }
+    }, 10000); // 10 seconds timeout
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        clearTimeout(timeoutId);
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
         setCoords({ lat: latitude, lon: longitude });
@@ -127,10 +141,19 @@ export default function NearlyStations() {
         }
       },
       (err) => {
+        clearTimeout(timeoutId);
+        setLocationPermissionDenied(true);
         setError("Không thể lấy vị trí: " + err.message);
         setLoading(false);
       },
+      {
+        timeout: 8000, // 8 seconds timeout for geolocation
+        enableHighAccuracy: false, // Faster but less accurate
+        maximumAge: 60000, // Accept cached position up to 1 minute old
+      },
     );
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const fetchStationDetail = async (stationId: string) => {
@@ -185,20 +208,40 @@ export default function NearlyStations() {
       {/* Trạng thái tải hoặc lỗi */}
       <section className="bg-white py-7 text-center">
         {loading && (
-          <p className="text-gray-700 font-medium">
-            Đang xác định vị trí của bạn...
-          </p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-700 font-medium">
+                Đang xác định vị trí của bạn...
+              </p>
+            </div>
+            <p className="text-sm text-gray-500">
+              Vui lòng cho phép truy cập vị trí khi trình duyệt yêu cầu
+            </p>
+          </div>
         )}
 
         {error && (
-          <div className="text-red-600 font-medium">
-            ⚠️ {error}
-            {error.includes("denied") && (
-              <p className="text-gray-500 text-sm mt-2">
-                Hãy kiểm tra lại quyền định vị của trình duyệt và chọn{" "}
-                <strong>“Cho phép truy cập vị trí”</strong>.
-              </p>
-            )}
+          <div className="max-w-md mx-auto">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-600 font-medium mb-2">⚠️ {error}</p>
+              {locationPermissionDenied && (
+                <div className="text-left space-y-2 text-sm text-gray-600">
+                  <p className="font-medium">Cách khắc phục:</p>
+                  <ol className="list-decimal list-inside space-y-1 ml-2">
+                    <li>Nhấp vào biểu tượng khóa/thông tin bên cạnh URL</li>
+                    <li>Chọn "Cho phép" quyền truy cập vị trí</li>
+                    <li>Tải lại trang</li>
+                  </ol>
+                  <Button
+                    onClick={() => window.location.reload()}
+                    className="mt-3 bg-green-600 hover:bg-green-700 w-full"
+                  >
+                    Tải lại trang
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </section>
@@ -210,127 +253,167 @@ export default function NearlyStations() {
             Các trạm gần vị trí của bạn
           </h3>
 
-          <div className="grid gap-6">
-            {stations.map((station) => (
-              <Card
-                key={station.id}
-                className="overflow-hidden hover:shadow-lg transition-shadow duration-300"
-              >
-                <div className="flex flex-col md:flex-row">
-                  {/* Ảnh đại diện */}
-                  <div className="relative md:w-1/3">
-                    <img
-                      src={station.photo || "/placeholder.jpg"}
-                      alt={station.name}
-                      className="w-full h-48 md:h-full object-cover"
-                    />
-                    <Badge
-                      className="absolute top-3 right-3 bg-white/90 text-gray-800 hover:bg-white/90"
-                      variant="secondary"
-                    >
-                      <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
-                      {station.rating?.toFixed(1) || "N/A"}
-                    </Badge>
-                  </div>
-
-                  {/* Thông tin chi tiết */}
-                  <CardContent className="flex-1 p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-start justify-between">
-                        <h3 className="text-xl font-bold text-gray-900">
-                          {station.name}
-                        </h3>
-                        <Badge
-                          variant={
-                            station.status === "ACTIVE"
-                              ? "default"
-                              : "destructive"
-                          }
-                          className={
-                            station.status === "ACTIVE" ? "bg-green-500" : ""
-                          }
-                        >
-                          {station.status === "ACTIVE"
-                            ? "Hoạt động"
-                            : "Đóng cửa"}
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-start gap-2 text-sm text-gray-600">
-                          <MapPin className="w-4 h-4 mt-0.5 text-green-600 flex-shrink-0" />
-                          <span>{station.address}</span>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Phone className="w-4 h-4 text-blue-600" />
-                          <span className="font-medium">{station.hotline}</span>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Clock className="w-4 h-4 text-orange-600" />
-                          <span>
-                            {new Date(station.startTime).toLocaleTimeString(
-                              "vi-VN",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
-                            {" - "}
-                            {new Date(station.endTime).toLocaleTimeString(
-                              "vi-VN",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
-                          </span>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Car className="w-4 h-4 text-purple-600" />
-                          <span className="font-semibold text-gray-900">
-                            {station.availableVehiclesCount}
-                          </span>
-                          <span className="text-gray-600">xe khả dụng</span>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-sm">
-                          <Navigation className="w-4 h-4 text-blue-600" />
-                          <span className="font-semibold text-blue-600">
-                            {station.distanceKm?.toFixed(1)} km
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <Button
-                          onClick={() => fetchStationDetail(station.id)}
-                          disabled={detailLoading}
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          {detailLoading ? "Đang tải..." : "Xem chi tiết"}
-                        </Button>
-
-                        <Button
-                          onClick={() => handleFindVehicles(station.id)}
-                          className="flex-1 bg-green-600 hover:bg-green-700"
-                        >
-                          <Search className="w-4 h-4 mr-2" />
-                          Tìm xe tại trạm
-                        </Button>
+          {/* Loading Skeleton */}
+          {loading && (
+            <div className="grid gap-6">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="overflow-hidden animate-pulse">
+                  <div className="flex flex-col md:flex-row">
+                    <div className="md:w-1/3 bg-gray-200 h-48"></div>
+                    <div className="flex-1 p-6 space-y-4">
+                      <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-4 bg-gray-200 rounded w-full"></div>
+                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                      <div className="flex gap-3 mt-4">
+                        <div className="h-10 bg-gray-200 rounded flex-1"></div>
+                        <div className="h-10 bg-gray-200 rounded flex-1"></div>
                       </div>
                     </div>
-                  </CardContent>
-                </div>
-              </Card>
-            ))}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Stations List */}
+          {!loading && stations.length === 0 && !error && (
+            <div className="text-center py-12">
+              <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">
+                Không tìm thấy trạm nào gần bạn
+              </p>
+            </div>
+          )}
+
+          <div className="grid gap-6">
+            {!loading &&
+              stations.map((station) => (
+                <Card
+                  key={station.id}
+                  className="overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                >
+                  <div className="flex flex-col md:flex-row">
+                    {/* Ảnh đại diện */}
+                    <div className="relative md:w-1/3">
+                      <img
+                        src={station.photo || "/placeholder.jpg"}
+                        alt={station.name}
+                        className="w-full h-48 md:h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/placeholder.jpg";
+                        }}
+                      />
+                      <Badge
+                        className="absolute top-3 right-3 bg-white/90 text-gray-800 hover:bg-white/90"
+                        variant="secondary"
+                      >
+                        <Star className="w-3 h-3 mr-1 fill-yellow-400 text-yellow-400" />
+                        {station.rating?.toFixed(1) || "N/A"}
+                      </Badge>
+                    </div>
+
+                    {/* Thông tin chi tiết */}
+                    <CardContent className="flex-1 p-6">
+                      <div className="space-y-4">
+                        <div className="flex items-start justify-between">
+                          <h3 className="text-xl font-bold text-gray-900">
+                            {station.name}
+                          </h3>
+                          <Badge
+                            variant={
+                              station.status === "ACTIVE"
+                                ? "default"
+                                : "destructive"
+                            }
+                            className={
+                              station.status === "ACTIVE" ? "bg-green-500" : ""
+                            }
+                          >
+                            {station.status === "ACTIVE"
+                              ? "Hoạt động"
+                              : "Đóng cửa"}
+                          </Badge>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-start gap-2 text-sm text-gray-600">
+                            <MapPin className="w-4 h-4 mt-0.5 text-green-600 flex-shrink-0" />
+                            <span>{station.address}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Phone className="w-4 h-4 text-blue-600" />
+                            <span className="font-medium">
+                              {station.hotline}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Clock className="w-4 h-4 text-orange-600" />
+                            <span>
+                              {new Date(station.startTime).toLocaleTimeString(
+                                "vi-VN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
+                              {" - "}
+                              {new Date(station.endTime).toLocaleTimeString(
+                                "vi-VN",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Car className="w-4 h-4 text-purple-600" />
+                            <span className="font-semibold text-gray-900">
+                              {station.availableVehiclesCount}
+                            </span>
+                            <span className="text-gray-600">xe khả dụng</span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-sm">
+                            <Navigation className="w-4 h-4 text-blue-600" />
+                            <span className="font-semibold text-blue-600">
+                              {station.distanceKm?.toFixed(1)} km
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                          <Button
+                            onClick={() => fetchStationDetail(station.id)}
+                            disabled={detailLoading}
+                            variant="outline"
+                            className="flex-1"
+                          >
+                            {detailLoading ? "Đang tải..." : "Xem chi tiết"}
+                          </Button>
+
+                          <Button
+                            onClick={() => handleFindVehicles(station.id)}
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                          >
+                            <Search className="w-4 h-4 mr-2" />
+                            Tìm xe tại trạm
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </div>
+                </Card>
+              ))}
           </div>
         </div>
       </section>
