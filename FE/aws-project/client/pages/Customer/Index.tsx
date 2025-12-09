@@ -264,21 +264,26 @@ export default function Index() {
               <div className="w-20 h-0.5 bg-white mx-auto mb-4"></div>
               <p
                 ref={subtitleRef}
-                className="text-lg md:text-xl drop-shadow-md"
+                className="text-lg md:text-xl drop-shadow-md mb-8"
               >
                 Trải nghiệm sự khác biệt từ{" "}
                 <span className="text-green-400 font-semibold">hơn 10.000</span>{" "}
                 xe gia đình đời mới khắp Việt Nam
               </p>
+              <Button
+                onClick={() => navigate("/find-stations")}
+                className="bg-white/10 backdrop-blur-md hover:bg-white/20 text-white h-16 px-12 text-lg font-bold shadow-2xl transition-all duration-500 hover:scale-110 border-2 border-white/30 hover:border-white/50 rounded-full group"
+              >
+                <MapPin className="w-6 h-6 mr-3 group-hover:animate-pulse" />
+                Tìm Trạm Gần Bạn
+              </Button>
             </div>
           </div>
-
-          
         </div>
       </section>
 
-{/* Booking Form positioned outside and overlapping */}
-          {/* <div>
+      {/* Booking Form positioned outside and overlapping */}
+      {/* <div>
           <div className="relative -mt-24 mx-auto w-full max-w-5xl px-4 z-40">
             <Tabs
               value={activeTab}
@@ -286,7 +291,7 @@ export default function Index() {
               className="w-full"
             >
               {/* Tab Navigation */}
-              {/* <div className="flex justify-center mb-0">
+      {/* <div className="flex justify-center mb-0">
                 <TabsList className="inline-flex w-auto bg-white rounded-lg h-12 p-1 shadow-lg">
                   <TabsTrigger
                     value="xe-tu-lai"
@@ -318,8 +323,8 @@ export default function Index() {
                 </TabsList>
               </div> */}
 
-              {/* Tab Content */}
-              {/* <TabsContent value="xe-tu-lai" className="mt-1">
+      {/* Tab Content */}
+      {/* <TabsContent value="xe-tu-lai" className="mt-1">
                 <Card className="bg-white shadow-xl rounded-2xl border-0">
                   <CardContent className="p-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
@@ -353,7 +358,7 @@ export default function Index() {
                         </Select>
                       </div> */}
 
-                      {/* <div className="space-y-3">
+      {/* <div className="space-y-3">
                         <Label
                           htmlFor="datetime"
                           className="flex items-center gap-2 text-sm font-medium text-gray-700"
@@ -394,7 +399,7 @@ export default function Index() {
                 </Card>
               </TabsContent> */}
 
-              {/* <TabsContent value="xe-co-tai-xe" className="mt-1">
+      {/* <TabsContent value="xe-co-tai-xe" className="mt-1">
                 <Card className="bg-white shadow-xl rounded-2xl border-0">
                   <CardContent className="p-8">
                     <div className="text-center py-12">
@@ -873,8 +878,8 @@ export default function Index() {
               Hướng Dẫn Thuê Xe
             </h2>
             <p className="text-gray-600 text-base">
-              Chỉ với 4 bước đơn giản để trải nghiệm thuê xe VoltGo một
-              cách nhanh chóng
+              Chỉ với 4 bước đơn giản để trải nghiệm thuê xe VoltGo một cách
+              nhanh chóng
             </p>
           </div>
 
@@ -973,10 +978,10 @@ export default function Index() {
                 về VoltGo?
               </h2>
               <p className="text-gray-700 text-base mb-8 leading-relaxed max-w-md">
-                VoltGo kết nối khách hàng có nhu cầu thuê xe với hàng
-                ngàn chủ xe ô tô ở TPHCM, Hà Nội & các tỉnh thành khác. BF Car
-                Rental hướng đến việc xây dựng cộng đồng người dùng ô tô văn
-                minh & uy tín tại Việt Nam.
+                VoltGo kết nối khách hàng có nhu cầu thuê xe với hàng ngàn chủ
+                xe ô tô ở TPHCM, Hà Nội & các tỉnh thành khác. BF Car Rental
+                hướng đến việc xây dựng cộng đồng người dùng ô tô văn minh & uy
+                tín tại Việt Nam.
               </p>
               <Button
                 className="h-12 px-8 text-base bg-green-500 hover:bg-green-600 text-white font-semibold"

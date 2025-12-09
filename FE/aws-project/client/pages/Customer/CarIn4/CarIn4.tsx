@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,10 +64,16 @@ const mapContainerStyle = {
   height: "400px",
 };
 
-const center = {
-  lat: 10.8494,
-  lng: 106.7619,
-};
+// AWS Location Service configuration - Same as FindStations
+const region = import.meta.env.VITE_AWS_LOCATION_REGION || "ap-southeast-1";
+const mapName =
+  import.meta.env.VITE_AWS_LOCATION_MAP_NAME || "voltgo-location-map";
+const apiKey = import.meta.env.VITE_AWS_LOCATION_API_KEY || "";
+
+// HERE Map configuration
+const hereMapName =
+  import.meta.env.VITE_AWS_LOCATION_MAP_NAME_HERE || "voltgo-location-map-here";
+const hereApiKey = import.meta.env.VITE_AWS_LOCATION_API_KEY_HERE || "";
 
 export default function CarIn4() {
   const { id } = useParams();
@@ -105,6 +112,11 @@ export default function CarIn4() {
   const [showGalleryDialog, setShowGalleryDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [mapLayer, setMapLayer] = useState<"terrain" | "map">("terrain");
+
+  // AWS Location Service map refs
+  const stationMapRef = useRef<maplibregl.Map | null>(null);
+  const stationMarkerRef = useRef<maplibregl.Marker | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("momo");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -201,6 +213,77 @@ export default function CarIn4() {
 
     loadStationData();
   }, [vehicleData]);
+
+  // Initialize AWS Location Service Map when showMap is true and stationData is available
+  useEffect(() => {
+    if (!showMap || !stationData?.latitude || !stationData?.longitude) {
+      return;
+    }
+
+    const mapElement = document.getElementById("station-map");
+    if (!mapElement) return;
+
+    // Clean up existing map
+    if (stationMapRef.current) {
+      stationMapRef.current.remove();
+      stationMapRef.current = null;
+    }
+
+    try {
+      // Choose map style based on layer selection
+      const currentMapName = mapLayer === "terrain" ? mapName : hereMapName;
+      const currentApiKey = mapLayer === "terrain" ? apiKey : hereApiKey;
+
+      // Initialize MapLibre GL map with AWS Location Service
+      const map = new maplibregl.Map({
+        container: "station-map",
+        style: `https://maps.geo.${region}.amazonaws.com/maps/v0/maps/${currentMapName}/style-descriptor?key=${currentApiKey}`,
+        center: [stationData.longitude, stationData.latitude],
+        zoom: 15,
+      });
+
+      // Add navigation controls
+      map.addControl(new maplibregl.NavigationControl(), "top-right");
+
+      map.on("load", () => {
+        stationMapRef.current = map;
+
+        // Create custom station marker element
+        const markerEl = document.createElement("div");
+        markerEl.innerHTML = `
+          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="18" fill="#10b981" stroke="white" stroke-width="3"/>
+            <path d="M20 10 L20 30 M10 20 L30 20" stroke="white" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        `;
+        markerEl.title = stationData.name;
+
+        // Add station marker
+        if (stationMarkerRef.current) {
+          stationMarkerRef.current.remove();
+        }
+
+        stationMarkerRef.current = new maplibregl.Marker({
+          element: markerEl,
+        })
+          .setLngLat([stationData.longitude, stationData.latitude])
+          .addTo(map);
+      });
+    } catch (error) {
+      console.error("Error initializing AWS Location Service map:", error);
+    }
+
+    return () => {
+      if (stationMapRef.current) {
+        stationMapRef.current.remove();
+        stationMapRef.current = null;
+      }
+      if (stationMarkerRef.current) {
+        stationMarkerRef.current.remove();
+        stationMarkerRef.current = null;
+      }
+    };
+  }, [showMap, stationData, mapLayer]);
 
   // Helper function to get vehicle images
   const getVehicleImages = () => {
@@ -1260,33 +1343,41 @@ export default function CarIn4() {
                       giữ chỗ
                     </p>
 
-                    {/* Google Map */}
+                    {/* AWS Location Service Map */}
                     {showMap && (
-                      <div className="mt-4 rounded-lg overflow-hidden border-2 border-gray-200">
-                        <LoadScript googleMapsApiKey="AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8">
-                          <GoogleMap
-                            mapContainerStyle={mapContainerStyle}
-                            center={{
-                              lat: stationData.latitude,
-                              lng: stationData.longitude,
-                            }}
-                            zoom={15}
-                            options={{
-                              zoomControl: true,
-                              streetViewControl: true,
-                              mapTypeControl: true,
-                              fullscreenControl: true,
-                            }}
+                      <div className="mt-4 space-y-2">
+                        {/* Map Layer Toggle */}
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={() => setMapLayer("terrain")}
+                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                              mapLayer === "terrain"
+                                ? "bg-green-500 text-white"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
                           >
-                            <Marker
-                              position={{
-                                lat: stationData.latitude,
-                                lng: stationData.longitude,
-                              }}
-                              title={stationData.name}
-                            />
-                          </GoogleMap>
-                        </LoadScript>
+                            Địa hình
+                          </button>
+                          <button
+                            onClick={() => setMapLayer("map")}
+                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                              mapLayer === "map"
+                                ? "bg-green-500 text-white"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
+                          >
+                            Bản đồ
+                          </button>
+                        </div>
+
+                        {/* Map Container */}
+                        <div className="rounded-lg overflow-hidden border-2 border-gray-200">
+                          <div
+                            id="station-map"
+                            style={mapContainerStyle}
+                            className="rounded-lg"
+                          />
+                        </div>
                       </div>
                     )}
                   </>
