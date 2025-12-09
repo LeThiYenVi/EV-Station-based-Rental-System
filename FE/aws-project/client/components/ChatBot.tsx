@@ -75,9 +75,12 @@ export default function ChatBot() {
       // Get user_id from localStorage if available
       const userId = localStorage.getItem("userId") || undefined;
 
-      // Prepare metadata with user location if available
+      // Check if message is asking for nearby locations
+      const needsLocation = /trạm\s*(gần|ở\s*đâu|quanh|lân\s*cận)|tìm\s*trạm|near|nearby|location/i.test(userMessage.text);
+
+      // Prepare metadata with user location ONLY if needed
       const metadata = 
-        locationEnabled && latitude && longitude
+        locationEnabled && latitude && longitude && needsLocation
           ? {
               user_location: {
                 latitude,
@@ -150,7 +153,7 @@ export default function ChatBot() {
           msg.id === botMessageId
             ? {
                 ...msg,
-                text: "❌ Không thể kết nối với trợ lý AI. Vui lòng kiểm tra:\n\n- AI service đang chạy tại `http://localhost:8000`\n- Backend API đang chạy tại `http://localhost:8080`\n\nThử lại sau nhé!",
+                text: "❌ Không thể kết nối với trợ lý AI. Vui lòng kiểm tra lại.\nThử lại sau nhé!",
               }
             : msg
         )
