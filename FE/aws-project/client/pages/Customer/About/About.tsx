@@ -388,7 +388,7 @@ export default function About() {
             <div className="image-section">
               <div className="main-image-container">
                 <img
-                  src="/mocks/aboutus1.4c31a699.png"
+                  src="/image/aboutus1.4c31a699.png"
                   alt="Drive and explore beautiful landscapes"
                   className="hero-landscape-image"
                 />
@@ -421,7 +421,7 @@ export default function About() {
           <div className="mioto-journey-content">
             <div className="journey-image-left">
               <img
-                src="/mocks/aboutus2.18999daf.png"
+                src="/image/aboutus2.18999daf.png"
                 alt="MIOTO - Cùng bạn đến mọi hành trình"
                 className="mioto-journey-image"
               />
@@ -463,7 +463,7 @@ export default function About() {
             <div className="cta-card-item">
               <div className="cta-card-image-overlay">
                 <img
-                  src="/mocks/gia_thue_xe_tu_lai_4cho_tai_hanoi.e6ebc385.png"
+                  src="/image/gia_thue_xe_tu_lai_4cho_tai_hanoi.e6ebc385.png"
                   alt="Xe đã sẵn sàng - Bắt đầu hành trình ngay"
                   className="cta-image"
                 />
@@ -495,7 +495,7 @@ export default function About() {
                 className="cta-card-image-overlay relative"
               >
                 <img
-                  src="/mocks/thue_xe_oto_tu_lai_va_co_tai.9df79c9f.png"
+                  src="/image/thue_xe_oto_tu_lai_va_co_tai.9df79c9f.png"
                   alt="Tài xế của bạn đã đến"
                   className="cta-image opacity-60"
                 />

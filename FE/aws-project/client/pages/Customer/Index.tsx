@@ -235,7 +235,7 @@ export default function Index() {
             <source src="/video.mp4" type="video/mp4" />
             {/* Fallback image if video doesn't load */}
             <img
-              src="/mocks/tour1.png"
+              src="/image/tour1.png"
               alt="Hero background"
               className="w-full h-full object-cover"
             />
@@ -671,7 +671,7 @@ export default function Index() {
                       <div
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
                         style={{
-                          backgroundImage: `url('${station.photo || "/mocks/city/hanoi.webp"}')`,
+                          backgroundImage: `url('${station.photo || "/image/city/hanoi.webp"}')`,
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -725,37 +725,37 @@ export default function Index() {
                     {
                       name: "Tân Sơn Nhất",
                       cars: "2000+ xe",
-                      image: "/mocks/sanbay/tansonnhat.png",
+                      image: "/image/sanbay/tansonnhat.png",
                     },
                     {
                       name: "Ga T3 (TSN)",
                       cars: "2000+ xe",
-                      image: "/mocks/sanbay/tansonnhatT3.jpg",
+                      image: "/image/sanbay/tansonnhatT3.jpg",
                     },
                     {
                       name: "Nội Bài",
                       cars: "200+ xe",
-                      image: "/mocks/sanbay/noibai.jpg",
+                      image: "/image/sanbay/noibai.jpg",
                     },
                     {
                       name: "Đà Nẵng",
                       cars: "100+ xe",
-                      image: "/mocks/sanbay/danang.jpg",
+                      image: "/image/sanbay/danang.jpg",
                     },
                     {
                       name: "Cam Ranh",
                       cars: "150+ xe",
-                      image: "/mocks/sanbay/camranh.jpg",
+                      image: "/image/sanbay/camranh.jpg",
                     },
                     {
                       name: "Liên Khương",
                       cars: "120+ xe",
-                      image: "/mocks/sanbay/lienkhuong.jpg",
+                      image: "/image/sanbay/lienkhuong.jpg",
                     },
                     {
                       name: "Phú Quốc",
                       cars: "180+ xe",
-                      image: "/mocks/sanbay/phu quoc.jpg",
+                      image: "/image/sanbay/phu quoc.jpg",
                     },
                   ].map((airport, index) => (
                     <CarouselItem key={index} className="pl-4 basis-auto">
@@ -812,37 +812,37 @@ export default function Index() {
                 title: "Lái xe an toàn cùng VoltGo",
                 description:
                   "Chuyến đi trên VoltGo được bảo vệ với Gói bảo hiểm thuê xe tự lái MIC & ĐBV (VNI). Khách thuê xe còn bồi thường tối đa 2.000.000VND trong trường hợp có sự cố ngoài ý muốn.",
-                image: "/mocks/uudiem/Screenshot 2025-10-02 132842.png",
+                image: "/image/uudiem/Screenshot 2025-10-02 132842.png",
               },
               {
                 title: "An tâm đặt xe",
                 description:
                   "Không tính phí huỷ chuyến trong vòng 1h sau khi thanh toán giữ chỗ. Hoàn tiền giữ chỗ và bồi thường 100% nếu chủ xe huỷ chuyến trong vòng 7 ngày trước chuyến đi.",
-                image: "/mocks/uudiem/Screenshot 2025-10-02 132836.png",
+                image: "/image/uudiem/Screenshot 2025-10-02 132836.png",
               },
               {
                 title: "Thủ tục đơn giản",
                 description:
                   "Chỉ cần có CCCD gắn chip (Hoặc Passport) & Giấy phép lái xe là bạn đã đủ điều kiện thuê xe trên VoltGo.",
-                image: "/mocks/uudiem/Screenshot 2025-10-02 132830.png",
+                image: "/image/uudiem/Screenshot 2025-10-02 132830.png",
               },
               {
                 title: "Thanh toán dễ dàng",
                 description:
                   "Đa dạng hình thức thanh toán: ATM, thẻ Visa & Ví điện tử (Momo, VnPay, ZaloPay).",
-                image: "/mocks/uudiem/Screenshot 2025-10-02 132848.png",
+                image: "/image/uudiem/Screenshot 2025-10-02 132848.png",
               },
               {
                 title: "Giao xe tận nơi",
                 description:
                   "Bạn có thể lựa chọn giao xe tận nhà/sân bay... Phí tiết kiệm chỉ từ 15k/km.",
-                image: "/mocks/uudiem/Screenshot 2025-10-02 132855.png",
+                image: "/image/uudiem/Screenshot 2025-10-02 132855.png",
               },
               {
                 title: "Dòng xe đa dạng",
                 description:
                   "Hơn 100 dòng xe cho bạn tuỳ ý lựa chọn: Mini, Sedan, CUV, SUV, MPV, Bán tải.",
-                image: "/mocks/uudiem/Screenshot 2025-10-02 132859.png",
+                image: "/image/uudiem/Screenshot 2025-10-02 132859.png",
               },
             ].map((item, index) => (
               <div
@@ -888,25 +888,25 @@ export default function Index() {
               {
                 step: "01",
                 title: "Đặt xe trên app/web VoltGo",
-                image: "/mocks/huongdan/Screenshot 2025-10-02 132938.png",
+                image: "/image/huongdan/Screenshot 2025-10-02 132938.png",
                 color: "text-green-500",
               },
               {
                 step: "02",
                 title: "Nhận xe",
-                image: "/mocks/huongdan/Screenshot 2025-10-02 132946.png",
+                image: "/image/huongdan/Screenshot 2025-10-02 132946.png",
                 color: "text-green-500",
               },
               {
                 step: "03",
                 title: "Bắt đầu hành trình",
-                image: "/mocks/huongdan/Screenshot 2025-10-02 132953.png",
+                image: "/image/huongdan/Screenshot 2025-10-02 132953.png",
                 color: "text-green-500",
               },
               {
                 step: "04",
                 title: "Trả xe & kết thúc chuyến đi",
-                image: "/mocks/huongdan/Screenshot 2025-10-02 132958.png",
+                image: "/image/huongdan/Screenshot 2025-10-02 132958.png",
                 color: "text-green-500",
               },
             ].map((item, index) => (
@@ -946,7 +946,7 @@ export default function Index() {
             <div className="order-1">
               <div className="relative rounded-3xl overflow-hidden shadow-2xl">
                 <img
-                  src="/mocks/thue_xe_co_tai_xe_tphcm_gia_re.84f8483d.png"
+                  src="/image/thue_xe_co_tai_xe_tphcm_gia_re.84f8483d.png"
                   alt="Về VoltGo"
                   className="w-full h-auto object-cover"
                 />
@@ -1035,7 +1035,7 @@ export default function Index() {
               <div className="order-1 lg:order-2">
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl">
                   <img
-                    src="/mocks/thue_xe_oto_tu_lai_di_du_lich_gia_re.fde3ac82.png"
+                    src="/image/thue_xe_oto_tu_lai_di_du_lich_gia_re.fde3ac82.png"
                     alt="Cho thuê xe"
                     className="w-full h-auto object-cover"
                   />
@@ -1057,7 +1057,7 @@ export default function Index() {
             <div className="cta-card-item">
               <div className="cta-card-image-overlay">
                 <img
-                  src="/mocks/gia_thue_xe_tu_lai_4cho_tai_hanoi.e6ebc385.png"
+                  src="/image/gia_thue_xe_tu_lai_4cho_tai_hanoi.e6ebc385.png"
                   alt="Xe đã sẵn sàng - Bắt đầu hành trình ngay"
                   className="cta-image"
                 />
@@ -1089,7 +1089,7 @@ export default function Index() {
                 className="cta-card-image-overlay relative"
               >
                 <img
-                  src="/mocks/thue_xe_oto_tu_lai_va_co_tai.9df79c9f.png"
+                  src="/image/thue_xe_oto_tu_lai_va_co_tai.9df79c9f.png"
                   alt="Tài xế của bạn đã đến"
                   className="cta-image opacity-60"
                 />

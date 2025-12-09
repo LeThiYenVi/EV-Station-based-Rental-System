@@ -702,25 +702,25 @@ export default function SelfDrive() {
               {
                 step: "01",
                 title: "Đặt xe trên app/web BF Car Rental",
-                image: "/mocks/huongdan/Screenshot 2025-10-02 132938.png",
+                image: "/image/huongdan/Screenshot 2025-10-02 132938.png",
                 color: "text-green-500",
               },
               {
                 step: "02",
                 title: "Nhận xe",
-                image: "/mocks/huongdan/Screenshot 2025-10-02 132946.png",
+                image: "/image/huongdan/Screenshot 2025-10-02 132946.png",
                 color: "text-green-500",
               },
               {
                 step: "03",
                 title: "Bắt đầu hành trình",
-                image: "/mocks/huongdan/Screenshot 2025-10-02 132953.png",
+                image: "/image/huongdan/Screenshot 2025-10-02 132953.png",
                 color: "text-green-500",
               },
               {
                 step: "04",
                 title: "Trả xe & kết thúc chuyến đi",
-                image: "/mocks/huongdan/Screenshot 2025-10-02 132958.png",
+                image: "/image/huongdan/Screenshot 2025-10-02 132958.png",
                 color: "text-green-500",
               },
             ].map((item, index) => (
