@@ -112,11 +112,11 @@ export default function In4Blog() {
       {/* Hero Image */}
       <div className="relative h-[400px] overflow-hidden">
         <img
-          src={blog.thumbnailUrl || "/mocks/city/hanoi.webp"}
+          src={blog.thumbnailUrl || "/image/city/hanoi.webp"}
           alt={blog.title}
           className="w-full h-full object-cover"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = "/mocks/city/hanoi.webp";
+            (e.target as HTMLImageElement).src = "/image/city/hanoi.webp";
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -242,13 +242,13 @@ export default function In4Blog() {
                         >
                           <img
                             src={
-                              related.thumbnailUrl || "/mocks/city/hanoi.webp"
+                              related.thumbnailUrl || "/image/city/hanoi.webp"
                             }
                             alt={related.title}
                             className="w-20 h-20 object-cover rounded flex-shrink-0 group-hover:opacity-80 transition"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src =
-                                "/mocks/city/hanoi.webp";
+                                "/image/city/hanoi.webp";
                             }}
                           />
                           <div className="flex-1 min-w-0 overflow-hidden">

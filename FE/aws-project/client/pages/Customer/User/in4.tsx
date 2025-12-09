@@ -146,6 +146,11 @@ export default function UserProfile() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  // Validation errors state
+  const [licenseNumberError, setLicenseNumberError] = useState<string>("");
+  const [phoneError, setPhoneError] = useState<string>("");
+  const [idNumberError, setIdNumberError] = useState<string>("");
+
   // Load user data from API
   useEffect(() => {
     loadUserData();
@@ -359,6 +364,39 @@ export default function UserProfile() {
 
   const handleSaveProfile = async () => {
     try {
+      // Validate phone number
+      if (
+        userData.phone &&
+        (userData.phone.length < 10 ||
+          userData.phone.length > 11 ||
+          !/^[0-9]+$/.test(userData.phone))
+      ) {
+        setPhoneError("Số điện thoại phải từ 10-11 chữ số");
+        showError("Vui lòng kiểm tra lại số điện thoại!");
+        return;
+      }
+
+      // Validate ID number
+      if (
+        userData.idNumber &&
+        (userData.idNumber.length < 9 || userData.idNumber.length > 20)
+      ) {
+        setIdNumberError("CCCD/CMND phải từ 9 đến 20 ký tự");
+        showError("Vui lòng kiểm tra lại số CCCD/CMND!");
+        return;
+      }
+
+      // Validate license number before saving
+      if (
+        userData.licenseNumber &&
+        (userData.licenseNumber.length < 9 ||
+          userData.licenseNumber.length > 20)
+      ) {
+        setLicenseNumberError("Số giấy phép lái xe phải từ 9 đến 20 ký tự");
+        showError("Vui lòng kiểm tra lại số giấy phép lái xe!");
+        return;
+      }
+
       // Combine ward and city back to address format: "Phường/Xã, Tỉnh/TP"
       const combinedAddress =
         userData.ward && userData.city
@@ -377,6 +415,9 @@ export default function UserProfile() {
         showSuccess("Cập nhật thông tin thành công!");
         setEditMode(false);
         setEditingSection(null);
+        setLicenseNumberError(""); // Clear error on success
+        setPhoneError("");
+        setIdNumberError("");
         // Reload data to get latest from server
         await loadUserData();
       } else {
@@ -776,11 +817,30 @@ export default function UserProfile() {
                           id="phone"
                           type="tel"
                           value={userData.phone}
-                          onChange={(e) =>
-                            setUserData({ ...userData, phone: e.target.value })
-                          }
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setUserData({ ...userData, phone: value });
+
+                            // Real-time validation
+                            if (
+                              value &&
+                              (value.length < 10 ||
+                                value.length > 11 ||
+                                !/^[0-9]+$/.test(value))
+                            ) {
+                              setPhoneError(
+                                "Số điện thoại phải từ 10-11 chữ số",
+                              );
+                            } else {
+                              setPhoneError("");
+                            }
+                          }}
                           disabled={editingSection !== "personal"}
+                          className={phoneError ? "border-red-500" : ""}
                         />
+                        {phoneError && (
+                          <p className="text-sm text-red-500">{phoneError}</p>
+                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -834,14 +894,33 @@ export default function UserProfile() {
                         <Input
                           id="idNumber"
                           value={userData.idNumber}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const value = e.target.value;
                             setUserData({
                               ...userData,
-                              idNumber: e.target.value,
-                            })
-                          }
+                              idNumber: value,
+                            });
+
+                            // Real-time validation
+                            if (
+                              value &&
+                              (value.length < 9 || value.length > 20)
+                            ) {
+                              setIdNumberError(
+                                "CCCD/CMND phải từ 9 đến 20 ký tự",
+                              );
+                            } else {
+                              setIdNumberError("");
+                            }
+                          }}
                           disabled={editingSection !== "personal"}
+                          className={idNumberError ? "border-red-500" : ""}
                         />
+                        {idNumberError && (
+                          <p className="text-sm text-red-500">
+                            {idNumberError}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -950,15 +1029,34 @@ export default function UserProfile() {
                         <Input
                           id="licenseNumber"
                           value={userData.licenseNumber}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const value = e.target.value;
                             setUserData({
                               ...userData,
-                              licenseNumber: e.target.value,
-                            })
-                          }
+                              licenseNumber: value,
+                            });
+
+                            // Real-time validation
+                            if (
+                              value &&
+                              (value.length < 9 || value.length > 20)
+                            ) {
+                              setLicenseNumberError(
+                                "Số giấy phép lái xe phải từ 9 đến 20 ký tự",
+                              );
+                            } else {
+                              setLicenseNumberError("");
+                            }
+                          }}
                           disabled={editingSection !== "license"}
                           placeholder="VD: 012345678"
+                          className={licenseNumberError ? "border-red-500" : ""}
                         />
+                        {licenseNumberError && (
+                          <p className="text-sm text-red-500">
+                            {licenseNumberError}
+                          </p>
+                        )}
                       </div>
 
                       <div className="space-y-2">
