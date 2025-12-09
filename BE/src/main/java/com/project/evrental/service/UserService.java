@@ -190,13 +190,18 @@ public class UserService {
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        if (user.getAvatarUrl() != null) {
-            s3Service.deleteFile(user.getAvatarUrl());
+        String oldImageUrl = user.getAvatarUrl();
+        String newImageUrl = s3Service.uploadFile(file, "assets/avatars");
+
+        user.setAvatarUrl(newImageUrl);
+        User savedUser = userRepository.save(user);
+        if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+            try {
+                s3Service.deleteFile(oldImageUrl);
+            } catch (Exception e) {
+                log.warn("Failed to delete old S3 file: {}. Error: {}", oldImageUrl, e.getMessage());
+            }
         }
-
-        String avatarUrl = s3Service.uploadFile(file, "assets/avatars");
-        user.setAvatarUrl(avatarUrl);
-
         return UserMapper.fromEntity(userRepository.save(user));
     }
 
@@ -207,14 +212,21 @@ public class UserService {
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        if (user.getLicenseCardFrontImageUrl() != null) {
-            s3Service.deleteFile(user.getLicenseCardFrontImageUrl());
+
+        String oldImageUrl = user.getLicenseCardFrontImageUrl();
+        String newImageUrl = s3Service.uploadFile(file, "assets/license-cards");
+
+        user.setLicenseCardFrontImageUrl(newImageUrl);
+        User savedUser = userRepository.save(user);
+        if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+            try {
+                s3Service.deleteFile(oldImageUrl);
+            } catch (Exception e) {
+                log.warn("Failed to delete old S3 file: {}. Error: {}", oldImageUrl, e.getMessage());
+            }
         }
 
-        String licenseCardFrontUrl = s3Service.uploadFile(file, "assets/license-cards");
-        user.setLicenseCardFrontImageUrl(licenseCardFrontUrl);
-
-        return UserMapper.fromEntity(userRepository.save(user));
+        return UserMapper.fromEntity(savedUser);
     }
 
     @Transactional
@@ -224,14 +236,20 @@ public class UserService {
         var user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        if (user.getLicenseCardBackImageUrl() != null) {
-            s3Service.deleteFile(user.getLicenseCardBackImageUrl());
+        String oldImageUrl = user.getLicenseCardBackImageUrl();
+        String newImageUrl = s3Service.uploadFile(file, "assets/license-cards");
+
+        user.setLicenseCardBackImageUrl(newImageUrl);
+        User savedUser = userRepository.save(user);
+        if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+            try {
+                s3Service.deleteFile(oldImageUrl);
+            } catch (Exception e) {
+                log.warn("Failed to delete old S3 file: {}. Error: {}", oldImageUrl, e.getMessage());
+            }
         }
 
-        String licenseCardBackUrl = s3Service.uploadFile(file, "assets/license-cards");
-        user.setLicenseCardBackImageUrl(licenseCardBackUrl);
-
-        return UserMapper.fromEntity(userRepository.save(user));
+        return UserMapper.fromEntity(savedUser);
     }
 
     public List<UserResponse> searchUsers(String keyword) {
