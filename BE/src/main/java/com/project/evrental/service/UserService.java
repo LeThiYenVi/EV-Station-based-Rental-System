@@ -41,6 +41,7 @@ public class UserService {
         return userRepository.findAll().stream().map(UserMapper::fromEntity).toList();
     }
 
+    @Cacheable(value = "users", key = "#email")
     public UserResponse getUserByEmail(String email) {
         var loadedUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
@@ -57,6 +58,7 @@ public class UserService {
         return loadedUser;
     }
 
+    @CacheEvict(value = "users", allEntries = true)
     public UserResponse createUser(User user) {
         return UserMapper.fromEntity(userRepository.save(user));
     }
@@ -67,6 +69,7 @@ public class UserService {
         );
         return UserMapper.fromEntity(loadedUser);
     }
+
 
     public UserResponse getUserByIdWithStats(UUID id) {
         log.info("Fetching user with booking statistics: {}", id);
@@ -83,6 +86,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(value = "users", key = "#id")
     public UserResponse verifyLicenceUserAccount(UUID id) {
         var loadedUser = userRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("User not found with id: " + id)
@@ -95,6 +99,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(value = "users", key = "#id")
     public UserResponse rejectLicenseVerification(UUID id) {
         log.info("Rejecting license verification for user: {}", id);
         var loadedUser = userRepository.findById(id).orElseThrow(
@@ -118,7 +123,6 @@ public class UserService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
     public void deleteUser(UUID id) {
         var loadedUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
