@@ -25,24 +25,40 @@ class ApiClient {
   private publicInstance: AxiosInstance; // For public endpoints without credentials
 
   constructor() {
-    // Use Vite proxy in development (relative URL), direct URL in production
-    const isDev = import.meta.env.DEV;
-    // Empty string to use relative URL which goes through Vite proxy
-    const backendUrl = "";
+    // Tự động sử dụng:
+    // - Development: Vite proxy (relative URL)
+    // - Production: Full API URL từ VITE_API_BASE_URL_PRODUCTION
+    const baseURL = `${API_CONFIG.BASE_URL}${API_CONFIG.API_PREFIX}`;
+    
+    // CORS FIX: Kiểm soát withCredentials để tránh CORS error
+    // Development: luôn true (có proxy)
+    // Production: đọc từ env (mặc định false, bật khi backend config CORS đủ)
+    const useCredentials = API_CONFIG.IS_DEV 
+      ? true 
+      : (import.meta.env.VITE_ENABLE_CREDENTIALS_PRODUCTION === 'true');
+    
+    console.log('🌐 API Client Config:', {
+      mode: API_CONFIG.IS_DEV ? 'Development' : 'Production',
+      baseURL,
+      fullBaseUrl: API_CONFIG.BASE_URL,
+      apiPrefix: API_CONFIG.API_PREFIX,
+      withCredentials: useCredentials,
+      corsMode: useCredentials ? 'credentials' : 'no-credentials'
+    });
 
     // Main instance with credentials for authenticated requests
     this.instance = axios.create({
-      baseURL: `${backendUrl}${API_CONFIG.API_PREFIX}`,
+      baseURL,
       timeout: API_CONFIG.TIMEOUT,
       headers: {
         "Content-Type": "application/json",
       },
-      withCredentials: true, // For cookie-based refresh tokens
+      withCredentials: useCredentials, // Tự động điều chỉnh theo env
     });
 
     // Public instance WITHOUT any credentials or cookies
     this.publicInstance = axios.create({
-      baseURL: `${backendUrl}${API_CONFIG.API_PREFIX}`,
+      baseURL,
       timeout: API_CONFIG.TIMEOUT,
       headers: {
         "Content-Type": "application/json",
@@ -51,12 +67,9 @@ class ApiClient {
       withCredentials: false, // CRITICAL: No cookies
     });
 
-    console.log(
-      "API Client initialized with baseURL:",
-      `${backendUrl}${API_CONFIG.API_PREFIX}`,
-    );
+    console.log("✅ API Client initialized");
     console.log("Public instance withCredentials:", false);
-    console.log("Authenticated instance withCredentials:", true);
+    console.log("Authenticated instance withCredentials:", useCredentials);
 
     this.setupInterceptors();
   }

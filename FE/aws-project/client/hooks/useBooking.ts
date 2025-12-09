@@ -31,6 +31,7 @@ interface UseBookingReturn {
   completeBooking: (id: string) => Promise<BookingResponse | null>;
   cancelBooking: (id: string) => Promise<BookingResponse | null>;
   deleteBooking: (id: string) => Promise<boolean>;
+  payRemainder: (id: string) => Promise<BookingWithPaymentResponse | null>;
 
   // Helpers
   clearError: () => void;
@@ -310,6 +311,22 @@ export const useBooking = (): UseBookingReturn => {
     }
   }, []);
 
+  const payRemainder = useCallback(async (id: string): Promise<BookingWithPaymentResponse | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await bookingService.payRemainder(id);
+      return response;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || 'Failed to process payment';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     loading,
     error,
@@ -327,6 +344,7 @@ export const useBooking = (): UseBookingReturn => {
     completeBooking,
     cancelBooking,
     deleteBooking,
+    payRemainder,
     clearError,
   };
 };

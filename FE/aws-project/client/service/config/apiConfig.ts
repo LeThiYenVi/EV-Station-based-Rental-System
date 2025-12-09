@@ -1,9 +1,27 @@
 // API Configuration
+// Tự động chọn API URL dựa trên environment
+const getBaseUrl = () => {
+  const isDev = import.meta.env.DEV;
+  
+  if (isDev) {
+    // Development: Use proxy (empty string for relative URL)
+    return "";
+  } else {
+    // Production: Use full API URL
+    return import.meta.env.VITE_API_BASE_URL_PRODUCTION || "";
+  }
+};
+
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || "", // Empty string để dùng proxy
+  BASE_URL: getBaseUrl(),
   API_PREFIX: "/api",
   TIMEOUT: 30000, // 30 seconds
+  IS_DEV: import.meta.env.DEV,
+  IS_PROD: import.meta.env.PROD,
 };
+
+console.log("API_CONFIG.BASE_URL =", API_CONFIG.BASE_URL);
+
 
 export const API_ENDPOINTS = {
   AUTH: {
@@ -34,6 +52,7 @@ export const API_ENDPOINTS = {
     COMPLETE: "/bookings/:id/complete",
     CANCEL: "/bookings/:id/cancel",
     DELETE: "/bookings/:id",
+    PAY_REMAINDER: "/bookings/:id/payRemainder",
   },
   FLEET: {
     VEHICLES_AT_STATION: "/admin/fleet/stations/:stationId/vehicles",
