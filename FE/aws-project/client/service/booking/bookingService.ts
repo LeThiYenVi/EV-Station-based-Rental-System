@@ -181,6 +181,16 @@ class BookingService {
   }
 
   /**
+   * Pay remainder amount for completed booking
+   * Requires: RENTER role
+   */
+  async payRemainder(bookingId: string): Promise<BookingWithPaymentResponse> {
+    const url = API_ENDPOINTS.BOOKINGS.PAY_REMAINDER.replace(":id", bookingId);
+    const response = await apiClient.get<BookingWithPaymentResponse>(url);
+    return response.data!;
+  }
+
+  /**
    * Check if booking can be cancelled
    */
   canCancelBooking(booking: BookingResponse): boolean {

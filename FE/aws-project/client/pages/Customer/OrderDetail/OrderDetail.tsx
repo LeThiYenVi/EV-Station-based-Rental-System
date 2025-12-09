@@ -47,7 +47,7 @@ export default function OrderDetail() {
   const navigate = useNavigate();
   const [order, setOrder] = useState<BookingDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const { getBookingByCode, completeBooking } = useBooking();
+  const { getBookingByCode, completeBooking, payRemainder } = useBooking();
   const { contextHolder, showSuccess, showError } = useMessage();
 
   // Feedback states
@@ -352,6 +352,40 @@ export default function OrderDetail() {
     }
   };
 
+  const handlePayRemainder = async () => {
+    if (!order?.id) {
+      showError("Không tìm thấy thông tin đơn hàng");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const result = await payRemainder(order.id);
+
+      if (result) {
+        showSuccess("Đang chuyển hướng đến trang thanh toán...");
+
+        // Redirect to payment URL if available
+        if (result.momoPayment?.payUrl) {
+          window.location.href = result.momoPayment.payUrl;
+        } else {
+          showError("Không tìm thấy URL thanh toán");
+        }
+      } else {
+        showError("Không thể tạo yêu cầu thanh toán. Vui lòng thử lại.");
+      }
+    } catch (error: any) {
+      console.error("Pay remainder error:", error);
+      const errorMessage =
+        error?.response?.data?.errors ||
+        error?.response?.data?.message ||
+        "Không thể xử lý thanh toán";
+      showError(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // Helper functions
   const formatDateTime = (dateTimeStr: string) => {
     if (!dateTimeStr) return { date: "", time: "" };
@@ -530,6 +564,25 @@ export default function OrderDetail() {
                     <>
                       <CheckCircle2 className="w-4 h-4 mr-2" />
                       Hoàn thành chuyến đi
+                    </>
+                  )}
+                </Button>
+              )}
+              {order.status?.toUpperCase() === "COMPLETED" && (
+                <Button
+                  onClick={handlePayRemainder}
+                  disabled={isProcessing}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Thanh toán phần còn lại
                     </>
                   )}
                 </Button>
