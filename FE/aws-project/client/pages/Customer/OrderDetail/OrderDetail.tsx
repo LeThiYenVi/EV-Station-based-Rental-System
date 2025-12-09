@@ -1013,7 +1013,7 @@ export default function OrderDetail() {
 
                     <Separator />
 
-                    {/* Chi phí cơ bản */}
+                    {/* Chi phí cơ bản (basePrice) */}
                     {(order as any).basePrice > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Phí thuê xe</span>
@@ -1023,41 +1023,100 @@ export default function OrderDetail() {
                       </div>
                     )}
 
-                    {/* Tiền cọc */}
+                    {/* Tiền cọc (depositPaid) */}
                     {(order as any).depositPaid > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Tiền đặt cọc</span>
-                        <span className="font-medium text-orange-600">
-                          {formatCurrency((order as any).depositPaid)}
+                        <span className="font-medium text-blue-600">
+                          +{formatCurrency((order as any).depositPaid)}
                         </span>
                       </div>
                     )}
 
-                    {/* Phí phụ thu */}
+                    {/* Phí phụ thu (extraFee - bao gồm phí trả xe muộn) */}
                     {(order as any).extraFee > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Phí phụ thu</span>
-                        <span className="font-medium">
-                          {formatCurrency((order as any).extraFee)}
+                        <span className="text-gray-600">
+                          Phí phụ thu{" "}
+                          {(order as any).actualEndTime &&
+                          new Date((order as any).actualEndTime) >
+                            new Date(
+                              (order as any).expectedEndTime ||
+                                order.returnTime,
+                            )
+                            ? "(bao gồm phí trả xe muộn)"
+                            : ""}
+                        </span>
+                        <span className="font-medium text-red-600">
+                          +{formatCurrency((order as any).extraFee)}
                         </span>
                       </div>
                     )}
+
+                    {/* Hiển thị chi tiết phí trả xe muộn nếu có */}
+                    {(order as any).actualEndTime &&
+                      new Date((order as any).actualEndTime) >
+                        new Date(
+                          (order as any).expectedEndTime || order.returnTime,
+                        ) && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                          <p className="text-xs font-semibold text-red-700 mb-1">
+                            ⚠️ Trả xe muộn
+                          </p>
+                          <p className="text-xs text-red-600">
+                            Phí: Giá theo giờ × Số giờ muộn × 1.5
+                          </p>
+                          {(order as any).vehicle?.hourlyRate && (
+                            <p className="text-xs text-red-600 mt-1">
+                              ={" "}
+                              {formatCurrency(
+                                (order as any).vehicle.hourlyRate,
+                              )}{" "}
+                              × số giờ muộn × 1.5
+                            </p>
+                          )}
+                        </div>
+                      )}
 
                     <Separator />
 
-                    {/* Tổng cộng */}
+                    {/* Tổng cộng (totalAmount = basePrice + depositPaid + extraFee) */}
                     <div className="flex justify-between text-base font-bold">
                       <span>Tổng cộng</span>
                       <span className="text-green-600">
                         {formatCurrency(
-                          (order as any).totalAmount -
-                            (order as any).depositPaid +
-                            (order as any).extraFee ||
-                            order.totalPrice ||
-                            0,
+                          (order as any).totalAmount || order.totalPrice || 0,
                         )}
                       </span>
                     </div>
+
+                    {/* Công thức tính toán */}
+                    {(order as any).basePrice && (
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-xs text-gray-600 mb-1">
+                          <strong>Công thức:</strong>
+                        </p>
+                        <p className="text-xs text-gray-700 font-mono">
+                          = Phí thuê ({formatCurrency((order as any).basePrice)}
+                          )
+                        </p>
+                        {(order as any).depositPaid > 0 && (
+                          <p className="text-xs text-gray-700 font-mono">
+                            + Tiền cọc (
+                            {formatCurrency((order as any).depositPaid)})
+                          </p>
+                        )}
+                        {(order as any).extraFee > 0 && (
+                          <p className="text-xs text-gray-700 font-mono">
+                            + Phí phụ thu (
+                            {formatCurrency((order as any).extraFee)})
+                          </p>
+                        )}
+                        <p className="text-xs font-semibold text-gray-900 mt-1 pt-1 border-t border-gray-300">
+                          = {formatCurrency((order as any).totalAmount || 0)}
+                        </p>
+                      </div>
+                    )}
 
                     <Separator />
 

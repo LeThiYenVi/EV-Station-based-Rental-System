@@ -29,8 +29,8 @@ spring:
       port: ${REDIS_PORT:6379}
       timeout: 2000ms
       time-to-live: 10m
-      ssl:
-        enabled: true
+#      ssl:
+#        enabled: true
   security:
     oauth2:
       resourceserver:
