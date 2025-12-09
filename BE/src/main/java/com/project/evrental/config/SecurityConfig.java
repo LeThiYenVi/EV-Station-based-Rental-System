@@ -18,6 +18,7 @@ public class SecurityConfig {
             "/swagger-ui.html",
             "/api/stations/**",
             "/api/vehicles/**",
+            "/api/locations/**",
             "/api/payments/momo/callback"
     };
 
