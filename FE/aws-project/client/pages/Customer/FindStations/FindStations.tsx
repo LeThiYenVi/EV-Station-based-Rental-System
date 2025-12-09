@@ -13,6 +13,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -766,8 +767,18 @@ export default function FindStations() {
         </div>
       )}
 
-      {/* Find Nearby Button & Map Layer Toggle */}
-      <div className="absolute top-20 right-4 z-10 flex flex-col gap-2">
+      {/* Control Buttons - Top Right */}
+      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 mr-[50px]">
+        {/* Back to Home Button */}
+        <Button
+          onClick={() => navigate("/")}
+          className="bg-white hover:bg-gray-50 text-gray-800 shadow-xl rounded-full h-12 px-5"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2 text-gray-600" />
+          Trang chủ
+        </Button>
+
+        {/* Find Nearby Button */}
         <Button
           onClick={handleFindNearby}
           disabled={loadingLocation || !userLocation}
@@ -818,8 +829,8 @@ export default function FindStations() {
 
       {/* Location Error */}
       {locationError && (
-        <div className="absolute top-32 right-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4 shadow-lg max-w-xs z-10">
-          <p className="text-sm text-yellow-800">{locationError}</p>
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-yellow-50 border border-yellow-200 rounded-lg p-4 shadow-lg max-w-md z-10">
+          <p className="text-sm text-yellow-800 text-center">{locationError}</p>
         </div>
       )}
     </div>
