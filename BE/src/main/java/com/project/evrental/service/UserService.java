@@ -70,7 +70,7 @@ public class UserService {
         return UserMapper.fromEntity(loadedUser);
     }
 
-    @Cacheable(value = "users", key = "'user-with-stats-' + #id")
+
     public UserResponse getUserByIdWithStats(UUID id) {
         log.info("Fetching user with booking statistics: {}", id);
         var loadedUser = userRepository.findById(id).orElseThrow(
@@ -113,19 +113,16 @@ public class UserService {
         return UserMapper.fromEntity(loadedUser);
     }
 
-    @Cacheable(value = "users", key = "#role")
     public List<UserResponse> getUsersByRole(UserRole role) {
         return userRepository.findByRole(role).stream().map(UserMapper::fromEntity).toList();
     }
 
-    @Cacheable(value = "users", key = "'staff-station-' + #stationId")
     public List<UserResponse> getStaffByStation(UUID stationId) {
         return userRepository.findByStationIdAndRole(stationId, UserRole.STAFF)
                 .stream().map(UserMapper::fromEntity).toList();
     }
 
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
     public void deleteUser(UUID id) {
         var loadedUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
