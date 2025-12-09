@@ -6,16 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="426a8776-3f1b-4992-9558-b4db87dfc39e" name="Changes" comment="fix (be): fix class not found exception in OauthStateService">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/BE/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/config/CorsConfig.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/scheduled/OauthStateScheduled.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/scheduled/OauthStateScheduled.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/resources/application.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/aws-project/.env" beforeDir="false" afterPath="$PROJECT_DIR$/FE/aws-project/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/aws-project/.env.example" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/aws-project/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/FE/aws-project/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/aws-project/client/service/config/apiConfig.ts" beforeDir="false" afterPath="$PROJECT_DIR$/FE/aws-project/client/service/config/apiConfig.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/aws-project/nginx.conf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/service/UserService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

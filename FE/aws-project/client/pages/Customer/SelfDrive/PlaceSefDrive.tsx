@@ -189,7 +189,7 @@ export default function PlaceSefDrive() {
       <div
         className="relative h-[400px] bg-cover bg-center"
         style={{
-          backgroundImage: `url('${stationInfo?.photo || "/mocks/city/hanoi.webp"}')`,
+          backgroundImage: `url('${stationInfo?.photo || "/image/city/hanoi.webp"}')`,
         }}
       >
         <div className="absolute inset-0 bg-black/50" />

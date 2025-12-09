@@ -105,7 +105,7 @@ export default function Blog() {
         {/* Background Image */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url(/mocks/service1.jpg)" }}
+          style={{ backgroundImage: "url(/image/service1.jpg)" }}
         >
           <div className="absolute inset-0 bg-black/50" />
         </div>
@@ -260,12 +260,12 @@ export default function Blog() {
                   {/* Image */}
                   <div className="relative h-48 overflow-hidden">
                     <img
-                      src={blog.thumbnailUrl || "/mocks/city/hanoi.webp"}
+                      src={blog.thumbnailUrl || "/image/city/hanoi.webp"}
                       alt={blog.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src =
-                          "/mocks/city/hanoi.webp";
+                          "/image/city/hanoi.webp";
                       }}
                     />
                   </div>

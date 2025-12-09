@@ -123,17 +123,8 @@ export default function CarIn4() {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [showVerifyDialog, setShowVerifyDialog] = useState(false);
+  const [showLicenseAlert, setShowLicenseAlert] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
-  const [frontImage, setFrontImage] = useState<File | null>(null);
-  const [backImage, setBackImage] = useState<File | null>(null);
-  const [frontPreview, setFrontPreview] = useState<string | null>(null);
-  const [backPreview, setBackPreview] = useState<string | null>(null);
-  const [isUploadingLicense, setIsUploadingLicense] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{
-    front: boolean;
-    back: boolean;
-  }>({ front: false, back: false });
 
   // Booking form states
   const [pickupDate, setPickupDate] = useState("2025-10-08");
@@ -539,18 +530,7 @@ export default function CarIn4() {
       setIsLoggedIn(true);
       setCurrentUser(loginData.username);
       setShowLoginDialog(false);
-
-      // Kiểm tra xem user đã xác thực GPLX chưa
-      const hasVerified = verifiedUsers.includes(loginData.username);
-      setIsVerified(hasVerified);
-
-      if (hasVerified) {
-        setShowPaymentDialog(true);
-        showSuccess(`Đăng nhập thành công! Chào mừng ${loginData.username}`);
-      } else {
-        setShowVerifyDialog(true);
-        showInfo("Đăng nhập thành công! Vui lòng xác thực GPLX để tiếp tục");
-      }
+      showSuccess(`Đăng nhập thành công! Chào mừng ${loginData.username}`);
 
       // Reset login form
       setLoginData({
@@ -604,117 +584,11 @@ export default function CarIn4() {
 
     if (!isLoggedIn) {
       setShowLoginDialog(true);
-    } else if (!isVerified) {
-      setShowVerifyDialog(true);
+    } else if (!currentUserData?.licenseVerified) {
+      // Show alert asking user to update license in profile
+      setShowLicenseAlert(true);
     } else {
       setShowPaymentDialog(true);
-    }
-  };
-
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    side: "front" | "back",
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const validTypes = ["image/jpeg", "image/png", "image/jpg"];
-    if (!validTypes.includes(file.type)) {
-      showError("Chỉ chấp nhận file ảnh định dạng JPG, PNG, JPEG!");
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      showError("Kích thước file không được vượt quá 5MB!");
-      return;
-    }
-
-    if (side === "front") {
-      setFrontImage(file);
-      setFrontPreview(URL.createObjectURL(file));
-    } else {
-      setBackImage(file);
-      setBackPreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleVerifySubmit = async () => {
-    if (!frontImage || !backImage) {
-      showError("Vui lòng upload đầy đủ ảnh mặt trước và mặt sau GPLX!");
-      return;
-    }
-
-    if (!currentUserData?.id) {
-      showError("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại!");
-      return;
-    }
-
-    setIsUploadingLicense(true);
-    showInfo("Đang upload và xác thực GPLX... Vui lòng đợi!");
-
-    try {
-      // Upload front image
-      setUploadProgress({ front: true, back: false });
-      const frontResult = await uploadLicenseCardFront(
-        currentUserData.id,
-        frontImage,
-      );
-
-      if (!frontResult.success) {
-        throw new Error(
-          frontResult.error || "Không thể upload ảnh mặt trước GPLX!",
-        );
-      }
-
-      // Upload back image
-      setUploadProgress({ front: true, back: true });
-      const backResult = await uploadLicenseCardBack(
-        currentUserData.id,
-        backImage,
-      );
-
-      if (!backResult.success) {
-        throw new Error(
-          backResult.error || "Không thể upload ảnh mặt sau GPLX!",
-        );
-      }
-
-      // Success - update user data
-      setCurrentUserData((prev: any) => ({
-        ...prev,
-        licenseCardFrontImageUrl:
-          frontResult.data?.licenseCardFrontImageUrl || "",
-        licenseCardBackImageUrl: backResult.data?.licenseCardBackImageUrl || "",
-      }));
-
-      // Close verify dialog and show payment dialog immediately
-      setShowVerifyDialog(false);
-      setIsVerified(true);
-
-      // Show success toast
-      showSuccess(
-        "Xác thực thành công! GPLX của bạn đã được upload. Vui lòng đợi Staff phê duyệt trước khi đặt xe.",
-      );
-
-      // Reset upload state
-      setFrontImage(null);
-      setBackImage(null);
-      setFrontPreview(null);
-      setBackPreview(null);
-
-      // Open payment dialog after a short delay to show toast first
-      setTimeout(() => {
-        setShowPaymentDialog(true);
-      }, 500);
-    } catch (error: any) {
-      console.error("Error uploading license:", error);
-      showError(error.message || "Có lỗi xảy ra khi upload GPLX!");
-    } finally {
-      setIsUploadingLicense(false);
-      setUploadProgress({ front: false, back: false });
     }
   };
 
@@ -1932,229 +1806,64 @@ export default function CarIn4() {
           </DialogContent>
         </Dialog>
 
-        {/* GPLX Verification Dialog */}
-        <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* License Alert Dialog */}
+        <Dialog open={showLicenseAlert} onOpenChange={setShowLicenseAlert}>
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-green-600">
-                Xin chào Quý khách hàng
+              <DialogTitle className="text-xl font-bold text-yellow-600 flex items-center gap-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Yêu cầu xác thực GPLX
               </DialogTitle>
               <DialogDescription className="text-base text-gray-700 mt-3">
-                Để đảm bảo an toàn cho chuyến đi của bạn, chúng tôi cần xác thực
-                Giấy phép lái xe (GPLX) của bạn. Vui lòng tải lên ảnh chụp rõ
-                nét cả hai mặt của GPLX.
+                Để đảm bảo an toàn và tuân thủ quy định, bạn cần cập nhật và xác
+                thực Giấy phép lái xe (GPLX) trước khi đặt xe.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-6 mt-4">
-              {/* Instructions Section */}
+            <div className="space-y-4 mt-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Hướng dẫn
-                </h3>
-                <ul className="text-sm text-blue-900 space-y-1 ml-7">
-                  <li>• Chụp ảnh GPLX rõ ràng, không mờ, không chói sáng</li>
-                  <li>• Đảm bảo tất cả thông tin trên GPLX có thể đọc được</li>
-                  <li>• Ảnh phải là bản gốc, không chỉnh sửa</li>
-                  <li>• Định dạng: JPG, PNG, JPEG (tối đa 5MB)</li>
+                <h3 className="font-semibold text-blue-900 mb-2">Hướng dẫn:</h3>
+                <ul className="text-sm text-blue-900 space-y-1 ml-5">
+                  <li>
+                    • Truy cập trang <strong>Thông tin cá nhân</strong>
+                  </li>
+                  <li>
+                    • Vào tab <strong>"Giấy phép lái xe"</strong>
+                  </li>
+                  <li>• Upload ảnh GPLX mặt trước và mặt sau</li>
+                  <li>• Đợi Staff phê duyệt (thường trong 24h)</li>
                 </ul>
               </div>
 
-              {/* Upload Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Front Image Upload */}
-                <div className="space-y-2">
-                  <Label className="text-gray-700 font-medium">
-                    Mặt trước GPLX<span className="text-red-500">*</span>
-                  </Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-500 transition-colors">
-                    {frontPreview ? (
-                      <div className="space-y-2">
-                        <img
-                          src={frontPreview}
-                          alt="Front preview"
-                          className="w-full h-48 object-cover rounded"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setFrontImage(null);
-                            setFrontPreview(null);
-                          }}
-                          className="w-full"
-                        >
-                          Chọn ảnh khác
-                        </Button>
-                      </div>
-                    ) : (
-                      <label className="cursor-pointer block">
-                        <div className="space-y-2 py-4">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-12 w-12 mx-auto text-gray-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                            />
-                          </svg>
-                          <p className="text-sm text-gray-600">
-                            <span className="text-green-600 font-semibold">
-                              Chọn ảnh
-                            </span>
-                            <br />
-                            hoặc kéo thả vào đây
-                          </p>
-                        </div>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/jpeg,image/png,image/jpg"
-                          onChange={(e) => handleFileChange(e, "front")}
-                        />
-                      </label>
-                    )}
-                  </div>
-                </div>
-
-                {/* Back Image Upload */}
-                <div className="space-y-2">
-                  <Label className="text-gray-700 font-medium">
-                    Mặt sau GPLX<span className="text-red-500">*</span>
-                  </Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-500 transition-colors">
-                    {backPreview ? (
-                      <div className="space-y-2">
-                        <img
-                          src={backPreview}
-                          alt="Back preview"
-                          className="w-full h-48 object-cover rounded"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setBackImage(null);
-                            setBackPreview(null);
-                          }}
-                          className="w-full"
-                        >
-                          Chọn ảnh khác
-                        </Button>
-                      </div>
-                    ) : (
-                      <label className="cursor-pointer block">
-                        <div className="space-y-2 py-4">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-12 w-12 mx-auto text-gray-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                            />
-                          </svg>
-                          <p className="text-sm text-gray-600">
-                            <span className="text-green-600 font-semibold">
-                              Chọn ảnh
-                            </span>
-                            <br />
-                            hoặc kéo thả vào đây
-                          </p>
-                        </div>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/jpeg,image/png,image/jpg"
-                          onChange={(e) => handleFileChange(e, "back")}
-                        />
-                      </label>
-                    )}
-                  </div>
-                </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowLicenseAlert(false)}
+                >
+                  Để sau
+                </Button>
+                <Button
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  onClick={() => {
+                    setShowLicenseAlert(false);
+                    navigate("/user/info");
+                  }}
+                >
+                  Cập nhật ngay
+                </Button>
               </div>
-
-              {/* Note Section */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h3 className="font-semibold text-yellow-900 mb-2 flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Ghi chú
-                </h3>
-                <ul className="text-sm text-yellow-900 space-y-1 ml-7">
-                  <li>
-                    • GPLX phải còn hiệu lực và phù hợp với loại xe bạn thuê
-                  </li>
-                  <li>
-                    • Thông tin trên GPLX phải khớp với thông tin tài khoản
-                  </li>
-                  <li>• Quá trình xác thực có thể mất 1-2 phút</li>
-                  <li>• Thông tin của bạn được bảo mật tuyệt đối</li>
-                </ul>
-              </div>
-
-              {/* Submit Button */}
-              <Button
-                type="button"
-                onClick={handleVerifySubmit}
-                disabled={!frontImage || !backImage || isUploadingLicense}
-                className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-semibold text-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                {isUploadingLicense ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>
-                      {uploadProgress.front && uploadProgress.back
-                        ? "Đang xác thực..."
-                        : uploadProgress.front
-                          ? "Đang upload mặt sau..."
-                          : "Đang upload mặt trước..."}
-                    </span>
-                  </div>
-                ) : (
-                  "Xác thực ngay"
-                )}
-              </Button>
-
-              <p className="text-xs text-center text-gray-500">
-                Bằng việc xác thực, bạn đồng ý cho phép chúng tôi sử dụng thông
-                tin GPLX của bạn để xác minh danh tính
-              </p>
             </div>
           </DialogContent>
         </Dialog>

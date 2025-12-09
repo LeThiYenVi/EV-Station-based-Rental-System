@@ -84,14 +84,13 @@ const { TextArea } = Input;
 const { TabPane } = Tabs;
 const { Option } = Select;
 
-// Vehicle status enum
+// Vehicle status enum (5 status hợp lệ theo backend)
 type VehicleStatus =
   | "available"
   | "rented"
   | "maintenance"
   | "charging"
-  | "unavailable"
-  | "out_of_service";
+  | "unavailable";
 
 // Inspection status enum
 type InspectionStatus = "good" | "minor_issue" | "major_issue";
@@ -181,7 +180,7 @@ export default function VehicleInspection() {
     available: vehicles.filter((v) => v.status === "available").length,
     needInspection: vehicles.filter((v) => v.daysSinceInspection > 30).length,
     maintenance: vehicles.filter((v) => v.status === "maintenance").length,
-    outOfService: vehicles.filter((v) => v.status === "out_of_service").length,
+    unavailable: vehicles.filter((v) => v.status === "unavailable").length,
   };
 
   useEffect(() => {
@@ -217,9 +216,7 @@ export default function VehicleInspection() {
                   ? "maintenance"
                   : v.status === "CHARGING"
                     ? "charging"
-                    : v.status === "UNAVAILABLE"
-                      ? "unavailable"
-                      : "out_of_service",
+                    : "unavailable",
           imageUrl: v.photos?.[0] || v.imageUrl,
           currentKm: 0, // API không trả về currentKm
           lastInspection: new Date().toISOString(),
@@ -286,11 +283,6 @@ export default function VehicleInspection() {
       },
       unavailable: {
         label: "Không khả dụng",
-        color: "default",
-        icon: <ExclamationCircleOutlined />,
-      },
-      out_of_service: {
-        label: "Ngừng hoạt động",
         color: "red",
         icon: <CloseCircleOutlined />,
       },
@@ -349,44 +341,26 @@ export default function VehicleInspection() {
   const handleSubmitInspection = async (values: any) => {
     if (!selectedVehicle) return;
 
-    const hasIssues = checklist.some((item) => item.status !== "good");
-    const hasMajorIssues = checklist.some(
-      (item) => item.status === "major_issue",
-    );
-
     setLoading(true);
     try {
-      let newStatus: VehicleStatus = "available";
-      if (hasMajorIssues) {
-        newStatus = "out_of_service";
-      } else if (hasIssues) {
-        newStatus = "maintenance";
-      }
+      const newStatus: VehicleStatus = values.overallStatus;
 
       // Map to service enum (UPPERCASE)
-      const statusMap: Record<VehicleStatus, any> = {
+      const statusMap: Record<VehicleStatus, string> = {
         available: "AVAILABLE",
         rented: "RENTED",
         maintenance: "MAINTENANCE",
         charging: "CHARGING",
         unavailable: "UNAVAILABLE",
-        out_of_service: "OUT_OF_SERVICE",
       };
 
-      // Upload photos if any
-      const files: File[] = fileList
-        .map((f) => f.originFileObj as File)
-        .filter(Boolean);
-      if (files.length > 0) {
-        await vehicleService.uploadVehiclePhotos(selectedVehicle.id, files);
-      }
-
-      // Change status via service
+      // Chỉ cập nhật trạng thái xe qua API
       await vehicleService.changeVehicleStatus(
         selectedVehicle.id,
-        statusMap[newStatus],
+        statusMap[newStatus] as any,
       );
 
+      // Cập nhật lại UI
       setVehicles((prev) =>
         prev.map((v) =>
           v.id === selectedVehicle.id
@@ -404,23 +378,30 @@ export default function VehicleInspection() {
       );
 
       message.success({
-        content: `Xe ${selectedVehicle.plateNumber}: ${
-          newStatus === "available"
-            ? "✅ Sẵn sàng"
-            : newStatus === "maintenance"
-              ? "⚠️ Cần bảo trì"
-              : "❌ Ngừng hoạt động"
-        }`,
-        duration: 5,
+        content: `Đã cập nhật trạng thái xe ${selectedVehicle.plateNumber} thành: ${getStatusLabel(newStatus)}`,
+        duration: 3,
       });
 
       setInspectionModalOpen(false);
       form.resetFields();
     } catch (error) {
+      console.error("Error submitting inspection:", error);
       message.error("Có lỗi xảy ra, vui lòng thử lại!");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Get status label
+  const getStatusLabel = (status: VehicleStatus) => {
+    const labels = {
+      available: "Sẵn sàng",
+      rented: "Đang thuê",
+      maintenance: "Bảo trì",
+      charging: "Đang sạc",
+      unavailable: "Không khả dụng",
+    };
+    return labels[status];
   };
 
   // Upload props
@@ -539,35 +520,25 @@ export default function VehicleInspection() {
       title: "Thao tác",
       key: "actions",
       fixed: "right",
-      width: 180,
+      width: 200,
       render: (_: any, record: Vehicle) => (
-        <Space direction="vertical" size="small" className="w-full">
+        <Space size="small">
           <Button
-            type="link"
+            type="default"
+            size="small"
             icon={<EyeOutlined />}
             onClick={() => handleViewDetail(record)}
-            className="w-full text-left px-0"
           >
             Xem chi tiết
           </Button>
           <Button
             type="primary"
             size="small"
-            icon={<CheckSquareOutlined />}
+            icon={<EditOutlined />}
             onClick={() => handleOpenInspection(record)}
-            className="w-full"
             disabled={record.status === "rented"}
           >
-            Kiểm tra xe
-          </Button>
-          <Button
-            type="default"
-            size="small"
-            icon={<HistoryOutlined />}
-            onClick={() => handleOpenHistory(record)}
-            className="w-full"
-          >
-            Lịch sử bảo trì
+            Cập nhật trạng thái
           </Button>
         </Space>
       ),
@@ -621,8 +592,8 @@ export default function VehicleInspection() {
         <Col span={6}>
           <Card>
             <Statistic
-              title="Đang bảo trì"
-              value={stats.maintenance + stats.outOfService}
+              title="Đang bảo trì / Không khả dụng"
+              value={stats.maintenance + stats.unavailable}
               prefix={<ToolOutlined />}
               valueStyle={{ color: "#ff4d4f" }}
             />
@@ -664,239 +635,71 @@ export default function VehicleInspection() {
         />
       </Card>
 
-      {/* Inspection Modal */}
+      {/* Update Status Modal */}
       <Modal
         title={
           <div className="flex items-center gap-2">
-            <CheckSquareOutlined className="text-blue-500" />
-            <span>Kiểm tra xe định kỳ</span>
+            <EditOutlined className="text-blue-500" />
+            <span>Cập nhật trạng thái xe</span>
           </div>
         }
         open={inspectionModalOpen}
         onCancel={() => setInspectionModalOpen(false)}
-        width={900}
+        width={600}
         footer={null}
       >
         {selectedVehicle && (
           <Form form={form} layout="vertical" onFinish={handleSubmitInspection}>
-            <Alert
-              message="Quy trình kiểm tra xe"
-              description={
-                <div className="space-y-1">
-                  <div>1. Kiểm tra từng hạng mục theo checklist</div>
-                  <div>2. Chụp ảnh các vấn đề phát hiện (nếu có)</div>
-                  <div>3. Nhập ghi chú chi tiết</div>
-                  <div>4. Đánh giá tổng thể và xác định trạng thái xe</div>
-                </div>
-              }
-              type="info"
-              showIcon
-              className="mb-4"
-            />
+            <Descriptions column={2} bordered size="small" className="mb-6">
+              <Descriptions.Item label="Xe" span={2}>
+                {selectedVehicle.name}
+              </Descriptions.Item>
+              <Descriptions.Item label="Biển số" span={1}>
+                <span className="font-mono font-semibold">
+                  {selectedVehicle.plateNumber}
+                </span>
+              </Descriptions.Item>
+              <Descriptions.Item label="Loại xe" span={1}>
+                {selectedVehicle.type}
+              </Descriptions.Item>
+              <Descriptions.Item label="Trạng thái hiện tại" span={2}>
+                {getStatusBadge(selectedVehicle.status)}
+              </Descriptions.Item>
+            </Descriptions>
 
-            <Tabs defaultActiveKey="1">
-              <TabPane tab="Thông tin xe" key="1">
-                <Descriptions column={2} bordered size="small">
-                  <Descriptions.Item label="Xe" span={2}>
-                    {selectedVehicle.name}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Biển số" span={1}>
-                    <span className="font-mono font-semibold">
-                      {selectedVehicle.plateNumber}
-                    </span>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Loại xe" span={1}>
-                    {selectedVehicle.type}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Số km" span={1}>
-                    {selectedVehicle.currentKm.toLocaleString()} km
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Kiểm tra lần cuối" span={1}>
-                    {formatDateTime(selectedVehicle.lastInspection)}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Trạng thái hiện tại" span={2}>
-                    {getStatusBadge(selectedVehicle.status)}
-                  </Descriptions.Item>
-                </Descriptions>
-              </TabPane>
+            <Form.Item
+              name="overallStatus"
+              label="Trạng thái mới"
+              rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
+            >
+              <Radio.Group className="w-full">
+                <Space direction="vertical" className="w-full">
+                  <Radio value="available">
+                    <CheckCircleOutlined className="text-green-600" /> Sẵn sàng
+                    (Available)
+                  </Radio>
+                  <Radio value="maintenance">
+                    <WarningOutlined className="text-orange-500" /> Bảo trì
+                    (Maintenance)
+                  </Radio>
+                  <Radio value="charging">
+                    <ThunderboltOutlined className="text-cyan-500" /> Đang sạc
+                    (Charging)
+                  </Radio>
+                  <Radio value="unavailable">
+                    <CloseCircleOutlined className="text-red-600" /> Không khả
+                    dụng (Unavailable)
+                  </Radio>
+                </Space>
+              </Radio.Group>
+            </Form.Item>
 
-              <TabPane
-                tab={
-                  <span>
-                    <CheckSquareOutlined />
-                    Checklist kiểm tra
-                  </span>
-                }
-                key="2"
-              >
-                <div className="space-y-4">
-                  {checklist.map((item) => (
-                    <Card key={item.id} size="small">
-                      <Row gutter={16} align="middle">
-                        <Col span={8}>
-                          <div className="font-medium flex items-center gap-2">
-                            {item.category === "engine" && (
-                              <DashboardOutlined />
-                            )}
-                            {item.category === "brake" && (
-                              <SafetyCertificateOutlined />
-                            )}
-                            {item.category === "tire" && <CarOutlined />}
-                            {item.category === "light" && <BulbOutlined />}
-                            {item.category === "battery" && (
-                              <ThunderboltOutlined />
-                            )}
-                            {item.category === "interior" && <HomeOutlined />}
-                            {item.category === "cleaning" && (
-                              <FormatPainterOutlined />
-                            )}
-                            {item.label}
-                          </div>
-                        </Col>
-                        <Col span={8}>
-                          <Radio.Group
-                            value={item.status}
-                            onChange={(e) =>
-                              handleChecklistChange(item.id, e.target.value)
-                            }
-                          >
-                            <Radio value="good">
-                              <CheckCircleOutlined className="text-green-600" />{" "}
-                              Tốt
-                            </Radio>
-                            <Radio value="minor_issue">
-                              <WarningOutlined className="text-orange-500" />{" "}
-                              Vấn đề nhỏ
-                            </Radio>
-                            <Radio value="major_issue">
-                              <CloseCircleOutlined className="text-red-600" />{" "}
-                              Nghiêm trọng
-                            </Radio>
-                          </Radio.Group>
-                        </Col>
-                        <Col span={8}>
-                          {item.status !== "good" && (
-                            <Input
-                              placeholder="Ghi chú chi tiết..."
-                              size="small"
-                              onChange={(e) => {
-                                setChecklist((prev) =>
-                                  prev.map((i) =>
-                                    i.id === item.id
-                                      ? { ...i, note: e.target.value }
-                                      : i,
-                                  ),
-                                );
-                              }}
-                            />
-                          )}
-                        </Col>
-                      </Row>
-                    </Card>
-                  ))}
-                </div>
-              </TabPane>
-
-              <TabPane
-                tab={
-                  <span>
-                    <CameraOutlined />
-                    Ảnh kiểm tra ({fileList.length}/10)
-                  </span>
-                }
-                key="3"
-              >
-                <Alert
-                  message="Chụp ảnh các vấn đề phát hiện được (nếu có)"
-                  type="info"
-                  showIcon
-                  className="mb-4"
-                />
-                <Upload {...uploadProps}>
-                  <div>
-                    <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>Chụp ảnh</div>
-                  </div>
-                </Upload>
-              </TabPane>
-
-              <TabPane
-                tab={
-                  <span>
-                    <FileTextOutlined />
-                    Báo cáo
-                  </span>
-                }
-                key="4"
-              >
-                <Form.Item
-                  name="nextInspectionKm"
-                  label="Số km kiểm tra tiếp theo"
-                  rules={[{ required: true, message: "Vui lòng nhập số km" }]}
-                  initialValue={selectedVehicle.currentKm + 5000}
-                >
-                  <InputNumber
-                    style={{ width: "100%" }}
-                    min={selectedVehicle.currentKm}
-                    formatter={(value) =>
-                      `${value} km`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                    }
-                    parser={(value) =>
-                      value
-                        ?.replace(/\$\s?|(,*)/g, "")
-                        .replace(" km", "") as any
-                    }
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  name="overallStatus"
-                  label="Đánh giá tổng thể"
-                  rules={[
-                    { required: true, message: "Vui lòng chọn đánh giá" },
-                  ]}
-                >
-                  <Radio.Group>
-                    <Space direction="vertical">
-                      <Radio value="available">
-                        <CheckCircleOutlined className="text-green-600" /> ✅
-                        Tốt - Xe sẵn sàng hoạt động (Available)
-                      </Radio>
-                      <Radio value="maintenance">
-                        <WarningOutlined className="text-orange-500" /> ⚠️ Cần
-                        bảo trì nhỏ - Lên lịch bảo trì (Schedule Maintenance)
-                      </Radio>
-                      <Radio value="out_of_service">
-                        <CloseCircleOutlined className="text-red-600" /> ❌ Hỏng
-                        nặng - Ngừng hoạt động (Out of Service)
-                      </Radio>
-                    </Space>
-                  </Radio.Group>
-                </Form.Item>
-
-                <Form.Item
-                  name="inspectionNotes"
-                  label="Ghi chú kiểm tra"
-                  rules={[{ required: true, message: "Vui lòng nhập ghi chú" }]}
-                >
-                  <TextArea
-                    rows={6}
-                    placeholder="Ghi chú chi tiết về tình trạng xe, các vấn đề phát hiện, khuyến nghị xử lý..."
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  name="inspectorName"
-                  label="Người kiểm tra"
-                  rules={[{ required: true, message: "Vui lòng nhập tên" }]}
-                  initialValue="Staff User"
-                >
-                  <Input placeholder="Họ tên người kiểm tra" />
-                </Form.Item>
-              </TabPane>
-            </Tabs>
-
-            <Divider />
+            <Form.Item name="inspectionNotes" label="Ghi chú (tùy chọn)">
+              <TextArea
+                rows={4}
+                placeholder="Ghi chú về lý do thay đổi trạng thái..."
+              />
+            </Form.Item>
 
             <Form.Item className="mb-0">
               <Space className="w-full justify-end">
@@ -909,7 +712,7 @@ export default function VehicleInspection() {
                   loading={loading}
                   icon={<CheckCircleOutlined />}
                 >
-                  Hoàn tất kiểm tra
+                  Cập nhật
                 </Button>
               </Space>
             </Form.Item>

@@ -184,7 +184,7 @@ export function Footer() {
           <div className="footer-certification">
             <div className="footer-cert-badge">
               <img
-                src="/mocks/bocongthuong.png"
+                src="/image/bocongthuong.png"
                 alt="Đã đăng ký Bộ Công Thương"
                 className="footer-cert-image"
               />
@@ -193,7 +193,7 @@ export function Footer() {
 
           <div className="footer-payment-methods">
             <img
-              src="/mocks/thanhtoan.png"
+              src="/image/thanhtoan.png"
               alt="Phương thức thanh toán"
               className="footer-payment-image"
             />

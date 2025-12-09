@@ -29,21 +29,21 @@ class ApiClient {
     // - Development: Vite proxy (relative URL)
     // - Production: Full API URL từ VITE_API_BASE_URL_PRODUCTION
     const baseURL = `${API_CONFIG.BASE_URL}${API_CONFIG.API_PREFIX}`;
-    
+
     // CORS FIX: Kiểm soát withCredentials để tránh CORS error
     // Development: luôn true (có proxy)
     // Production: đọc từ env (mặc định false, bật khi backend config CORS đủ)
-    const useCredentials = API_CONFIG.IS_DEV 
-      ? true 
-      : (import.meta.env.VITE_ENABLE_CREDENTIALS_PRODUCTION === 'true');
-    
-    console.log('🌐 API Client Config:', {
-      mode: API_CONFIG.IS_DEV ? 'Development' : 'Production',
+    const useCredentials = API_CONFIG.IS_DEV
+      ? true
+      : import.meta.env.VITE_ENABLE_CREDENTIALS_PRODUCTION === "true";
+
+    console.log("🌐 API Client Config:", {
+      mode: API_CONFIG.IS_DEV ? "Development" : "Production",
       baseURL,
       fullBaseUrl: API_CONFIG.BASE_URL,
       apiPrefix: API_CONFIG.API_PREFIX,
       withCredentials: useCredentials,
-      corsMode: useCredentials ? 'credentials' : 'no-credentials'
+      corsMode: useCredentials ? "credentials" : "no-credentials",
     });
 
     // Main instance with credentials for authenticated requests
