@@ -167,12 +167,12 @@ export default function AdminLayout() {
               label: "Đơn thuê",
               onClick: () => navigate("/admin/bookings"),
             },
-            {
-              key: "5",
-              icon: <VideoCameraOutlined />,
-              label: "Báo cáo",
-              onClick: () => navigate("/admin/reports"),
-            },
+            // {
+            //   key: "5",
+            //   icon: <VideoCameraOutlined />,
+            //   label: "Báo cáo",
+            //   onClick: () => navigate("/admin/reports"),
+            // },
             {
               key: "6-stations",
               icon: <EnvironmentOutlined />,

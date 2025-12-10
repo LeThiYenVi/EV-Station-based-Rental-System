@@ -91,104 +91,6 @@ import {
 } from "@ant-design/icons";
 import { exportToCSV, exportToExcel, printUsers } from "@/lib/export-utils";
 
-// ==================== MOCK DATA ====================
-// TODO: Replace with real API calls
-const MOCK_USERS: User[] = [
-  {
-    id: "1",
-    email: "admin@bfcar.com",
-    full_name: "Nguyễn Văn Admin",
-    phone: "0901234567",
-    avatar_url: null,
-    role: "admin",
-    license_number: "12345678",
-    identity_number: "001234567890",
-    license_card_image_url: null,
-    is_verified: true,
-    verified_at: "2024-01-15T10:00:00Z",
-    status: "active",
-    stationid: null,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    total_bookings: 0,
-    total_spent: 0,
-  },
-  {
-    id: "2",
-    email: "staff1@bfcar.com",
-    full_name: "Trần Thị Staff",
-    phone: "0912345678",
-    avatar_url: null,
-    role: "staff",
-    license_number: "23456789",
-    identity_number: "002345678901",
-    license_card_image_url: null,
-    is_verified: true,
-    verified_at: "2024-02-10T14:00:00Z",
-    status: "active",
-    stationid: "station-hn-001",
-    created_at: "2024-02-01T00:00:00Z",
-    updated_at: "2024-02-01T00:00:00Z",
-  },
-  {
-    id: "3",
-    email: "customer1@gmail.com",
-    full_name: "Lê Văn Customer",
-    phone: "0923456789",
-    avatar_url: null,
-    role: "renter",
-    license_number: "34567890",
-    identity_number: "003456789012",
-    license_card_image_url: null,
-    is_verified: true,
-    verified_at: "2024-03-05T09:30:00Z",
-    status: "active",
-    stationid: null,
-    created_at: "2024-03-01T00:00:00Z",
-    updated_at: "2024-03-01T00:00:00Z",
-    total_bookings: 15,
-    total_spent: 25000000,
-  },
-  {
-    id: "4",
-    email: "customer2@gmail.com",
-    full_name: "Phạm Thị Hoa",
-    phone: "0934567890",
-    avatar_url: null,
-    role: "renter",
-    license_number: null,
-    identity_number: null,
-    license_card_image_url: null,
-    is_verified: false,
-    verified_at: null,
-    status: "pending",
-    stationid: null,
-    created_at: "2024-10-08T00:00:00Z",
-    updated_at: "2024-10-08T00:00:00Z",
-    total_bookings: 0,
-    total_spent: 0,
-  },
-  {
-    id: "5",
-    email: "blocked@example.com",
-    full_name: "Hoàng Văn Blocked",
-    phone: "0945678901",
-    avatar_url: null,
-    role: "renter",
-    license_number: "45678901",
-    identity_number: "004567890123",
-    license_card_image_url: null,
-    is_verified: true,
-    verified_at: "2024-04-01T00:00:00Z",
-    status: "blocked",
-    stationid: null,
-    created_at: "2024-04-01T00:00:00Z",
-    updated_at: "2024-09-15T00:00:00Z",
-    total_bookings: 3,
-    total_spent: 5000000,
-  },
-];
-
 export default function Users() {
   const { toast } = useToast();
 
@@ -906,7 +808,7 @@ export default function Users() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Xác thực</p>
+                  <p className="text-sm font-medium text-gray-600">Xác thực</p>{" "}
                   <p className="text-base">
                     {viewDetailUser.is_verified
                       ? "Đã xác thực"

@@ -407,10 +407,11 @@ export default function Stations() {
             icon={<ReloadOutlined />}
             onClick={() => load()}
             loading={loading}
+            className="bg-green-300 hover:bg-green-700"
           >
             Tải lại
           </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+          <Button className="bg-green-600 hover:bg-green-700" type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
             Thêm trạm
           </Button>
         </Space>

@@ -417,7 +417,7 @@ export default function VehicleEditModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">
+          <DialogTitle className="text-2xl font-semibold border-b pb-2 bg-green-600 rounded-md text-white px-2">
             {vehicle ? "Chỉnh sửa thông tin xe" : "Thêm xe mới"}
           </DialogTitle>
           <DialogDescription>
@@ -476,8 +476,8 @@ export default function VehicleEditModal({
           )}
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">
-              📋 Thông tin cơ bản
+            <h3 className="text-lg font-semibold border-b pb-2 font-semibold border-b pb-2 bg-green-600 rounded-md text-white px-2">
+               Thông tin cơ bản
             </h3>
 
             <div className="grid grid-cols-2 gap-4">
@@ -672,14 +672,14 @@ export default function VehicleEditModal({
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">
-              💰 Giá thuê và đặt cọc
+            <h3 className="text-lg font-semibold border-b pb-2 bg-green-600 rounded-md text-white px-2">
+               Giá thuê và đặt cọc
             </h3>
 
             <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="hourlyRate">
-                  Giá theo giờ (VND) <span className="text-red-500">*</span>
+              <div className="space-y-2 ">
+                <Label htmlFor="hourlyRate ">
+                  Giá theo giờ (VND) <span className="text-red-500 ">*</span>
                 </Label>
                 <Input
                   id="hourlyRate"
@@ -769,8 +769,8 @@ export default function VehicleEditModal({
           {/* Photo upload section - Only show when editing */}
           {vehicle && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">
-                📸 Hình ảnh xe
+              <h3 className="text-lg font-semibold border-b pb-2 bg-green-600 rounded-md text-white px-2">
+                 Hình ảnh xe
               </h3>
 
               <div

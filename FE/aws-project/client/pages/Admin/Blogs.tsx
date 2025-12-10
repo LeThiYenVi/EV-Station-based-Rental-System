@@ -130,7 +130,6 @@ export default function Blogs() {
       width: 150,
       render: (name: string) => (
         <Space>
-          <UserOutlined />
           {name || "Không rõ"}
         </Space>
       ),
@@ -189,6 +188,7 @@ export default function Blogs() {
       width: 100,
       render: (_, record) => (
         <Button
+          className="bg-green-600"
           type="primary"
           icon={<EyeOutlined />}
           onClick={() => handleViewDetail(record)}
@@ -202,10 +202,9 @@ export default function Blogs() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileTextOutlined className="text-xl" />
-          <h1 className="text-xl font-semibold">Quản lý bài viết</h1>
+      <div className="flex items-center justify-between ">
+        <div className="flex items-center gap-2 bg-green-600 rounded-md text-white px-2 py-1">
+          <h1 className="text-xl font-semibold ">Quản lý bài viết</h1>
         </div>
         <Space>
           <Button
@@ -263,6 +262,7 @@ export default function Blogs() {
       {/* Thanh tìm kiếm */}
       <div className="flex gap-4">
         <Search
+      
           placeholder="Tìm kiếm theo tiêu đề hoặc tác giả..."
           allowClear
           enterButton={<SearchOutlined />}

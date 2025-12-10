@@ -170,7 +170,7 @@ export default function UserTable({
               <TableHead>Vai trò</TableHead>
               <TableHead>Trạng thái</TableHead>
               <TableHead>Xác thực</TableHead>
-              <TableHead>Trạm</TableHead>
+              
               <TableHead>Ngày tham gia</TableHead>
               <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
@@ -242,32 +242,28 @@ export default function UserTable({
 
                   {/* Verified */}
                   <TableCell>
-                    {user.is_verified ? (
-                      <div className="flex items-center gap-1 text-green-600">
-                        <CheckCircleOutlined />
-                        <span className="text-sm font-medium">Đã xác thực</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1 text-orange-600">
-                        <SafetyCertificateOutlined />
-                        <span className="text-sm font-medium">
-                          Chưa xác thực
-                        </span>
-                      </div>
+                    {user.role === "RENTER" && (
+                      <>
+                        {user.is_verified ? (
+                          <div className="flex items-center gap-1 text-green-600">
+                            <CheckCircleOutlined />
+                            <span className="text-sm font-medium">
+                              Đã xác thực
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-orange-600">
+                            <SafetyCertificateOutlined />
+                            <span className="text-sm font-medium">
+                              Chưa xác thực
+                            </span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </TableCell>
 
-                  {/* Station */}
-                  <TableCell>
-                    {user.stationid ? (
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <EnvironmentOutlined style={{ fontSize: 12 }} />
-                        Trạm {user.stationid.slice(0, 8)}
-                      </div>
-                    ) : (
-                      <span className="text-gray-400 text-sm">-</span>
-                    )}
-                  </TableCell>
+                
 
                   {/* Joined Date */}
                   <TableCell>

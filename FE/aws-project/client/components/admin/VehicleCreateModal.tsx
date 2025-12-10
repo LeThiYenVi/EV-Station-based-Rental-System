@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LoadingOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import { stationService } from "@/service";
 import type { StationResponse } from "@/service/types/report-staff-station.types";
+import { Car, CarIcon } from "lucide-react";
 
 const VEHICLE_BRANDS = [
   "VinFast",
@@ -213,7 +214,7 @@ export default function VehicleCreateModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">🚗 Thêm xe mới</DialogTitle>
+          <DialogTitle className="text-2xl font-semibold text-green-600">Thêm xe mới</DialogTitle>
           <DialogDescription>
             Nhập thông tin xe. Upload ảnh sẽ được thực hiện ở bước tiếp theo.
           </DialogDescription>
@@ -221,8 +222,8 @@ export default function VehicleCreateModal({
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">
-              📋 Thông tin cơ bản
+            <h3 className="text-lg font-semibold border-b pb-2 bg-green-600 rounded-md text-white px-2">
+               Thông tin cơ bản
             </h3>
 
             <div className="grid grid-cols-2 gap-4">
@@ -406,8 +407,8 @@ export default function VehicleCreateModal({
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">
-              💰 Giá thuê & Cọc
+            <h3 className="text-lg font-semibold border-b pb-2 font-semibold border-b pb-2 bg-green-600 rounded-md text-white px-2">
+               Giá thuê & Cọc
             </h3>
 
             <div className="grid grid-cols-3 gap-4">
