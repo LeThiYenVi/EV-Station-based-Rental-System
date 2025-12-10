@@ -10,33 +10,11 @@ export function Footer() {
           {/* Logo and Contact Info */}
           <div className="footer-company">
             <div className="footer-logo">
-              <svg viewBox="0 0 120 40" className="footer-logo-svg">
-                <rect
-                  x="0"
-                  y="8"
-                  width="30"
-                  height="24"
-                  rx="4"
-                  fill="#4ade80"
-                />
-                <rect
-                  x="35"
-                  y="8"
-                  width="30"
-                  height="24"
-                  rx="4"
-                  fill="#4ade80"
-                />
-                <text
-                  x="75"
-                  y="20"
-                  fontSize="18"
-                  fontWeight="bold"
-                  fill="#1a1a1a"
-                >
-                  VoltGo
-                </text>
-              </svg>
+              <img
+                src="/voltgo_logo.jpg"
+                alt="VoltGo"
+                className="w-32 h-auto object-contain"
+              />
             </div>
 
             <div className="footer-contact-info">

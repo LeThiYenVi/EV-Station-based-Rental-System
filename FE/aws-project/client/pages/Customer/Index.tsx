@@ -41,6 +41,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { gsap } from "gsap";
 import { useStation } from "@/hooks/useStation";
 import { useVehicle } from "@/hooks/useVehicle";
+import Snowfall from "react-snowfall";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -219,7 +220,20 @@ export default function Index() {
   };
 
   return (
-    <div>
+    <div className="relative">
+      {/* Snowfall Effect */}
+      <Snowfall
+        color="#fff"
+        snowflakeCount={200}
+        style={{
+          position: "fixed",
+          width: "100vw",
+          height: "100vh",
+          zIndex: 9999,
+          pointerEvents: "none",
+        }}
+      />
+
       {contextHolder}
       {/* Hero with Video Background */}
       <section className="relative bg-black overflow-visible pb-32 md:pb-10 -mt-16 pt-16">

@@ -677,35 +677,84 @@ export default function Confirmations() {
         open={detailModalOpen}
         onCancel={() => setDetailModalOpen(false)}
         width={800}
-        footer={[
-          <Button key="close" onClick={() => setDetailModalOpen(false)}>
-            Đóng
-          </Button>,
-          <Button
-            key="reject"
-            danger
-            icon={<CloseCircleOutlined />}
-            onClick={() => {
-              setDetailModalOpen(false);
-              selectedBooking &&
-                handleOpenConfirmModal(selectedBooking, "reject");
-            }}
-          >
-            Từ chối
-          </Button>,
-          <Button
-            key="confirm"
-            type="primary"
-            icon={<CheckCircleOutlined />}
-            onClick={() => {
-              setDetailModalOpen(false);
-              selectedBooking &&
-                handleOpenConfirmModal(selectedBooking, "confirm");
-            }}
-          >
-            Xác nhận đơn
-          </Button>,
-        ]}
+        footer={
+          selectedBooking ? (
+            <Space className="w-full justify-end">
+              <Button onClick={() => setDetailModalOpen(false)}>Đóng</Button>
+
+              {/* PENDING: Xác nhận/Từ chối */}
+              {selectedBooking.status === "PENDING" && (
+                <>
+                  <Button
+                    danger
+                    icon={<CloseCircleOutlined />}
+                    onClick={() => {
+                      setDetailModalOpen(false);
+                      handleOpenConfirmModal(selectedBooking, "reject");
+                    }}
+                  >
+                    Từ chối
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<CheckCircleOutlined />}
+                    onClick={() => {
+                      setDetailModalOpen(false);
+                      handleOpenConfirmModal(selectedBooking, "confirm");
+                    }}
+                  >
+                    Xác nhận đơn
+                  </Button>
+                </>
+              )}
+
+              {/* CONFIRMED: Bắt đầu thuê */}
+              {selectedBooking.status === "CONFIRMED" && (
+                <Button
+                  type="primary"
+                  icon={<CarOutlined />}
+                  onClick={() => {
+                    setDetailModalOpen(false);
+                    handleOpenConfirmModal(selectedBooking, "start");
+                  }}
+                  className="bg-cyan-500 hover:bg-cyan-600"
+                >
+                  Bắt đầu thuê
+                </Button>
+              )}
+
+              {/* ONGOING: Hoàn thành */}
+              {selectedBooking.status === "ONGOING" && (
+                <Button
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => {
+                    setDetailModalOpen(false);
+                    handleOpenConfirmModal(selectedBooking, "complete");
+                  }}
+                  className="bg-green-500 hover:bg-green-600"
+                >
+                  Hoàn thành
+                </Button>
+              )}
+
+              {/* COMPLETED: Xem hóa đơn */}
+              {selectedBooking.status === "COMPLETED" && (
+                <Button
+                  type="default"
+                  icon={<FileTextOutlined />}
+                  onClick={() => {
+                    setDetailModalOpen(false);
+                    handleViewInvoice(selectedBooking);
+                  }}
+                  className="text-green-600 border-green-300"
+                >
+                  Xem hóa đơn
+                </Button>
+              )}
+            </Space>
+          ) : null
+        }
       >
         {selectedBooking && (
           <div className="space-y-6">
@@ -1043,12 +1092,6 @@ export default function Confirmations() {
         title={
           <div className="text-center">
             <CheckCircleOutlined className="text-green-500 text-4xl mb-2" />
-            <div className="text-2xl font-bold text-gray-800">
-              Hóa đơn thanh toán
-            </div>
-            <div className="text-sm text-gray-500 mt-1">
-              Đơn thuê đã hoàn thành thành công
-            </div>
           </div>
         }
         open={invoiceModalOpen}

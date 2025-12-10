@@ -6,6 +6,7 @@ import type {
   BookingResponse,
   BookingDetailResponse,
   BookingWithPaymentResponse,
+  MomoPaymentResponse,
   PageResponse,
   BookingQueryParams,
 } from "../types/booking.types";
@@ -183,10 +184,11 @@ class BookingService {
   /**
    * Pay remainder amount for completed booking
    * Requires: RENTER role
+   * Returns MomoPaymentResponse with payUrl
    */
-  async payRemainder(bookingId: string): Promise<BookingWithPaymentResponse> {
+  async payRemainder(bookingId: string): Promise<MomoPaymentResponse> {
     const url = API_ENDPOINTS.BOOKINGS.PAY_REMAINDER.replace(":id", bookingId);
-    const response = await apiClient.get<BookingWithPaymentResponse>(url);
+    const response = await apiClient.get<MomoPaymentResponse>(url);
     return response.data!;
   }
 

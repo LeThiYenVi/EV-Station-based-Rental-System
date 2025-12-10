@@ -6,6 +6,7 @@ import type {
   BookingResponse,
   BookingDetailResponse,
   BookingWithPaymentResponse,
+  MomoPaymentResponse,
   PageResponse,
   BookingQueryParams,
   BookingStatus,
@@ -31,7 +32,7 @@ interface UseBookingReturn {
   completeBooking: (id: string) => Promise<BookingResponse | null>;
   cancelBooking: (id: string) => Promise<BookingResponse | null>;
   deleteBooking: (id: string) => Promise<boolean>;
-  payRemainder: (id: string) => Promise<BookingWithPaymentResponse | null>;
+  payRemainder: (id: string) => Promise<MomoPaymentResponse | null>;
 
   // Helpers
   clearError: () => void;
@@ -311,7 +312,7 @@ export const useBooking = (): UseBookingReturn => {
     }
   }, []);
 
-  const payRemainder = useCallback(async (id: string): Promise<BookingWithPaymentResponse | null> => {
+  const payRemainder = useCallback(async (id: string): Promise<MomoPaymentResponse | null> => {
     try {
       setLoading(true);
       setError(null);
@@ -326,6 +327,7 @@ export const useBooking = (): UseBookingReturn => {
       setLoading(false);
     }
   }, []);
+
 
   return {
     loading,

@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
+  TruckElectric,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -238,13 +239,19 @@ export default function FindStations() {
         station.longitude >= -180 &&
         station.longitude <= 180
       ) {
-        // Create custom station marker element
+        // Create custom station marker element using TruckElectric icon
         const markerEl = document.createElement("div");
         markerEl.innerHTML = `
-          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="18" fill="#10b981" stroke="white" stroke-width="3"/>
-            <path d="M20 10 L20 30 M10 20 L30 20" stroke="white" stroke-width="3" stroke-linecap="round"/>
-          </svg>
+          <div style="width: 40px; height: 40px; background: #10b981; border: 3px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/>
+              <path d="M15 18H9"/>
+              <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/>
+              <circle cx="17" cy="18" r="2"/>
+              <circle cx="7" cy="18" r="2"/>
+              <path d="m13 11 1-3h2l-3 6h-3l1-3z"/>
+            </svg>
+          </div>
         `;
         markerEl.style.cursor = "pointer";
         markerEl.title = station.name;
