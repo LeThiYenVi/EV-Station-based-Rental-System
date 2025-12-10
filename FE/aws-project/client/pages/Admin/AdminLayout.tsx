@@ -125,8 +125,8 @@ export default function AdminLayout() {
                 <span className="text-green-700 font-bold text-xl">A</span>
               </div>
               <div className="text-white min-w-0">
-                <div className="font-bold text-base leading-tight">
-                  VoltGo Admin
+                <div className="font-bold text-base leading-tight text-xs">
+                  Volt Go Admin
                 </div>
                 <div className="text-xs text-green-200 leading-tight">
                   EV Rental Management
