@@ -343,7 +343,12 @@ export default function Blog() {
         okText={editingBlog ? "Cập nhật" : "Tạo mới"}
         cancelText="Hủy"
       >
-        <Form form={form} layout="vertical" className="mt-4">
+        <Form
+          form={form}
+          layout="vertical"
+          className="mt-4"
+          initialValues={{ published: true }}
+        >
           <Form.Item
             name="title"
             label="Tiêu đề"

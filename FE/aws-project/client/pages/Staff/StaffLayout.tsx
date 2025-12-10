@@ -70,17 +70,24 @@ export default function StaffLayout() {
           className={`flex items-center justify-center h-16 border-b border-blue-600 transition-all duration-300 ${collapsed ? "px-4" : "px-6"}`}
         >
           {collapsed ? (
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-blue-700 font-bold text-xl">S</span>
+            <div className="w-10 h-10 flex items-center justify-center">
+              <img
+                src="/voltgo_logo.png"
+                alt="VoltGo"
+                className="w-10 h-10 object-contain"
+              />
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-blue-700 font-bold text-xl">S</span>
+              <div className="w-10 h-10 flex items-center justify-center shrink-0">
+                <img
+                  src="/voltgo_logo.jpg"
+                  alt="VoltGo"
+                  className="w-10 h-10 object-contain"
+                />
               </div>
-              <div className="text-white">
+              <div className="text-white min-w-0">
                 <div className="font-bold text-lg">VoltGo Staff</div>
-                <div className="text-xs text-blue-200">EV Operations</div>
               </div>
             </div>
           )}

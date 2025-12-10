@@ -153,9 +153,9 @@ export function Header() {
         <Link to="/" className="flex items-center gap-3">
           <div className="w-14 h-12 flex items-center justify-center">
             <img
-              src="/voltgo_logo.png"
+              src="/voltgo_logo.jpg"
               alt="VoltGo Logo"
-              className={`w-full h-full object-contain transition-all duration-300 ${
+              className={`w-full h-full object-contain transition-all duration-300 bd-[0_2px_4px_rgba(0,0,0,0.3)] ${
                 isTransparent ? "drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" : ""
               }`}
             />

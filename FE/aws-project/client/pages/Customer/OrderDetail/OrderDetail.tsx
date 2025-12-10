@@ -67,6 +67,10 @@ export default function OrderDetail() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Payment modal states
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState<string>("");
+
   useEffect(() => {
     const loadBookingDetail = async () => {
       if (!id) {
@@ -363,11 +367,11 @@ export default function OrderDetail() {
       const result = await payRemainder(order.id);
 
       if (result) {
-        showSuccess("Đang chuyển hướng đến trang thanh toán...");
-
-        // Redirect to payment URL if available
-        if (result.momoPayment?.payUrl) {
-          window.location.href = result.momoPayment.payUrl;
+        // Hiển thị payment URL trong modal thay vì redirect
+        if (result.payUrl) {
+          setPaymentUrl(result.payUrl);
+          setShowPaymentDialog(true);
+          showSuccess("Vui lòng hoàn tất thanh toán trong cửa sổ bên dưới");
         } else {
           showError("Không tìm thấy URL thanh toán");
         }
@@ -1496,6 +1500,53 @@ export default function OrderDetail() {
               {isProcessing ? "Đang xóa..." : "Xóa đánh giá"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Modal Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[95vh] p-0 flex flex-col overflow-hidden">
+          <DialogHeader className="p-4 pb-3 border-b flex-shrink-0">
+            <DialogTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-blue-600">
+                <CreditCard className="w-5 h-5" />
+                Thanh toán MoMo
+              </div>
+              {/* <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowPaymentDialog(false);
+                  setPaymentUrl("");
+                  window.location.reload();
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕ Đóng
+              </Button> */}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            {paymentUrl ? (
+              <iframe
+                src={paymentUrl}
+                className="w-full h-full border-0"
+                title="MoMo Payment"
+                allow="payment"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              </div>
+            )}
+          </div>
+          <div className="p-3 border-t bg-gray-50 flex-shrink-0">
+            <p className="text-xs text-center text-gray-600">
+              💡 Sau khi thanh toán thành công, vui lòng đóng cửa sổ này để cập
+              nhật trạng thái
+            </p>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -42,6 +42,7 @@ import {
   Copy,
   CheckCircle2,
   Zap,
+  TruckElectric,
 } from "lucide-react";
 import { useVehicle } from "@/hooks/useVehicle";
 import { useBooking } from "@/hooks/useBooking";
@@ -239,13 +240,19 @@ export default function CarIn4() {
       map.on("load", () => {
         stationMapRef.current = map;
 
-        // Create custom station marker element
+        // Create custom station marker element using TruckElectric icon
         const markerEl = document.createElement("div");
         markerEl.innerHTML = `
-          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="18" fill="#10b981" stroke="white" stroke-width="3"/>
-            <path d="M20 10 L20 30 M10 20 L30 20" stroke="white" stroke-width="3" stroke-linecap="round"/>
-          </svg>
+          <div style="width: 40px; height: 40px; background: #10b981; border: 3px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/>
+              <path d="M15 18H9"/>
+              <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/>
+              <circle cx="17" cy="18" r="2"/>
+              <circle cx="7" cy="18" r="2"/>
+              <path d="m13 11 1-3h2l-3 6h-3l1-3z"/>
+            </svg>
+          </div>
         `;
         markerEl.title = stationData.name;
 
@@ -1572,18 +1579,24 @@ export default function CarIn4() {
                           </p>
                         </div>
                       </label>
-                      <label className="flex items-start gap-2 cursor-pointer">
+                      <label className="flex items-start gap-2 cursor-not-allowed opacity-60">
                         <input
                           type="radio"
                           name="delivery"
                           checked={deliveryOption === "delivery"}
                           onChange={() => setDeliveryOption("delivery")}
                           className="mt-1"
+                          disabled
                         />
                         <div className="flex-1">
-                          <span className="text-sm font-medium text-gray-900">
-                            Tôi muốn được giao xe tận nơi
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-900">
+                              Tôi muốn được giao xe tận nơi
+                            </span>
+                            <Badge className="bg-yellow-100 text-yellow-700 text-xs border-0">
+                              Sắp ra mắt
+                            </Badge>
+                          </div>
                           {deliveryOption === "delivery" && (
                             <Input
                               type="text"
@@ -1593,6 +1606,7 @@ export default function CarIn4() {
                                 setDeliveryAddress(e.target.value)
                               }
                               className="mt-2 text-sm"
+                              disabled
                             />
                           )}
                         </div>
@@ -1887,56 +1901,93 @@ export default function CarIn4() {
                 </DialogHeader>
 
                 {/* Steps Indicator */}
-                <div className="flex items-center justify-center gap-4 my-6">
+                <div className="flex items-center justify-center gap-2 my-8 px-4">
                   <div className="flex items-center">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                      className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-300 shadow-md ${
                         currentStep >= 1
-                          ? "bg-green-600 text-white"
-                          : "bg-gray-200 text-gray-600"
+                          ? "bg-gradient-to-br from-green-500 to-green-600 text-white scale-105"
+                          : "bg-gray-200 text-gray-500"
                       }`}
                     >
                       1
                     </div>
-                    <span className="ml-2 text-sm font-medium">Xác nhận</span>
+                    <div className="ml-3">
+                      <span
+                        className={`block text-sm font-semibold ${
+                          currentStep >= 1 ? "text-green-600" : "text-gray-500"
+                        }`}
+                      >
+                        Bước 1
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        Xác nhận
+                      </span>
+                    </div>
                   </div>
-                  <div className="w-16 h-1 bg-gray-200">
+                  <div className="w-20 h-1 mx-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className={`h-full ${
-                        currentStep >= 2 ? "bg-green-600" : "bg-gray-200"
+                      className={`h-full transition-all duration-500 rounded-full ${
+                        currentStep >= 2
+                          ? "bg-gradient-to-r from-green-500 to-green-600 w-full"
+                          : "w-0"
                       }`}
                     />
                   </div>
                   <div className="flex items-center">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                      className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-300 shadow-md ${
                         currentStep >= 2
-                          ? "bg-green-600 text-white"
-                          : "bg-gray-200 text-gray-600"
+                          ? "bg-gradient-to-br from-green-500 to-green-600 text-white scale-105"
+                          : "bg-gray-200 text-gray-500"
                       }`}
                     >
                       2
                     </div>
-                    <span className="ml-2 text-sm font-medium">Thanh toán</span>
+                    <div className="ml-3">
+                      <span
+                        className={`block text-sm font-semibold ${
+                          currentStep >= 2 ? "text-green-600" : "text-gray-500"
+                        }`}
+                      >
+                        Bước 2
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        Thanh toán
+                      </span>
+                    </div>
                   </div>
-                  <div className="w-16 h-1 bg-gray-200">
+                  <div className="w-20 h-1 mx-2 bg-gray-200 rounded-full overflow-hidden">
                     <div
-                      className={`h-full ${
-                        currentStep >= 3 ? "bg-green-600" : "bg-gray-200"
+                      className={`h-full transition-all duration-500 rounded-full ${
+                        currentStep >= 3
+                          ? "bg-gradient-to-r from-green-500 to-green-600 w-full"
+                          : "w-0"
                       }`}
                     />
                   </div>
                   <div className="flex items-center">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                      className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-300 shadow-md ${
                         currentStep >= 3
-                          ? "bg-green-600 text-white"
-                          : "bg-gray-200 text-gray-600"
+                          ? "bg-gradient-to-br from-green-500 to-green-600 text-white scale-105"
+                          : "bg-gray-200 text-gray-500"
                       }`}
                     >
                       3
                     </div>
-                    <span className="ml-2 text-sm font-medium">Hoàn tất</span>
+                    <div className="ml-3">
+                      <span
+                        className={`block text-sm font-semibold ${
+                          currentStep >= 3 ? "text-green-600" : "text-gray-500"
+                        }`}
+                      >
+                        Bước 3
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        Hoàn tất
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1946,44 +1997,73 @@ export default function CarIn4() {
                 {currentStep === 1 && (
                   <div className="space-y-6 py-4">
                     {/* Thông tin người thuê */}
-                    <div>
-                      <h3 className="text-base font-bold mb-3">
-                        Tên người thuê<span className="text-red-500">*</span>
-                      </h3>
-                      <Input
-                        value={bookingDetails.renterName}
-                        placeholder="Chú bộ đội"
-                        className="mb-3"
-                        readOnly
-                      />
-                    </div>
+                    <Card className="border-green-100 shadow-sm">
+                      <CardContent className="p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg
+                              className="w-5 h-5 text-green-600"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
+                            </svg>
+                          </div>
+                          <h3 className="text-lg font-bold text-gray-900">
+                            Thông tin người thuê
+                          </h3>
+                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                              Tên người thuê
+                              <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                              value={bookingDetails.renterName}
+                              placeholder="Chú bộ đội"
+                              className="bg-gray-50 cursor-not-allowed border-gray-200"
+                              readOnly
+                              disabled
+                            />
+                          </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <h3 className="text-base font-bold mb-3">
-                          Số điện thoại<span className="text-red-500">*</span>
-                        </h3>
-                        <Input
-                          value={bookingDetails.phone}
-                          placeholder="Nhập 09xxxxx"
-                          readOnly
-                        />
-                        {/* <p className="text-xs text-red-500 mt-1">
-                          Vui lòng xác thực số điện thoại để sử dụng các dịch vụ
-                          của Green Future
-                        </p> */}
-                      </div>
-                      <div>
-                        <h3 className="text-base font-bold mb-3">
-                          Email<span className="text-red-500">*</span>
-                        </h3>
-                        <Input
-                          value={bookingDetails.email}
-                          placeholder="Xác thực"
-                          readOnly
-                        />
-                      </div>
-                    </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                                Số điện thoại
+                                <span className="text-red-500">*</span>
+                              </Label>
+                              <Input
+                                value={bookingDetails.phone}
+                                placeholder="Nhập 09xxxxx"
+                                className="bg-gray-50 cursor-not-allowed border-gray-200"
+                                readOnly
+                                disabled
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                                Email<span className="text-red-500">*</span>
+                              </Label>
+                              <Input
+                                value={bookingDetails.email}
+                                placeholder="Xác thực"
+                                className="bg-gray-50 cursor-not-allowed border-gray-200"
+                                readOnly
+                                disabled
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
                     {/* <div className="flex items-center gap-2">
                       <input
@@ -1997,32 +2077,47 @@ export default function CarIn4() {
                     </div> */}
 
                     {/* Nơi nhận xe */}
-                    <div>
-                      <h3 className="text-base font-bold mb-3">
-                        Nơi nhận xe<span className="text-red-500">*</span>
-                      </h3>
-                      <div className="bg-gray-50 border rounded-lg p-3 flex items-start gap-2">
-                        <MapPin className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1">
-                          <p className="font-semibold">
-                            {bookingDetails.pickupLocation}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {bookingDetails.duration} •{" "}
-                            {bookingDetails.pickupDate}{" "}
-                            {bookingDetails.pickupTime} →{" "}
-                            {bookingDetails.returnDate}{" "}
-                            {bookingDetails.returnTime}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Hình thức thuê: {bookingDetails.rentalType}
-                          </p>
+                    <Card className="border-blue-100 shadow-sm">
+                      <CardContent className="p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <MapPin className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <h3 className="text-lg font-bold text-gray-900">
+                            Nơi nhận xe<span className="text-red-500">*</span>
+                          </h3>
                         </div>
-                        <button className="text-blue-600 hover:underline text-sm">
-                          ✎
-                        </button>
-                      </div>
-                    </div>
+                        <div className="bg-gradient-to-br from-blue-50 to-green-50 border-2 border-blue-100 rounded-xl p-4 flex items-start gap-3">
+                          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+                            <MapPin className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900 text-base mb-1">
+                              {bookingDetails.pickupLocation}
+                            </p>
+                            <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
+                              <span className="font-medium">
+                                {bookingDetails.duration}
+                              </span>
+                              <span className="text-gray-400">•</span>
+                              <span>
+                                {bookingDetails.pickupDate}{" "}
+                                {bookingDetails.pickupTime}
+                              </span>
+                              <span className="text-gray-400">→</span>
+                              <span>
+                                {bookingDetails.returnDate}{" "}
+                                {bookingDetails.returnTime}
+                              </span>
+                            </div>
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white rounded-full text-xs font-medium text-blue-700 border border-blue-200">
+                              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                              {bookingDetails.rentalType}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
                     {/* Thêm dịch vụ */}
                     {/* <div>
@@ -2040,31 +2135,53 @@ export default function CarIn4() {
                     </div> */}
 
                     {/* Bảng kê chi tiết */}
-                    <div>
-                      <h3 className="text-base font-bold mb-3">
-                        Bảng kê chi tiết
-                      </h3>
-                      <Card>
-                        <CardContent className="p-4 space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">
-                              Đơn giá thuê ({bookingDetails.duration})
+                    <Card className="border-purple-100 shadow-sm">
+                      <CardContent className="p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg
+                              className="w-5 h-5 text-purple-600"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                              />
+                            </svg>
+                          </div>
+                          <h3 className="text-lg font-bold text-gray-900">
+                            Bảng kê chi tiết
+                          </h3>
+                        </div>
+                        <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 space-y-3">
+                          <div className="flex justify-between items-center py-2">
+                            <span className="text-gray-700 font-medium">
+                              Đơn giá thuê{" "}
+                              <span className="text-sm text-gray-500">
+                                ({bookingDetails.duration})
+                              </span>
                             </span>
-                            <span className="font-semibold">
+                            <span className="font-bold text-gray-900">
                               {bookingDetails.carPrice.toLocaleString()}đ
                             </span>
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">
+                          <div className="flex justify-between items-center py-2">
+                            <span className="text-gray-700 font-medium">
                               Bảo hiểm thuê xe
                             </span>
-                            <span className="font-semibold">
+                            <span className="font-bold text-gray-900">
                               {bookingDetails.insurance.toLocaleString()}đ
                             </span>
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Phí dịch vụ</span>
-                            <span className="font-semibold">
+                          <div className="flex justify-between items-center py-2">
+                            <span className="text-gray-700 font-medium">
+                              Phí dịch vụ
+                            </span>
+                            <span className="font-bold text-gray-900">
                               {bookingDetails.serviceFee.toLocaleString()}đ
                             </span>
                           </div>
@@ -2091,14 +2208,16 @@ export default function CarIn4() {
                               </span>
                             </div>
                           )}
-                          <Separator className="my-2" />
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Tiền đặt cọc</span>
-                            <span className="font-semibold text-orange-600">
+                          <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent my-3"></div>
+                          <div className="flex justify-between items-center py-2 bg-orange-50 -mx-4 px-4 rounded-lg">
+                            <span className="text-orange-700 font-semibold">
+                              Tiền đặt cọc
+                            </span>
+                            <span className="font-bold text-orange-600 text-lg">
                               {bookingDetails.deposit.toLocaleString()}đ
                             </span>
                           </div>
-                          <Separator className="my-2" />
+                          <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent my-3"></div>
                           {/* <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <span className="w-5 h-5 rounded-full bg-orange-400 text-white text-xs flex items-center justify-center">
@@ -2117,23 +2236,30 @@ export default function CarIn4() {
                           {/* <p className="text-xs text-gray-500">
                             Bạn không có Vpoints để sử dụng
                           </p> */}
-                        </CardContent>
-                      </Card>
-                    </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
                     {/* Thanh toán */}
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-bold text-lg">
-                          Thanh toán<span className="text-red-500">*</span>
-                        </span>
-                        <span className="font-bold text-2xl text-green-600">
-                          {bookingDetails.deposit.toLocaleString()}đ
-                        </span>
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 shadow-sm">
+                      <div className="flex justify-between items-center mb-3">
+                        <div>
+                          <span className="font-bold text-xl text-gray-900">
+                            Tổng thanh toán
+                          </span>
+                          <p className="text-xs text-gray-600 mt-1">
+                            *Giá đã bao gồm VAT và bảo hiểm
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-3xl bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                            {bookingDetails.deposit.toLocaleString()}đ
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Tiền đặt cọc
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-600">
-                        *Giá thuê xe đã bao gồm VAT và bảo hiểm.
-                      </p>
                     </div>
 
                     {/* Mã giới thiệu và Ghi chú nhận xe */}
@@ -2151,54 +2277,84 @@ export default function CarIn4() {
                     </div>
 
                     <div>
-                      <Label className="text-sm font-semibold mb-2 block">
+                      <Label className="text-sm font-bold mb-3 block text-gray-900">
                         Phương thức thanh toán
                         <span className="text-red-500">*</span>
                       </Label>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-4">
                         <button
                           onClick={() => setPaymentMethod("momo")}
-                          className={`border-2 rounded-lg p-4 text-left flex items-center gap-3 transition-all ${
+                          className={`group relative border-2 rounded-xl p-5 text-left transition-all duration-300 ${
                             paymentMethod === "momo"
-                              ? "border-pink-500 bg-pink-50"
-                              : "border-gray-200 hover:border-pink-300"
+                              ? "border-pink-500 bg-gradient-to-br from-pink-50 to-pink-100 shadow-lg scale-105"
+                              : "border-gray-200 hover:border-pink-300 hover:shadow-md hover:scale-102"
                           }`}
                         >
-                          <div className="w-8 h-8 bg-pink-500 rounded-lg flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">
-                              M
-                            </span>
+                          <div className="flex items-start gap-3">
+                            <div
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-transform ${
+                                paymentMethod === "momo"
+                                  ? "bg-gradient-to-br from-pink-500 to-pink-600"
+                                  : "bg-pink-500"
+                              }`}
+                            >
+                              <span className="text-white font-bold text-lg">
+                                M
+                              </span>
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-bold text-base text-gray-900">
+                                Ví MoMo
+                              </p>
+                              <p className="text-xs text-gray-600 mt-0.5">
+                                Thanh toán nhanh chóng
+                              </p>
+                            </div>
+                            {paymentMethod === "momo" && (
+                              <div className="absolute top-3 right-3">
+                                <div className="w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center">
+                                  <Check className="w-4 h-4 text-white" />
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div>
-                            <p className="font-semibold text-sm">Ví MoMo</p>
-                            <p className="text-xs text-gray-500">
-                              Thanh toán nhanh
-                            </p>
-                          </div>
-                          {paymentMethod === "momo" && (
-                            <Check className="w-5 h-5 text-pink-600 ml-auto" />
-                          )}
                         </button>
                         <button
                           onClick={() => setPaymentMethod("bank")}
-                          className={`border-2 rounded-lg p-4 text-left flex items-center gap-3 transition-all ${
+                          className={`group relative border-2 rounded-xl p-5 text-left transition-all duration-300 ${
                             paymentMethod === "bank"
-                              ? "border-green-500 bg-green-50"
-                              : "border-gray-200 hover:border-green-300"
+                              ? "border-green-500 bg-gradient-to-br from-green-50 to-emerald-100 shadow-lg scale-105"
+                              : "border-gray-200 hover:border-green-300 hover:shadow-md hover:scale-102"
                           }`}
                         >
-                          <CreditCard
-                            className={`w-6 h-6 ${paymentMethod === "bank" ? "text-green-600" : "text-gray-500"}`}
-                          />
-                          <div>
-                            <p className="font-semibold text-sm">
-                              Chuyển khoản
-                            </p>
-                            <p className="text-xs text-gray-500">Ngân hàng</p>
+                          <div className="flex items-start gap-3">
+                            <div
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
+                                paymentMethod === "bank"
+                                  ? "bg-gradient-to-br from-green-500 to-emerald-600"
+                                  : "bg-gray-200"
+                              }`}
+                            >
+                              <CreditCard
+                                className={`w-5 h-5 ${paymentMethod === "bank" ? "text-white" : "text-gray-500"}`}
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-bold text-base text-gray-900">
+                                Chuyển khoản
+                              </p>
+                              <p className="text-xs text-gray-600 mt-0.5">
+                                Qua ngân hàng
+                              </p>
+                            </div>
+                            {paymentMethod === "bank" && (
+                              <div className="absolute top-3 right-3">
+                                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                  <Check className="w-4 h-4 text-white" />
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          {paymentMethod === "bank" && (
-                            <Check className="w-5 h-5 text-green-600 ml-auto" />
-                          )}
                         </button>
                       </div>
                     </div>
@@ -2271,18 +2427,41 @@ export default function CarIn4() {
                         !termsAccepted ||
                         !policyAccepted
                       }
-                      className={`w-full h-12 font-semibold ${
+                      className={`w-full h-14 font-bold text-lg rounded-xl shadow-lg transition-all duration-300 ${
                         paymentMethod &&
                         termsAccepted &&
                         policyAccepted &&
                         !isProcessing
-                          ? "bg-green-600 hover:bg-green-700 text-white"
+                          ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white transform hover:scale-105 hover:shadow-xl"
                           : "bg-gray-300 text-gray-500 cursor-not-allowed"
                       }`}
                     >
-                      {isProcessing
-                        ? "Đang tạo đơn..."
-                        : `Tiếp tục thanh toán ${bookingDetails.deposit.toLocaleString()}đ`}
+                      {isProcessing ? (
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          <span>Đang tạo đơn...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-2">
+                          <span>Tiếp tục thanh toán</span>
+                          <span className="text-xl">
+                            {bookingDetails.deposit.toLocaleString()}đ
+                          </span>
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 7l5 5m0 0l-5 5m5-5H6"
+                            />
+                          </svg>
+                        </div>
+                      )}
                     </Button>
                   </div>
                 )}

@@ -79,6 +79,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import type { UploadFile } from "antd/es/upload/interface";
 import vehicleService from "@/service/vehicle/vehicleService";
+import stationService from "@/service/station/stationService";
 
 const { TextArea } = Input;
 const { TabPane } = Tabs;
@@ -152,6 +153,7 @@ export default function VehicleInspection() {
   const [sortDirection, setSortDirection] = useState<
     "asc" | "desc" | undefined
   >("desc");
+  const [stationMap, setStationMap] = useState<Map<string, string>>(new Map());
 
   // Inspection checklist
   const [checklist, setChecklist] = useState<ChecklistItem[]>([
@@ -182,6 +184,27 @@ export default function VehicleInspection() {
     maintenance: vehicles.filter((v) => v.status === "maintenance").length,
     unavailable: vehicles.filter((v) => v.status === "unavailable").length,
   };
+
+  // Load all stations để ánh xạ stationId -> stationName
+  useEffect(() => {
+    const loadStations = async () => {
+      try {
+        const res = await stationService.getAllStations({
+          page: 0,
+          size: 1000,
+        });
+        const map = new Map<string, string>();
+        res.content.forEach((station: any) => {
+          map.set(station.id, station.name);
+        });
+        setStationMap(map);
+        console.log("✅ Loaded stations:", map.size);
+      } catch (e) {
+        console.error("❌ Error loading stations:", e);
+      }
+    };
+    loadStations();
+  }, []);
 
   useEffect(() => {
     const loadVehicles = async () => {
@@ -224,8 +247,10 @@ export default function VehicleInspection() {
           daysSinceInspection: 0,
           batteryHealth: v.fuelType === "ELECTRICITY" ? 100 : undefined,
           fuelLevel: v.fuelType === "ELECTRICITY" ? 100 : 80,
-          stationName:
-            `Trạm ${v.stationId?.substring(0, 8)}...` || "Chưa xác định",
+          stationName: v.stationId
+            ? stationMap.get(v.stationId) ||
+              `Trạm ${v.stationId.substring(0, 8)}...`
+            : "Chưa xác định",
         }));
 
         console.log("✅ Mapped vehicles:", mapped);
@@ -240,7 +265,7 @@ export default function VehicleInspection() {
       }
     };
     loadVehicles();
-  }, [pageNumber, pageSize, sortBy, sortDirection]);
+  }, [pageNumber, pageSize, sortBy, sortDirection, stationMap]);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -420,20 +445,20 @@ export default function VehicleInspection() {
       title: "Xe",
       key: "vehicle",
       fixed: "left",
-      width: 280,
+      width: 140,
       render: (_: any, record: Vehicle) => (
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           {record.imageUrl && (
             <Image
               src={record.imageUrl}
-              width={80}
-              height={60}
+              width={50}
+              height={38}
               className="rounded object-cover"
               preview={false}
             />
           )}
           <div>
-            <div className="font-medium">{record.name}</div>
+            <div className="font-medium text-sm">{record.name}</div>
             <div className="text-xs text-gray-500 mt-1">
               <span className="font-mono font-semibold">
                 {record.plateNumber}
@@ -452,7 +477,7 @@ export default function VehicleInspection() {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      width: 150,
+      width: 100,
       render: (status: VehicleStatus) => getStatusBadge(status),
     },
     {
