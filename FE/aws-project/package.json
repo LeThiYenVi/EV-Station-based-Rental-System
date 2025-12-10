@@ -22,6 +22,7 @@
     "radix-ui": "^1.4.3",
     "react-markdown": "^10.1.0",
     "react-snowfall": "^2.4.0",
+    "react-xmas-tree": "^1.1.1",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "styled-components": "^6.1.19"
