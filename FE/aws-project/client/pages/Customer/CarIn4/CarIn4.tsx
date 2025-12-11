@@ -293,44 +293,25 @@ export default function CarIn4() {
 
   // Calculate rental details
   const calculateRentalDetails = () => {
-    const pickup = new Date(`${pickupDate}T${pickupTime}`);
-    const returnD = new Date(`${returnDate}T${returnTime}`);
-    const diffMs = returnD.getTime() - pickup.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
-    const diffDays = Math.ceil(diffHours / 24);
+  const pickup = new Date(`${pickupDate}T${pickupTime}`);
+  const returnD = new Date(`${returnDate}T${returnTime}`);
 
-    // Tính giá thuê - sử dụng dailyRate từ API
-    let rentalDays = diffDays > 0 ? diffDays : 1;
+  // Nếu thời gian trả <= thời gian nhận → tuỳ bạn xử lý (ở đây ép tối thiểu 1h)
+  if (returnD.getTime() <= pickup.getTime()) {
+    // Có thể: throw error, hoặc auto cộng 1h
+    // Ở đây tạm thời return mặc định 1 ngày cho an toàn
     const dailyRate = vehicleData?.dailyRate || 0;
-    const carPrice = dailyRate * rentalDays;
-
-    // Bảo hiểm thuê xe (10% giá xe)
-    const insurance = Math.round(carPrice * 0.1);
-
-    // Phí dịch vụ (5% giá xe)
-    const serviceFee = Math.round(carPrice * 0.05);
-
-    // Bảo hiểm bổ sung (nếu có)
-    const additionalInsuranceCost = additionalInsurance
-      ? additionalInsuranceFee * rentalDays
-      : 0;
-
-    // Tiền cọc - sử dụng depositAmount từ API
     const deposit = vehicleData?.depositAmount || 5000000;
 
-    // Giảm giá (không có discount trong API, để 0)
+    const carPrice = dailyRate;
+    const insurance = Math.round(carPrice * 0.1);
+    const serviceFee = Math.round(carPrice * 0.05);
+    const additionalInsuranceCost = additionalInsurance ? additionalInsuranceFee * 1 : 0;
     const discountAmount = 0;
-
-    // Tổng tiền
-    const total =
-      carPrice +
-      insurance +
-      serviceFee +
-      additionalInsuranceCost -
-      discountAmount;
+    const total = carPrice + insurance + serviceFee + additionalInsuranceCost - discountAmount;
 
     return {
-      duration: `${rentalDays} ngày`,
+      duration: `1 ngày`,
       carPrice,
       insurance,
       serviceFee,
@@ -339,10 +320,79 @@ export default function CarIn4() {
       discount: discountAmount,
       total,
       totalDeposit: deposit,
-      rentalDays,
-      diffHours: Math.floor(diffHours),
+      rentalDays: 1,
+      diffHours: 24,
     };
+  }
+
+  const diffMs = returnD.getTime() - pickup.getTime();
+  const diffHoursFloat = diffMs / (1000 * 60 * 60);
+
+  // Java Duration.toHours() TRUNCATE về integer → nên dùng floor cho giống backend
+  const diffHours = Math.floor(diffHoursFloat);
+
+  const dailyRate = vehicleData?.dailyRate || 0;
+  const hourlyRate = vehicleData?.hourlyRate || 0;
+
+  let rentalDays = 1;
+  let remainingHours = 0;
+  let carPrice = 0;
+
+  if (diffHours <= 24) {
+    // Rule: <= 24h tính như 1 ngày
+    rentalDays = 1;
+    remainingHours = 0;
+    carPrice = dailyRate;
+  } else {
+    rentalDays = Math.floor(diffHours / 24);   // số ngày nguyên
+    remainingHours = diffHours % 24;           // số giờ lẻ
+    carPrice = dailyRate * rentalDays + hourlyRate * remainingHours;
+  }
+
+  // Bảo hiểm thuê xe (10% giá xe)
+  const insurance = Math.round(carPrice * 0.1);
+
+  // Phí dịch vụ (5% giá xe)
+  const serviceFee = Math.round(carPrice * 0.05);
+
+  // Bảo hiểm bổ sung (nếu có)
+  const additionalInsuranceCost = additionalInsurance
+    ? additionalInsuranceFee * rentalDays
+    : 0;
+
+  // Tiền cọc - sử dụng depositAmount từ API
+  const deposit = vehicleData?.depositAmount || 5000000;
+
+  const discountAmount = 0;
+
+  const total =
+    carPrice +
+    insurance +
+    serviceFee +
+    additionalInsuranceCost -
+    discountAmount;
+
+  // Có thể cải thiện text duration: "2 ngày 1 giờ" thay vì chỉ "2 ngày"
+  const durationText =
+    remainingHours > 0
+      ? `${rentalDays} ngày ${remainingHours} giờ`
+      : `${rentalDays} ngày`;
+
+  return {
+    duration: durationText,
+    carPrice,
+    insurance,
+    serviceFee,
+    additionalInsurance: additionalInsuranceCost,
+    deposit,
+    discount: discountAmount,
+    total,
+    totalDeposit: deposit,
+    rentalDays,
+    diffHours,
   };
+};
+
 
   // Check login status from localStorage on component mount
   useEffect(() => {
