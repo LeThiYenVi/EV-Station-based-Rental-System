@@ -506,46 +506,53 @@ public class BookingService {
         if (booking.getStatus() != BookingStatus.COMPLETED) {
             throw new IllegalStateException("Remainder payment is only available for completed bookings");
         }
+        BigDecimal totalCharge = booking.getBasePrice();
+        LocalDateTime actualEndTime = LocalDateTime.now();
+        BigDecimal lateFee = BigDecimal.ZERO;
 
-        // Compute the remaining amount: totalAmount - depositPaid
-        // If extra fees were added, they should already be reflected in totalAmount
-        // Prevent negative or zero payment attempts
-        BigDecimal remaining = booking.getTotalAmount().subtract(
-                booking.getDepositPaid() != null ? booking.getDepositPaid() : BigDecimal.ZERO
-        );
-        if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("No remaining amount to pay for this booking");
+        if (actualEndTime.isAfter(booking.getExpectedEndTime())) {
+            long lateHours = Duration.between(booking.getExpectedEndTime(), actualEndTime).toHours();
+            if (lateHours > 0) {
+                Vehicle vehicle = booking.getVehicle();
+                lateFee = vehicle.getHourlyRate().multiply(BigDecimal.valueOf(lateHours)).multiply(BigDecimal.valueOf(1.5));
+                log.warn("Late return detected - booking: {}, late hours: {}, late fee: {}",
+                        booking.getBookingCode(), lateHours, lateFee);
+            }
+            totalCharge=totalCharge.add(lateFee);
         }
 
-        // Create a Payment record for the remainder, consistent with completeBooking
-        Payment remainingPayment = Payment.builder()
-                .booking(booking)
-                .amount(remaining)
-                .paymentMethod(PaymentMethod.MOMO)
-                .status(PaymentStatus.PENDING)
-                .processedBy(renter.getId())
-                .build();
-        Payment savedPayment = paymentRepository.save(remainingPayment);
+        BigDecimal depositPaid = booking.getDepositPaid() != null ? booking.getDepositPaid() : BigDecimal.ZERO;
+        BigDecimal netSettlementAmount = totalCharge.subtract(depositPaid);
 
-        MoMoPaymentResponse moMoResponse = moMoService.createPayment(
-                booking.getId(),
-                remaining,
-                "Thanh toán phần còn lại booking " + booking.getBookingCode(),
-                false
-        );
+            log.info("Khách hàng CÒN NỢ: {}", netSettlementAmount);
 
-        // Update payment record based on MoMo response for traceability
-        if ("0".equals(moMoResponse.getResultCode())) {
-            savedPayment.setTransactionId(moMoResponse.getOrderId());
-            paymentRepository.save(savedPayment);
-            log.info("MoMo remainder payment created successfully - orderId: {}", moMoResponse.getOrderId());
-        } else {
-            savedPayment.setStatus(PaymentStatus.FAILED);
-            paymentRepository.save(savedPayment);
-            log.error("MoMo remainder payment creation failed - resultCode: {}, message: {}",
-                    moMoResponse.getResultCode(), moMoResponse.getMessage());
-        }
+            // Create a Payment record for the remainder, consistent with completeBooking
+            Payment remainingPayment = Payment.builder()
+                    .booking(booking)
+                    .amount(netSettlementAmount)
+                    .paymentMethod(PaymentMethod.MOMO)
+                    .status(PaymentStatus.PENDING)
+                    .processedBy(renter.getId())
+                    .build();
+            Payment savedPayment = paymentRepository.save(remainingPayment);
 
-        return moMoResponse;
+            MoMoPaymentResponse moMoResponse = moMoService.createPayment(
+                    booking.getId(),
+                    netSettlementAmount,
+                    "Thanh toán phần còn lại booking " + booking.getBookingCode(),
+                    false
+            );
+
+            if ("0".equals(moMoResponse.getResultCode())) {
+                savedPayment.setTransactionId(moMoResponse.getOrderId());
+                paymentRepository.save(savedPayment);
+                log.info("MoMo remainder payment created successfully - orderId: {}", moMoResponse.getOrderId());
+            } else {
+                savedPayment.setStatus(PaymentStatus.FAILED);
+                paymentRepository.save(savedPayment);
+                log.error("MoMo remainder payment creation failed - resultCode: {}, message: {}",
+                        moMoResponse.getResultCode(), moMoResponse.getMessage());
+            }
+            return moMoResponse;
     }
 }
