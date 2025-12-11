@@ -28,6 +28,7 @@ import NotFound from "./pages/NotFound";
 import { Layout } from "@/components/site/Layout";
 import NearlyStations from "./pages/Customer/GeoStation/NearlyStations";
 import FindStations from "./pages/Customer/FindStations/FindStations";
+import { GoogleCallback } from "./pages/Login/GoogleCallback";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/auth/callback" element={<GoogleCallback />} />
           <Route
             path="/"
             element={

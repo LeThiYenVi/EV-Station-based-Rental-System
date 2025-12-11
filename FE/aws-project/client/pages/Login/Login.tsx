@@ -53,21 +53,6 @@ export default function Login() {
     confirmPassword: "",
   });
 
-  useEffect(() => {
-    const mode = searchParams.get("mode");
-    if (mode === "register") {
-      setActiveTab("register");
-    }
-
-    // Handle Google OAuth callback
-    const code = searchParams.get("code");
-    const state = searchParams.get("state");
-
-    if (code && state) {
-      handleGoogleCallback(code, state);
-    }
-  }, [searchParams]);
-
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -302,61 +287,61 @@ export default function Login() {
     }
   };
 
-  const handleGoogleCallback = async (code: string, state: string) => {
-    try {
-      // Verify state to prevent CSRF attacks
-      const savedState = sessionStorage.getItem("oauth_state");
-      if (savedState !== state) {
-        showError("Xác thực không hợp lệ. Vui lòng thử lại.");
-        navigate("/login", { replace: true });
-        return;
-      }
+  // const handleGoogleCallback = async (code: string, state: string) => {
+  //   try {
+  //     // Verify state to prevent CSRF attacks
+  //     const savedState = sessionStorage.getItem("oauth_state");
+  //     if (savedState !== state) {
+  //       showError("Xác thực không hợp lệ. Vui lòng thử lại.");
+  //       navigate("/login", { replace: true });
+  //       return;
+  //     }
 
-      // Call API to exchange code for tokens
-      const result = await authService.loginWithGoogle(code, state);
+  //     // Call API to exchange code for tokens
+  //     const result = await authService.loginWithGoogle(code, state);
 
-      if (result && result.user) {
-        const user = result.user;
+  //     if (result && result.user) {
+  //       const user = result.user;
 
-        // Save login status
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("username", user.email);
-        localStorage.setItem("userRole", user.role || "user");
-        localStorage.setItem("userId", user.id);
+  //       // Save login status
+  //       localStorage.setItem("isLoggedIn", "true");
+  //       localStorage.setItem("username", user.email);
+  //       localStorage.setItem("userRole", user.role || "user");
+  //       localStorage.setItem("userId", user.id);
 
-        // Dispatch event to notify header
-        window.dispatchEvent(new Event("loginStatusChanged"));
+  //       // Dispatch event to notify header
+  //       window.dispatchEvent(new Event("loginStatusChanged"));
 
-        showSuccess(
-          `Đăng nhập Google thành công! Chào mừng ${user.fullName || user.email}`,
-        );
+  //       showSuccess(
+  //         `Đăng nhập Google thành công! Chào mừng ${user.fullName || user.email}`,
+  //       );
 
-        // Clean up
-        sessionStorage.removeItem("oauth_state");
+  //       // Clean up
+  //       sessionStorage.removeItem("oauth_state");
 
-        // Navigate based on role
-        setTimeout(() => {
-          const userRole = user.role?.toLowerCase();
-          if (userRole === "admin") {
-            navigate("/admin", { replace: true });
-          } else if (userRole === "staff") {
-            navigate("/staff", { replace: true });
-          } else {
-            navigate("/", { replace: true });
-          }
-        }, 1000);
-      } else {
-        showError("Đăng nhập Google thất bại. Vui lòng thử lại.");
-        navigate("/login", { replace: true });
-      }
-    } catch (error: any) {
-      console.error("Google callback error:", error);
-      const errorMessage =
-        error?.response?.data?.message || "Đăng nhập Google thất bại.";
-      showError(errorMessage);
-      navigate("/login", { replace: true });
-    }
-  };
+  //       // Navigate based on role
+  //       setTimeout(() => {
+  //         const userRole = user.role?.toLowerCase();
+  //         if (userRole === "admin") {
+  //           navigate("/admin", { replace: true });
+  //         } else if (userRole === "staff") {
+  //           navigate("/staff", { replace: true });
+  //         } else {
+  //           navigate("/", { replace: true });
+  //         }
+  //       }, 1000);
+  //     } else {
+  //       showError("Đăng nhập Google thất bại. Vui lòng thử lại.");
+  //       navigate("/login", { replace: true });
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Google callback error:", error);
+  //     const errorMessage =
+  //       error?.response?.data?.message || "Đăng nhập Google thất bại.";
+  //     showError(errorMessage);
+  //     navigate("/login", { replace: true });
+  //   }
+  // };
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 md:p-8">

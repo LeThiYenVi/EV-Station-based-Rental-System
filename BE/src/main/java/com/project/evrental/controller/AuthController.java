@@ -70,18 +70,18 @@ public class AuthController {
                         .build());
     }
 
-    @GetMapping("/callback")
-    public ResponseEntity<ApiResponse<AuthResponse>> handleGoogleCallback(@RequestParam(name = "code") String code,
-            @RequestParam(name = "state") String state,
-                                                                     HttpServletResponse response) {
-        oauthStateService.validateAndConsumeState(state);
+    @GetMapping("/login/google")
+    public ResponseEntity<ApiResponse<AuthResponse>> handleLoginGoogle(@RequestBody Map<String, String> requestBody,
+                                                                          HttpServletResponse response) {
+        log.info("Login google callback");
+        String code = requestBody.get("code");
         var authResponse = cognitoService.loginWithGoogle(code);
-
+        log.info("{}", authResponse);
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", authResponse.getRefreshToken())
                 .httpOnly(true)
                 .secure(false)
                 .sameSite("Strict")
-                .path("/api/auth/login/google")
+                .path("/api/auth/refresh")
                 .maxAge(Duration.ofDays(30))
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
