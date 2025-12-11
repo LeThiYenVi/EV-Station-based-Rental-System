@@ -8,7 +8,7 @@ const getBaseUrl = () => {
     return "";
   } else {
     // Production: Use full API URL
-    return import.meta.env.VITE_API_BASE_URL_PRODUCTION || "";
+    return import.meta.env.VITE_API_BASE_URL || "";
   }
 };
 

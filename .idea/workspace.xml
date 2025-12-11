@@ -5,9 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="426a8776-3f1b-4992-9558-b4db87dfc39e" name="Changes" comment="fix (be): fix class not found exception in OauthStateService">
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/service/UserService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/aws-project/.env" beforeDir="false" afterPath="$PROJECT_DIR$/FE/aws-project/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/BE/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/config/AwsClientConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/config/AwsClientConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/service/search/LocationSearchService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/com/project/evrental/service/search/LocationSearchService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/resources/application.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/aws-project/client/pages/Customer/FindStations/FindStations.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/aws-project/client/pages/Customer/FindStations/FindStations.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/aws-project/client/service/config/apiConfig.ts" beforeDir="false" afterPath="$PROJECT_DIR$/FE/aws-project/client/service/config/apiConfig.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

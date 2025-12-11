@@ -796,7 +796,7 @@ export default function FindStations() {
           ) : (
             <Navigation className="w-5 h-5 mr-2 text-green-600" />
           )}
-          Trạm gần tôi
+          Các trạm thuê xe
         </Button>
 
         {/* Map Layer Toggle */}
