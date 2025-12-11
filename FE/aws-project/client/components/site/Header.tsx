@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useMessage } from "@/components/ui/message";
 import { useUser } from "@/hooks/useUser";
+// Images are now served from `public/image` — reference by absolute paths below
 
 const links = [
   { href: "/nearly-stations", label: "Tìm trạm gần bạn" },
@@ -140,6 +141,14 @@ export function Header() {
     }
   };
 
+  // Image paths served from `public/` (use absolute paths starting with '/')
+  const serviceImages = [
+    '/image/in4car/vf8/VinFast-VF-8-driving.jpeg',
+    '/image/service1.jpg',
+    '/image/sanbay/tansonnhat.png',
+    '/image/in4car/vf8/vinfast-vf8-gia-xe-1.jpg',
+  ];
+
   return (
     <header
       className={`fixed top-0 z-50 w-full transition-all duration-300 ${
@@ -161,14 +170,10 @@ export function Header() {
             />
           </div>
           <div className="flex flex-col leading-tight">
-            <span
-              className={`text-xl ${isTransparent ? "text-white" : "text-black"}`}
-            >
+            <span className={`text-xl ${isTransparent ? "text-white" : "text-black"}`}>
               VoltGo
             </span>
-            <span
-              className={`text-xs ${isTransparent ? "text-white/80" : "text-gray-600"}`}
-            >
+            <span className={`text-xs ${isTransparent ? "text-white/80" : "text-gray-600"}`}>
               Thuê xe tự lái
             </span>
           </div>
@@ -189,11 +194,11 @@ export function Header() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-[600px] p-6 bg-white rounded-2xl shadow-2xl border-0"
+              className="w-[760px] p-4 bg-white rounded-2xl shadow-2xl border-0"
               align="start"
               sideOffset={12}
             >
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-4 gap-3">
                 {serviceItems.map((service, index) => (
                   <DropdownMenuItem
                     key={service.href}
@@ -201,25 +206,14 @@ export function Header() {
                     className="p-0 focus:bg-transparent"
                   >
                     <div
-                      onClick={(e) =>
-                        handleProtectedNavigation(e, service.href)
-                      }
-                      className={`relative group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                      onClick={(e) => handleProtectedNavigation(e, service.href)}
+                      className={`relative group cursor-pointer rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-32 w-full ${
                         service.comingSoon ? "opacity-70" : ""
                       }`}
                     >
-                      {/* Background Image */}
-                      <div
-                        className={`h-32 bg-cover bg-center ${
-                          index === 0
-                            ? "bg-[url('/VinFast-VF-8-driving.jpeg)]"
-                            : index === 1
-                              ? "bg-[url('https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=400&h=200&fit=crop')]"
-                              : index === 2
-                                ? "bg-[url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=200&fit=crop')]"
-                                : "bg-[url('https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=400&h=200&fit=crop')]"
-                        }`}
-                      >
+                      {/* Image area: fixed height so all cards match */}
+                      <div className="h-full relative overflow-hidden">
+                        <img src={serviceImages[index] || serviceImages[0]} alt={service.title} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
                         {/* Coming Soon Badge */}
@@ -229,18 +223,12 @@ export function Header() {
                           </div>
                         )}
 
-                        {/* Content */}
+                        {/* Content overlay */}
                         <div className="absolute bottom-0 left-0 right-0 p-4">
-                          <h3
-                            className={`font-bold text-white text-sm mb-1 ${
-                              index === 1 ? "text-green-400" : ""
-                            }`}
-                          >
+                          <h3 className={`font-bold text-white text-sm mb-1 ${index === 1 ? "text-green-400" : ""}`}>
                             {service.title}
                           </h3>
-                          <p className="text-white/80 text-xs">
-                            {service.subtitle}
-                          </p>
+                          <p className="text-white/80 text-xs">{service.subtitle}</p>
                         </div>
                       </div>
 
