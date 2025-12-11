@@ -119,7 +119,7 @@ export default function NearlyStations() {
               params: {
                 latitude,
                 longitude,
-                radiusKm: 10,
+                radiusKm: 4.0,
                 limit: 20,
               },
             },
@@ -147,7 +147,7 @@ export default function NearlyStations() {
         setLoading(false);
       },
       {
-        timeout: 8000, // 8 seconds timeout for geolocation
+        timeout: 10000, // 8 seconds timeout for geolocation
         enableHighAccuracy: false, // Faster but less accurate
         maximumAge: 60000, // Accept cached position up to 1 minute old
       },

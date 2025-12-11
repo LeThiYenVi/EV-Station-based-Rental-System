@@ -14,7 +14,7 @@ public class SearchMetadata {
 
     Integer totalResults;
     
-    Integer radiusKm;
+    Double radiusKm;
     
     Integer returnedCount;
     

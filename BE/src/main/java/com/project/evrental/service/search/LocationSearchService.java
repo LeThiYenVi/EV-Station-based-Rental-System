@@ -35,7 +35,7 @@ public class LocationSearchService {
 
     private static final String CALCULATOR_NAME = "voltgo-routes-calculator";
 
-    private static final double FALLBACK_DRIVING_FACTOR = 1.35;
+    private static final double FALLBACK_DRIVING_FACTOR = 1.5;
 
     public NearbyStationsPageResponse findNearbyStations(NearbyStationSearchRequest request) {
         log.info("Searching for stations near lat: {}, lon: {}, radius: {}km",

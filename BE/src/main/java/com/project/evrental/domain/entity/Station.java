@@ -33,8 +33,10 @@ public class Station {
 
     private Double rating;
 
+    @Column(name = "latitude", nullable = false, precision = 10, scale = 8)
     private BigDecimal latitude;
 
+    @Column(name = "longitude", nullable = false, precision = 11, scale = 8)
     private BigDecimal longitude;
 
     private String hotline;

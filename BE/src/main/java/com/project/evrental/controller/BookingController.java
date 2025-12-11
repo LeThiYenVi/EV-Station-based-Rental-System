@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -232,14 +233,15 @@ public class BookingController {
     @PreAuthorize("hasRole('RENTER')")
     @Operation(summary = "Pay the Reminder ", description = "Pay the remaining amount for a booking")
     public ResponseEntity<ApiResponse<MoMoPaymentResponse>> payRemainder(
-            @PathVariable UUID bookingId
+            @PathVariable UUID bookingId,
+            @RequestParam(defaultValue = "0") BigDecimal extraFee
     ) {
         log.info("Request to purchase booking: {}", bookingId);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.<MoMoPaymentResponse>builder()
                         .statusCode(200)
                         .message("Booking purchased successfully")
-                        .data(bookingService.payRemainder(bookingId))
+                        .data(bookingService.payRemainder(bookingId, extraFee))
                         .build());
     }
 }

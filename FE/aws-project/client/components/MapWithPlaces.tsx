@@ -6,9 +6,9 @@ import { SearchOutlined } from "@ant-design/icons";
 
 // Vite environment variables (use VITE_ prefix, not REACT_APP_)
 const region = import.meta.env.VITE_AWS_LOCATION_REGION || "ap-southeast-1";
-const mapName = import.meta.env.VITE_AWS_LOCATION_MAP_NAME || "voltgo-location-map";
-const placeIndex = import.meta.env.VITE_AWS_LOCATION_PLACE_INDEX || "voltgo-place-index";
-const apiKey = import.meta.env.VITE_AWS_LOCATION_API_KEY || "";
+const mapName = import.meta.env.VITE_AWS_LOCATION_MAP_NAME_HERE || "voltgo-location-map";
+const placeIndex = import.meta.env.VITE_AWS_LOCATION_PLACE_INDEX_HERE || "voltgo-place-index";
+const apiKey = import.meta.env.VITE_AWS_LOCATION_API_KEY_HERE || "";
 
 interface MapWithPlacesProps {
   onLocationSelect?: (lat: number, lng: number, address?: string) => void;

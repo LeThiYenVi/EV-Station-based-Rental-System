@@ -64,7 +64,8 @@ public class BookingService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
         if (renter.getLicenseCardFrontImageUrl() == null || renter.getLicenseCardBackImageUrl() == null) {
-            throw new IllegalStateException("You must upload both front and back of your driver's license before booking");
+            throw new IllegalStateException(
+                    "You must upload both front and back of your driver's license before booking");
         }
 
         if (renter.getLicenseNumber() == null || renter.getLicenseNumber().trim().isEmpty()) {
@@ -72,10 +73,12 @@ public class BookingService {
         }
 
         Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with ID: " + request.getVehicleId()));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Vehicle not found with ID: " + request.getVehicleId()));
 
         Station station = stationRepository.findById(request.getStationId())
-                .orElseThrow(() -> new ResourceNotFoundException("Station not found with ID: " + request.getStationId()));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Station not found with ID: " + request.getStationId()));
 
         if (vehicle.getStatus() != VehicleStatus.AVAILABLE) {
             throw new IllegalStateException("Vehicle is not available for booking");
@@ -92,10 +95,10 @@ public class BookingService {
         long hours = Duration.between(request.getStartTime(), request.getExpectedEndTime()).toHours();
         BigDecimal basePrice;
         if (hours <= 24) {
-            basePrice = vehicle.getHourlyRate().multiply(BigDecimal.valueOf(hours));
+            basePrice = vehicle.getDailyRate();
         } else {
-            long days = hours / 24;
-            long remainingHours = hours % 24;
+            long days = hours / 24; // days = 34/24
+            long remainingHours = hours % 24; // 0.41
             basePrice = vehicle.getDailyRate().multiply(BigDecimal.valueOf(days))
                     .add(vehicle.getHourlyRate().multiply(BigDecimal.valueOf(remainingHours)));
         }
@@ -136,19 +139,16 @@ public class BookingService {
                 savedBooking.getId(),
                 depositAmount,
                 "Thanh toan tien coc booking " + bookingCode,
-                true
-        );
+                true);
 
-        if ("0".equals(moMoResponse.getResultCode())) {
-            savedPayment.setTransactionId(moMoResponse.getOrderId());
-            paymentRepository.save(savedPayment);
-            log.info("MoMo payment created successfully - orderId: {}", moMoResponse.getOrderId());
-        } else {
-            savedPayment.setStatus(PaymentStatus.FAILED);
-            paymentRepository.save(savedPayment);
-            log.error("MoMo payment creation failed - resultCode: {}, message: {}", 
+        if (!"0".equals(moMoResponse.getResultCode())) {
+            log.error("MoMo create payment failed - resultCode: {}, message: {}",
                     moMoResponse.getResultCode(), moMoResponse.getMessage());
+            throw new RuntimeException("Cannot create MoMo payment order");
         }
+
+        savedPayment.setTransactionId(moMoResponse.getOrderId());
+        paymentRepository.save(savedPayment);
 
         return BookingWithPaymentResponse.builder()
                 .id(savedBooking.getId())
@@ -341,8 +341,9 @@ public class BookingService {
             long lateHours = Duration.between(booking.getExpectedEndTime(), actualEndTime).toHours();
             if (lateHours > 0) {
                 Vehicle vehicle = booking.getVehicle();
-                lateFee = vehicle.getHourlyRate().multiply(BigDecimal.valueOf(lateHours)).multiply(BigDecimal.valueOf(1.5));
-                log.warn("Late return detected - booking: {}, late hours: {}, late fee: {}", 
+                lateFee = vehicle.getHourlyRate().multiply(BigDecimal.valueOf(lateHours))
+                        .multiply(BigDecimal.valueOf(1.5));
+                log.warn("Late return detected - booking: {}, late hours: {}, late fee: {}",
                         booking.getBookingCode(), lateHours, lateFee);
             }
         }
@@ -357,7 +358,7 @@ public class BookingService {
             booking.setExtraFee(currentExtraFee.add(lateFee));
             BigDecimal newTotal = booking.getBasePrice().add(booking.getDepositPaid()).add(booking.getExtraFee());
             booking.setTotalAmount(newTotal);
-            log.info("Late fee added to booking - booking: {}, late fee: {}, new total: {}", 
+            log.info("Late fee added to booking - booking: {}, late fee: {}, new total: {}",
                     booking.getBookingCode(), lateFee, newTotal);
         }
 
@@ -374,8 +375,7 @@ public class BookingService {
                 booking.getId(),
                 remainingAmount,
                 "Thanh toan con lai booking " + booking.getBookingCode(),
-                false
-        );
+                false);
 
         if ("0".equals(moMoResponse.getResultCode())) {
             savedRemainingPayment.setTransactionId(moMoResponse.getOrderId());
@@ -384,7 +384,7 @@ public class BookingService {
         } else {
             savedRemainingPayment.setStatus(PaymentStatus.FAILED);
             paymentRepository.save(savedRemainingPayment);
-            log.error("MoMo payment creation failed - resultCode: {}, message: {}", 
+            log.error("MoMo payment creation failed - resultCode: {}, message: {}",
                     moMoResponse.getResultCode(), moMoResponse.getMessage());
         }
 
@@ -484,7 +484,7 @@ public class BookingService {
         return authentication != null ? authentication.getName() : null;
     }
 
-    public MoMoPaymentResponse payRemainder(UUID bookingId) {
+    public MoMoPaymentResponse payRemainder(UUID bookingId, BigDecimal extraFee) {
         log.info("Processing remainder payment for booking: {}", bookingId);
         String email = getEmailFromAuthentication();
         if (email == null || email.isBlank()) {
@@ -514,45 +514,46 @@ public class BookingService {
             long lateHours = Duration.between(booking.getExpectedEndTime(), actualEndTime).toHours();
             if (lateHours > 0) {
                 Vehicle vehicle = booking.getVehicle();
-                lateFee = vehicle.getHourlyRate().multiply(BigDecimal.valueOf(lateHours)).multiply(BigDecimal.valueOf(1.5));
-                log.warn("Late return detected - booking: {}, late hours: {}, late fee: {}",
+                lateFee = vehicle.getHourlyRate().multiply(BigDecimal.valueOf(lateHours));
+                log.info("Late return detected - booking: {}, late hours: {}, late fee: {}",
                         booking.getBookingCode(), lateHours, lateFee);
             }
-            totalCharge=totalCharge.add(lateFee);
+            totalCharge = totalCharge.add(lateFee);
         }
+        totalCharge.add(extraFee);
+        BigDecimal depositPaid = (booking.getDepositPaid() != null && booking.getDepositPaid() != new BigDecimal(0))
+                ? booking.getDepositPaid()
+                : BigDecimal.ZERO;
 
-        BigDecimal depositPaid = booking.getDepositPaid() != null ? booking.getDepositPaid() : BigDecimal.ZERO;
-        BigDecimal netSettlementAmount = totalCharge.subtract(depositPaid);
+        if (booking.getPaymentStatus() != PaymentStatus.PARTIALLY_PAID) {
+            totalCharge.add(depositPaid);
+        }
+        // Create a Payment record for the remainder, consistent with completeBooking
+        Payment remainingPayment = Payment.builder()
+                .booking(booking)
+                .amount(totalCharge)
+                .paymentMethod(PaymentMethod.MOMO)
+                .status(PaymentStatus.PENDING)
+                .processedBy(renter.getId())
+                .build();
+        Payment savedPayment = paymentRepository.save(remainingPayment);
 
-            log.info("Khách hàng CÒN NỢ: {}", netSettlementAmount);
+        MoMoPaymentResponse moMoResponse = moMoService.createPayment(
+                booking.getId(),
+                totalCharge,
+                "Thanh toán phần còn lại booking " + booking.getBookingCode(),
+                false);
 
-            // Create a Payment record for the remainder, consistent with completeBooking
-            Payment remainingPayment = Payment.builder()
-                    .booking(booking)
-                    .amount(netSettlementAmount)
-                    .paymentMethod(PaymentMethod.MOMO)
-                    .status(PaymentStatus.PENDING)
-                    .processedBy(renter.getId())
-                    .build();
-            Payment savedPayment = paymentRepository.save(remainingPayment);
-
-            MoMoPaymentResponse moMoResponse = moMoService.createPayment(
-                    booking.getId(),
-                    netSettlementAmount,
-                    "Thanh toán phần còn lại booking " + booking.getBookingCode(),
-                    false
-            );
-
-            if ("0".equals(moMoResponse.getResultCode())) {
-                savedPayment.setTransactionId(moMoResponse.getOrderId());
-                paymentRepository.save(savedPayment);
-                log.info("MoMo remainder payment created successfully - orderId: {}", moMoResponse.getOrderId());
-            } else {
-                savedPayment.setStatus(PaymentStatus.FAILED);
-                paymentRepository.save(savedPayment);
-                log.error("MoMo remainder payment creation failed - resultCode: {}, message: {}",
-                        moMoResponse.getResultCode(), moMoResponse.getMessage());
-            }
-            return moMoResponse;
+        if ("0".equals(moMoResponse.getResultCode())) {
+            savedPayment.setTransactionId(moMoResponse.getOrderId());
+            paymentRepository.save(savedPayment);
+            log.info("MoMo remainder payment created successfully - orderId: {}", moMoResponse.getOrderId());
+        } else {
+            savedPayment.setStatus(PaymentStatus.FAILED);
+            paymentRepository.save(savedPayment);
+            log.error("MoMo remainder payment creation failed - resultCode: {}, message: {}",
+                    moMoResponse.getResultCode(), moMoResponse.getMessage());
+        }
+        return moMoResponse;
     }
 }

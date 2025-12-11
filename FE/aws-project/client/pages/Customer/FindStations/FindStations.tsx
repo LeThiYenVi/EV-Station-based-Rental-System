@@ -146,7 +146,7 @@ export default function FindStations() {
           setLocationError("Không thể lấy vị trí của bạn");
           setLoadingLocation(false);
           // Set default location (Vietnam center)
-          setUserLocation({ lat: 16.0544, lng: 108.2022 });
+          setUserLocation({ lat: 10.7717066, lng: 106.7038224 });
         },
         {
           enableHighAccuracy: false,

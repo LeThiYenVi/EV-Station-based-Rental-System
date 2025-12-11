@@ -26,7 +26,7 @@ public class NearbyStationSearchRequest {
 
     @Min(value = 1, message = "Radius must be at least 1 km")
     @Max(value = 100, message = "Radius cannot exceed 100 km")
-    Integer radiusKm = 10;
+    Double radiusKm = 5.0;
 
     @Min(value = 1, message = "Limit must be at least 1")
     @Max(value = 50, message = "Limit cannot exceed 50")

@@ -49,8 +49,8 @@ public class MoMoService {
 
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("partnerCode", moMoConfig.getPartnerCode());
-            requestBody.put("partnerName", "EV Rental");
-            requestBody.put("storeId", "EVRental");
+            requestBody.put("partnerName", "Voltgo Platform");
+            requestBody.put("storeId", "Voltgo");
             requestBody.put("requestId", requestId);
             requestBody.put("amount", amountLong);
             requestBody.put("orderId", orderId);

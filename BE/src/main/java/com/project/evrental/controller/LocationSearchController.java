@@ -26,7 +26,7 @@ public class LocationSearchController {
     public ResponseEntity<ApiResponse<NearbyStationsPageResponse>> findNearbyStations(
             @RequestParam BigDecimal latitude,
             @RequestParam BigDecimal longitude,
-            @RequestParam(required = false, defaultValue = "10") Integer radiusKm,
+            @RequestParam(required = false, defaultValue = "5.0") Double radiusKm,
             @RequestParam(required = false, defaultValue = "10") Integer limit,
             @RequestParam(required = false) Double minRating,
             @RequestParam(required = false) String fuelType,
