@@ -39,6 +39,9 @@ import {
   Avatar,
   Alert,
   Divider,
+  Input,
+  InputNumber,
+  Form,
 } from "antd";
 import {
   CheckCircleOutlined,
@@ -136,6 +139,10 @@ export default function Confirmations() {
   const [completedBookingHistory, setCompletedBookingHistory] = useState<
     BookingData[]
   >([]);
+  const [extraFeeModalOpen, setExtraFeeModalOpen] = useState(false);
+  const [extraFeeAmount, setExtraFeeAmount] = useState<number | null>(null);
+  const [extraFeeForm] = Form.useForm();
+  const [payingRemainder, setPayingRemainder] = useState(false);
 
   // Use booking hook
   const {
@@ -145,6 +152,7 @@ export default function Confirmations() {
     startBooking,
     completeBooking,
     getBookingById,
+    payRemainder,
   } = useBooking();
 
   // Load bookings with pagination
@@ -363,9 +371,12 @@ export default function Confirmations() {
 
             console.log("Completed booking data with MoMo:", completedData);
 
-            // Set completed booking data and show invoice modal
+            // Set completed booking data and show extra fee modal
+            setSelectedBooking(completedData);
             setCompletedBooking(completedData);
-            setInvoiceModalOpen(true);
+            setExtraFeeAmount(null);
+            extraFeeForm.resetFields();
+            setExtraFeeModalOpen(true);
 
             // Add to history if not already exists
             setCompletedBookingHistory((prev) => {
@@ -379,14 +390,16 @@ export default function Confirmations() {
           break;
       }
 
-      setConfirmModalOpen(false);
-      setDetailModalOpen(false);
+      if (action !== "complete") {
+        setConfirmModalOpen(false);
+        setDetailModalOpen(false);
 
-      // Reload về trang đầu tiên để thấy thay đổi ngay lập tức
-      await loadBookings(0, pagination.pageSize);
+        // Reload về trang đầu tiên để thấy thay đổi ngay lập tức
+        await loadBookings(0, pagination.pageSize);
 
-      // Reset về page 1
-      setPagination((prev) => ({ ...prev, current: 1 }));
+        // Reset về page 1
+        setPagination((prev) => ({ ...prev, current: 1 }));
+      }
     } catch (error: any) {
       message.error(error?.message || "Có lỗi xảy ra, vui lòng thử lại!");
     } finally {
@@ -398,6 +411,47 @@ export default function Confirmations() {
   const handleSendEmail = (email: string) => {
     window.open(`mailto:${email}`);
     message.info(`Đang soạn email đến ${email}...`);
+  };
+
+  // Handle extra fee - gọi API payRemainder
+  const handlePayRemainder = async () => {
+    if (!completedBooking || extraFeeAmount === null) {
+      message.error("Vui lòng nhập chi phí phát sinh");
+      return;
+    }
+
+    setPayingRemainder(true);
+    try {
+      // Gọi API payRemainder để thanh toán phần còn lại
+      const paymentResult = await payRemainder(completedBooking.id);
+      
+      if (paymentResult) {
+        message.success("Tạo yêu cầu thanh toán thành công!");
+        
+        // Cập nhật completed booking với payment info
+        const updatedBooking: BookingData = {
+          ...completedBooking,
+          extraFee: extraFeeAmount,
+          momoPayment: paymentResult,
+        };
+        
+        setCompletedBooking(updatedBooking);
+        setExtraFeeModalOpen(false);
+        
+        // Hiển thị invoice modal với thông tin thanh toán mới
+        setInvoiceModalOpen(true);
+        
+        // Reload dữ liệu
+        await loadBookings(0, pagination.pageSize);
+        setPagination((prev) => ({ ...prev, current: 1 }));
+      }
+    } catch (error: any) {
+      message.error(
+        error?.message || "Có lỗi xảy ra khi tạo yêu cầu thanh toán!"
+      );
+    } finally {
+      setPayingRemainder(false);
+    }
   };
 
   // View invoice for completed booking
@@ -1540,6 +1594,148 @@ export default function Confirmations() {
               </p>
             </div>
           </div>
+        )}
+      </Modal>
+
+      {/* Extra Fee Modal - Nhập chi phí phát sinh */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <DollarOutlined className="text-orange-500" />
+            <span>Chi phí phát sinh</span>
+          </div>
+        }
+        open={extraFeeModalOpen}
+        onCancel={() => {
+          setExtraFeeModalOpen(false);
+          setCompletedBooking(null);
+          setExtraFeeAmount(null);
+          extraFeeForm.resetFields();
+        }}
+        footer={
+          <Space className="w-full justify-end">
+            <Button
+              onClick={() => {
+                setExtraFeeModalOpen(false);
+                setCompletedBooking(null);
+                setExtraFeeAmount(null);
+                extraFeeForm.resetFields();
+              }}
+            >
+              Bỏ qua
+            </Button>
+            <Button
+              type="primary"
+              loading={payingRemainder}
+              onClick={handlePayRemainder}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              Xác nhận và thanh toán
+            </Button>
+          </Space>
+        }
+      >
+        {completedBooking && (
+          <Form
+            form={extraFeeForm}
+            layout="vertical"
+            onValuesChange={(changedValues) => {
+              if (changedValues.extraFee !== undefined) {
+                setExtraFeeAmount(changedValues.extraFee);
+              }
+            }}
+          >
+            <Card className="mb-4">
+              <Descriptions column={1} bordered size="small">
+                <Descriptions.Item label="Mã đơn">
+                  <span className="font-mono font-semibold">
+                    {completedBooking.bookingCode}
+                  </span>
+                </Descriptions.Item>
+                <Descriptions.Item label="Khách hàng">
+                  {completedBooking.renterName || "Khách hàng"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Xe">
+                  {completedBooking.vehicleName} ({completedBooking.licensePlate})
+                </Descriptions.Item>
+                <Descriptions.Item label="Giá cơ bản">
+                  <span className="font-semibold">
+                    {formatCurrency(completedBooking.basePrice || 0)}
+                  </span>
+                </Descriptions.Item>
+                <Descriptions.Item label="Tiền đặt cọc">
+                  <span className="font-semibold text-blue-600">
+                    {formatCurrency(completedBooking.depositPaid || 0)}
+                  </span>
+                </Descriptions.Item>
+                <Descriptions.Item label="Tổng cần thanh toán">
+                  <span className="font-bold text-lg text-green-600">
+                    {formatCurrency(
+                      (completedBooking.totalAmount || 0) - (completedBooking.depositPaid || 0)
+                    )}
+                  </span>
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            <Alert
+              message="Nhập chi phí phát sinh (nếu có)"
+              description="Chi phí này sẽ được thêm vào tổng số tiền thanh toán. Nếu không có chi phí phát sinh, để trống hoặc nhập 0"
+              type="info"
+              showIcon
+              className="mb-4"
+            />
+
+            <Form.Item
+              name="extraFee"
+              label={
+                <span className="font-semibold text-orange-600">
+                  Chi phí phát sinh (VND)
+                </span>
+              }
+              rules={[
+                {
+                  pattern: /^\d+$/,
+                  message: "Vui lòng nhập số tiền hợp lệ",
+                },
+              ]}
+              initialValue={0}
+            >
+              <InputNumber
+                min={0}
+                step={10000}
+                placeholder="Nhập chi phí phát sinh..."
+                className="w-full"
+                formatter={(value) =>
+                  `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                }
+                parser={(value) => parseInt(value?.replace(/,/g, "") || "0") as any}
+              />
+            </Form.Item>
+
+            {extraFeeAmount && extraFeeAmount > 0 && (
+              <Card className="bg-orange-50 border-orange-200">
+                <div className="space-y-2">
+                  <p className="text-sm">
+                    <strong>Chi phí phát sinh:</strong>{" "}
+                    <span className="text-orange-600 font-semibold">
+                      {formatCurrency(extraFeeAmount)}
+                    </span>
+                  </p>
+                  <p className="text-sm border-t pt-2">
+                    <strong>Tổng thanh toán:</strong>{" "}
+                    <span className="text-green-600 font-bold text-lg">
+                      {formatCurrency(
+                        (completedBooking.totalAmount || 0) -
+                          (completedBooking.depositPaid || 0) +
+                          extraFeeAmount
+                      )}
+                    </span>
+                  </p>
+                </div>
+              </Card>
+            )}
+          </Form>
         )}
       </Modal>
     </div>

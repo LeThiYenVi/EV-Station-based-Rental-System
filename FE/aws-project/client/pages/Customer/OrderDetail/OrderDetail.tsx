@@ -1070,7 +1070,7 @@ export default function OrderDetail() {
                     )}
 
                     {/* Tiền cọc (depositPaid) */}
-                    {(order as any).depositPaid > 0 && (
+                    {(order as any).depositPaid >= 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Tiền đặt cọc</span>
                         <span className="font-medium text-blue-600">
@@ -1080,7 +1080,7 @@ export default function OrderDetail() {
                     )}
 
                     {/* Phí phụ thu (extraFee - bao gồm phí trả xe muộn) */}
-                    {(order as any).extraFee > 0 && (
+                    {(order as any).extraFee >= 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">
                           Phí phụ thu{" "}
@@ -1146,20 +1146,20 @@ export default function OrderDetail() {
                           = Phí thuê ({formatCurrency((order as any).basePrice)}
                           )
                         </p>
-                        {(order as any).depositPaid > 0 && (
+                        {(order as any).depositPaid >= 0 && (
                           <p className="text-xs text-gray-700 font-mono">
                             + Tiền cọc (
                             {formatCurrency((order as any).depositPaid)})
                           </p>
                         )}
-                        {(order as any).extraFee > 0 && (
+                        {(order as any).extraFee >= 0 && (
                           <p className="text-xs text-gray-700 font-mono">
                             + Phí phụ thu (
                             {formatCurrency((order as any).extraFee)})
                           </p>
                         )}
                         <p className="text-xs font-semibold text-gray-900 mt-1 pt-1 border-t border-gray-300">
-                          = {formatCurrency((order as any).totalAmount || 0)}
+                          = {formatCurrency((order as any).totalAmount || 0)} | Đã cọc trước ({formatCurrency((order as any).depositPaid)})
                         </p>
                       </div>
                     )}
