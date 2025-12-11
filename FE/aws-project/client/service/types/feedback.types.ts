@@ -1,6 +1,6 @@
 // Feedback Request DTOs
 export interface CreateFeedbackRequest {
-  bookingId: string;
+  bookingId: string; // Required - UUID of the booking
   vehicleRating: number;
   stationRating: number;
   comment: string;

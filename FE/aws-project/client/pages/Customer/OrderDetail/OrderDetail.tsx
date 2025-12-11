@@ -250,8 +250,27 @@ export default function OrderDetail() {
     try {
       setIsProcessing(true);
 
+      // Ensure bookingId is a number and valid
+      let bookingId: number;
+
+      if (typeof order.id === "string") {
+        // Remove any null characters or whitespace
+        const cleanId = order.id.replace(/\0/g, "").trim();
+        bookingId = parseInt(cleanId, 10);
+      } else {
+        bookingId = order.id;
+      }
+
+      // Validate bookingId
+      if (isNaN(bookingId) || bookingId <= 0) {
+        showError("ID đơn hàng không hợp lệ");
+        return;
+      }
+
       if (editingFeedback) {
         // Update existing feedback
+        console.log("📝 Updating feedback:", editingFeedback.id);
+
         await feedbackService.updateFeedback(editingFeedback.id, {
           vehicleRating: feedbackForm.vehicleRating,
           stationRating: feedbackForm.stationRating,
@@ -259,26 +278,59 @@ export default function OrderDetail() {
         });
         showSuccess("Cập nhật đánh giá thành công!");
       } else {
-        // Create new feedback
-        await feedbackService.createFeedback({
+        // Validate bookingId
+        if (!order.id) {
+          showError("Không tìm thấy thông tin đơn hàng");
+          return;
+        }
+
+        // Create new feedback with bookingId
+        const feedbackData = {
           bookingId: order.id,
           vehicleRating: feedbackForm.vehicleRating,
           stationRating: feedbackForm.stationRating,
-          comment: feedbackForm.comment,
-        });
+          comment: feedbackForm.comment.trim(),
+        };
+
+        console.log("📤 Creating feedback with data:", feedbackData);
+        console.log("📤 bookingId:", feedbackData.bookingId);
+
+        const response = await feedbackService.createFeedback(feedbackData);
+        console.log("✅ Feedback created successfully:", response);
+
         showSuccess("Gửi đánh giá thành công!");
       }
 
       setShowFeedbackDialog(false);
       setEditingFeedback(null);
+      setFeedbackForm({
+        vehicleRating: 5,
+        stationRating: 5,
+        comment: "",
+      });
       loadFeedbacks(); // Reload feedbacks
     } catch (error: any) {
-      console.error("Submit feedback error:", error);
-      // Extract error message from response
-      const errorMessage =
-        error?.response?.data?.errors ||
-        error?.response?.data?.message ||
-        "Không thể gửi đánh giá";
+      console.error("❌ Submit feedback error:", error);
+      console.error("❌ Error response:", error?.response);
+      console.error("❌ Error data:", error?.response?.data);
+
+      // Extract detailed error message
+      let errorMessage = "Không thể gửi đánh giá";
+
+      if (error?.response?.data) {
+        const data = error.response.data;
+        if (typeof data.errors === "string") {
+          errorMessage = data.errors;
+        } else if (typeof data.message === "string") {
+          errorMessage = data.message;
+        } else if (data.errors && typeof data.errors === "object") {
+          // Handle validation errors object
+          errorMessage = Object.values(data.errors).join(", ");
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
       showError(errorMessage);
     } finally {
       setIsProcessing(false);
