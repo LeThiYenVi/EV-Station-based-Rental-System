@@ -1,0 +1,50 @@
+.topic-avatar {
+  position: relative;
+}
+
+.topic-avatar > a::after {
+  content: "";
+  background-image: url($hat);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: -42%;
+  left: -27%;
+  width: 130%;
+  height: 100%;
+}
+
+.topic-post:nth-of-type(2n) .topic-avatar > a::after {
+  transform: rotate(-5deg) translateX(-4px);
+}
+
+.topic-post:nth-of-type(5n) .topic-avatar > a::after {
+  transform: rotate(5deg) translateX(4px);
+}
+
+.topic-post:nth-of-type(3n) .topic-avatar > a::after {
+  transform: scaleX(-1) rotate(5deg) translateX(-8px);
+}
+
+.topic-list .posters > a.latest {
+  position: relative;
+}
+
+.topic-list .posters > a.latest::after {
+  content: "";
+  background-image: url($hat);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: -14px;
+  left: -5px;
+  width: 32px;
+  height: 24px;
+}
+
+.topic-list tr:nth-of-type(3n) .posters > a.latest::after {
+  transform: scaleX(-1);
+  left: 2px;
+}

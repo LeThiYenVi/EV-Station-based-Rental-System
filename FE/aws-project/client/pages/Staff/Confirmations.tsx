@@ -144,6 +144,7 @@ export default function Confirmations() {
     cancelBooking,
     startBooking,
     completeBooking,
+    getBookingById,
   } = useBooking();
 
   // Load bookings with pagination
@@ -318,13 +319,54 @@ export default function Confirmations() {
           message.success(`Đã bắt đầu đơn thuê ${selectedBooking.bookingCode}`);
           break;
         case "complete":
+          // Validate booking status before completing
+          if (selectedBooking.status !== "ONGOING") {
+            message.error(
+              `Chỉ có thể hoàn thành đơn đang thuê. Trạng thái hiện tại: ${selectedBooking.status}`,
+            );
+            setLoading(false);
+            setConfirmModalOpen(false);
+            return;
+          }
+
           result = await completeBooking(selectedBooking.id);
           if (result) {
             message.success(`Đã hoàn thành đơn ${selectedBooking.bookingCode}`);
+
+            console.log("=== COMPLETE BOOKING RESULT ===");
+            console.log("Complete API response:", result);
+            console.log("MoMo Payment from complete API:", result.momoPayment);
+
+            // API complete trả về BookingWithPaymentResponse including momoPayment
+            const completedData: BookingData = {
+              id: result.id,
+              bookingCode: result.bookingCode,
+              renterId: result.renterId,
+              renterName: result.renterName,
+              renterEmail: result.renterEmail,
+              vehicleId: result.vehicleId,
+              vehicleName: result.vehicleName,
+              licensePlate: result.licensePlate,
+              stationId: result.stationId,
+              stationName: result.stationName,
+              startTime: result.startTime,
+              expectedEndTime: result.expectedEndTime,
+              status: result.status,
+              basePrice: result.basePrice,
+              depositPaid: result.depositPaid,
+              totalAmount: result.totalAmount,
+              pickupNote: result.pickupNote,
+              paymentStatus: result.paymentStatus,
+              createdAt: result.createdAt || new Date().toISOString(),
+              momoPayment: result.momoPayment, // MoMo payment data from complete API
+            };
+
+            console.log("Completed booking data with MoMo:", completedData);
+
             // Set completed booking data and show invoice modal
-            const completedData = result as BookingData;
             setCompletedBooking(completedData);
             setInvoiceModalOpen(true);
+
             // Add to history if not already exists
             setCompletedBookingHistory((prev) => {
               const exists = prev.find((b) => b.id === completedData.id);
@@ -359,7 +401,13 @@ export default function Confirmations() {
   };
 
   // View invoice for completed booking
-  const handleViewInvoice = (booking: BookingData) => {
+  const handleViewInvoice = async (booking: BookingData) => {
+    console.log("=== VIEW INVOICE DEBUG ===");
+    console.log("Original booking data:", booking);
+    console.log("MoMo Payment:", booking.momoPayment);
+
+    // Use booking data directly - it already contains all info from table
+    // If momoPayment is missing, it means the booking was completed without payment link
     setCompletedBooking(booking);
     setInvoiceModalOpen(true);
   };
@@ -788,12 +836,16 @@ export default function Confirmations() {
                     )}
                   </Space>
                 </Descriptions.Item>
-                <Descriptions.Item label="Người checkout" span={1}>
-                  {selectedBooking.checkedOutByName || "Chưa có"}
+                <Descriptions.Item label="Người checkout (Giao xe)" span={1}>
+                  <span className="font-semibold text-blue-600">
+                    {selectedBooking.checkedOutByName || "Chưa có"}
+                  </span>
                 </Descriptions.Item>
-                <Descriptions.Item label="Người checkin" span={1}>
-                  {selectedBooking.checkedInByName || "Chưa có"}
-                </Descriptions.Item>
+                {/* <Descriptions.Item label="Người checkin (Nhận xe trả)" span={1}>
+                  <span className="font-semibold text-green-600">
+                    {selectedBooking.checkedInByName || "Chưa có"}
+                  </span>
+                </Descriptions.Item> */}
               </Descriptions>
             </Card>
 
@@ -1099,7 +1151,7 @@ export default function Confirmations() {
           setInvoiceModalOpen(false);
           setCompletedBooking(null);
         }}
-        width={700}
+        width={1400}
         footer={[
           <Button
             key="print"
@@ -1136,152 +1188,242 @@ export default function Confirmations() {
               </p>
             </div>
 
-            {/* Customer & Vehicle Info */}
-            <Row gutter={16}>
-              <Col span={12}>
-                <Card size="small" title="Thông tin khách hàng">
-                  <p>
-                    <strong>Họ tên:</strong>{" "}
-                    {completedBooking.renterName || "Khách hàng"}
-                  </p>
-                  <p>
-                    <strong>Email:</strong> {getRenterEmail(completedBooking)}
-                  </p>
-                </Card>
-              </Col>
-              <Col span={12}>
-                <Card size="small" title="Thông tin xe">
-                  <p>
-                    <strong>Xe:</strong> {completedBooking.vehicleName || "Xe"}
-                  </p>
-                  <p>
-                    <strong>Biển số:</strong>{" "}
-                    <span className="font-mono">
-                      {completedBooking.licensePlate || "N/A"}
-                    </span>
-                  </p>
-                </Card>
-              </Col>
-            </Row>
-
-            {/* Rental Period */}
-            <Card size="small" title="Thời gian thuê">
-              <Row gutter={16}>
-                <Col span={12}>
-                  <p className="text-green-600">
-                    <CalendarOutlined className="mr-2" />
-                    <strong>Bắt đầu:</strong>
-                  </p>
-                  <p className="ml-6">
-                    {formatDateTime(getPickupTime(completedBooking))}
-                  </p>
-                </Col>
-                <Col span={12}>
-                  <p className="text-orange-600">
-                    <CalendarOutlined className="mr-2" />
-                    <strong>Kết thúc:</strong>
-                  </p>
-                  <p className="ml-6">
-                    {completedBooking.actualEndTime
-                      ? formatDateTime(completedBooking.actualEndTime)
-                      : formatDateTime(getReturnTime(completedBooking))}
-                  </p>
-                </Col>
-              </Row>
-              <p className="mt-2 text-gray-600">
-                <strong>Tổng thời gian:</strong>{" "}
-                {calculateDays(
-                  getPickupTime(completedBooking),
-                  completedBooking.actualEndTime ||
-                    getReturnTime(completedBooking),
-                )}{" "}
-                ngày
-              </p>
-            </Card>
-
-            {/* Payment Details */}
-            <Card size="small" title="Chi tiết thanh toán">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Giá cơ bản:</span>
-                  <span className="font-semibold">
-                    {formatCurrency(completedBooking.basePrice || 0)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Tiền đặt cọc:</span>
-                  <span className="font-semibold text-blue-600">
-                    {formatCurrency(completedBooking.depositPaid || 0)}
-                  </span>
-                </div>
-                {completedBooking.extraFee && completedBooking.extraFee > 0 && (
-                  <div className="flex justify-between text-orange-600">
-                    <span>Phí phát sinh:</span>
-                    <span className="font-semibold">
-                      {formatCurrency(completedBooking.extraFee)}
-                    </span>
-                  </div>
-                )}
-                <Divider className="my-2" />
-                <div className="flex justify-between text-lg">
-                  <span className="font-bold">Tổng cộng:</span>
-                  <span className="font-bold text-green-600 text-xl">
-                    {formatCurrency(getTotalPrice(completedBooking))}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center mt-2">
-                  <span>Trạng thái thanh toán:</span>
-                  <Tag
-                    color={
-                      completedBooking.paymentStatus === "PAID"
-                        ? "green"
-                        : "orange"
-                    }
-                  >
-                    {completedBooking.paymentStatus === "PAID"
-                      ? "Đã thanh toán"
-                      : "Chờ thanh toán"}
-                  </Tag>
-                </div>
-              </div>
-            </Card>
-
-            {/* Notes */}
-            {(completedBooking.returnNote || completedBooking.pickupNote) && (
-              <Card size="small" title="Ghi chú">
-                {completedBooking.pickupNote && (
-                  <p className="text-sm">
-                    <strong>Nhận xe:</strong> {completedBooking.pickupNote}
-                  </p>
-                )}
-                {completedBooking.returnNote && (
-                  <p className="text-sm mt-1">
-                    <strong>Trả xe:</strong> {completedBooking.returnNote}
-                  </p>
-                )}
-              </Card>
-            )}
-
-            {/* Momo Payment Links */}
-            {completedBooking.momoPayment && (
-              <Card size="small" title="Thông tin thanh toán MoMo">
+            {/* Main Content - Conditional Layout based on momoPayment */}
+            <Row gutter={24}>
+              {/* Left Column - Booking Information */}
+              <Col span={completedBooking.momoPayment ? 8 : 24}>
+                {/* Customer & Vehicle Info */}
                 <Row gutter={16}>
-                  <Col span={14}>
-                    <Space direction="vertical" className="w-full">
-                      <div>
-                        <strong>Mã giao dịch:</strong>{" "}
-                        <span className="font-mono text-sm">
-                          {completedBooking.momoPayment.orderId}
-                        </span>
+                  <Col span={completedBooking.momoPayment ? 24 : 12}>
+                    <Card
+                      size="small"
+                      title="Thông tin khách hàng"
+                      className="mb-4"
+                    >
+                      <div className="space-y-2">
+                        <p>
+                          <strong>Họ tên:</strong>{" "}
+                          {completedBooking.renterName || "Khách hàng"}
+                        </p>
+                        <p>
+                          <strong>Email:</strong>{" "}
+                          {getRenterEmail(completedBooking)}
+                        </p>
+                        <p>
+                          <strong>ID khách hàng:</strong>{" "}
+                          <span className="font-mono text-xs">
+                            {completedBooking.renterId || "N/A"}
+                          </span>
+                        </p>
                       </div>
-                      <div>
-                        <strong>Số tiền:</strong>{" "}
+                    </Card>
+                  </Col>
+                  <Col span={completedBooking.momoPayment ? 24 : 12}>
+                    <Card size="small" title="Thông tin xe" className="mb-4">
+                      <div className="space-y-2">
+                        <p>
+                          <strong>Xe:</strong>{" "}
+                          {completedBooking.vehicleName || "Xe"}
+                        </p>
+                        <p>
+                          <strong>Biển số:</strong>{" "}
+                          <span className="font-mono">
+                            {completedBooking.licensePlate || "N/A"}
+                          </span>
+                        </p>
+                        <p>
+                          <strong>ID xe:</strong>{" "}
+                          <span className="font-mono text-xs">
+                            {completedBooking.vehicleId || "N/A"}
+                          </span>
+                        </p>
+                      </div>
+                    </Card>
+                  </Col>
+                </Row>
+
+                {/* Staff Info & Station Info */}
+                <Row gutter={16}>
+                  <Col span={completedBooking.momoPayment ? 24 : 12}>
+                    <Card
+                      size="small"
+                      title="Thông tin nhân viên xử lý"
+                      className="mb-4"
+                    >
+                      <div className="space-y-3">
+                        <div>
+                          <strong>Người checkout (Giao xe):</strong>{" "}
+                          <span className="text-blue-600 font-semibold">
+                            {completedBooking.checkedOutByName || "Chưa có"}
+                          </span>
+                          {completedBooking.checkedOutById && (
+                            <p className="text-xs text-gray-500 font-mono">
+                              ID: {completedBooking.checkedOutById}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <strong>Người checkin (Nhận xe trả):</strong>{" "}
+                          <span className="text-green-600 font-semibold">
+                            {completedBooking.checkedInByName || "Chưa có"}
+                          </span>
+                          {completedBooking.checkedInById && (
+                            <p className="text-xs text-gray-500 font-mono">
+                              ID: {completedBooking.checkedInById}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  </Col>
+
+                  <Col span={completedBooking.momoPayment ? 24 : 12}>
+                    <Card size="small" title="Thông tin trạm" className="mb-4">
+                      <div className="space-y-2">
+                        <div>
+                          <strong>Tên trạm:</strong>{" "}
+                          {completedBooking.stationName ||
+                            getStationName(completedBooking)}
+                          {completedBooking.stationId && (
+                            <p className="text-xs text-gray-500 font-mono">
+                              ID: {completedBooking.stationId}
+                            </p>
+                          )}
+                        </div>
+                        {completedBooking.pickupStationName && (
+                          <div>
+                            <strong>Trạm nhận/trả:</strong>{" "}
+                            {completedBooking.pickupStationName}
+                            {completedBooking.pickupStationId && (
+                              <p className="text-xs text-gray-500 font-mono">
+                                ID: {completedBooking.pickupStationId}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  </Col>
+                </Row>
+
+                {/* Rental Period */}
+                <Card size="small" title="Thời gian thuê" className="mb-4">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-green-600">
+                        <CalendarOutlined className="mr-2" />
+                        <strong>Bắt đầu (startTime):</strong>
+                      </p>
+                      <p className="ml-6">
+                        {formatDateTime(getPickupTime(completedBooking))}
+                      </p>
+                      {completedBooking.startTime && (
+                        <p className="text-xs text-gray-500 ml-6">
+                          Raw: {completedBooking.startTime}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-orange-600">
+                        <CalendarOutlined className="mr-2" />
+                        <strong>Kết thúc dự kiến (expectedEndTime):</strong>
+                      </p>
+                      <p className="ml-6">
+                        {formatDateTime(getReturnTime(completedBooking))}
+                      </p>
+                      {completedBooking.expectedEndTime && (
+                        <p className="text-xs text-gray-500 ml-6">
+                          Raw: {completedBooking.expectedEndTime}
+                        </p>
+                      )}
+                    </div>
+                    {completedBooking.actualEndTime && (
+                      <div className="pt-3 border-t">
+                        <p className="text-blue-600">
+                          <CalendarOutlined className="mr-2" />
+                          <strong>Kết thúc thực tế (actualEndTime):</strong>
+                        </p>
+                        <p className="ml-6">
+                          {formatDateTime(completedBooking.actualEndTime)}
+                        </p>
+                        <p className="text-xs text-gray-500 ml-6">
+                          Raw: {completedBooking.actualEndTime}
+                        </p>
+                      </div>
+                    )}
+                    <div className="pt-3 border-t">
+                      <p className="text-gray-600">
+                        <strong>Tổng thời gian:</strong>{" "}
+                        {calculateDays(
+                          getPickupTime(completedBooking),
+                          completedBooking.actualEndTime ||
+                            getReturnTime(completedBooking),
+                        )}{" "}
+                        ngày
+                      </p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        <strong>Ngày tạo (createdAt):</strong>{" "}
+                        {formatDateTime(completedBooking.createdAt)}
+                      </p>
+                      {completedBooking.updatedAt && (
+                        <p className="text-xs text-gray-500">
+                          <strong>Ngày cập nhật (updatedAt):</strong>{" "}
+                          {formatDateTime(completedBooking.updatedAt)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Notes */}
+                {(completedBooking.returnNote ||
+                  completedBooking.pickupNote) && (
+                  <Card size="small" title="Ghi chú">
+                    {completedBooking.pickupNote && (
+                      <p className="text-sm">
+                        <strong>Nhận xe:</strong> {completedBooking.pickupNote}
+                      </p>
+                    )}
+                    {completedBooking.returnNote && (
+                      <p className="text-sm mt-1">
+                        <strong>Trả xe:</strong> {completedBooking.returnNote}
+                      </p>
+                    )}
+                  </Card>
+                )}
+              </Col>
+
+              {/* Right Column - MoMo Payment (only show when momoPayment exists) */}
+              {completedBooking.momoPayment && (
+                <Col span={16}>
+                  <Card size="small" title="Thanh toán MoMo">
+                    <Space direction="vertical" className="w-full" size="small">
+                      {/* <div>
+                        <strong>Số tiền (amount):</strong>{" "}
                         <span className="font-semibold text-green-600 text-lg">
                           {formatCurrency(completedBooking.momoPayment.amount)}
                         </span>
+                      </div> */}
+                      {/* <div>
+                        <strong>Mã giao dịch (orderId):</strong>{" "}
+                        <span className="font-mono text-sm">
+                          {completedBooking.momoPayment.orderId}
+                        </span>
+                      </div> */}
+                      {/* <div>
+                        <strong>Request ID (requestId):</strong>{" "}
+                        <span className="font-mono text-xs text-gray-600">
+                          {completedBooking.momoPayment.requestId}
+                        </span>
                       </div>
                       <div>
-                        <strong>Trạng thái:</strong>{" "}
+                        <strong>Partner Code (partnerCode):</strong>{" "}
+                        <span className="font-mono text-sm">
+                          {completedBooking.momoPayment.partnerCode || "N/A"}
+                        </span>
+                      </div>
+                      <div>
+                        <strong>Trạng thái (resultCode):</strong>{" "}
                         <Tag
                           color={
                             completedBooking.momoPayment.resultCode === "0"
@@ -1291,9 +1433,45 @@ export default function Confirmations() {
                         >
                           {completedBooking.momoPayment.message}
                         </Tag>
+                        <span className="ml-2 text-xs text-gray-500">
+                          Code: {completedBooking.momoPayment.resultCode}
+                        </span>
                       </div>
+                      <div>
+                        <strong>Thông điệp (message):</strong>{" "}
+                        <span className="text-sm">
+                          {completedBooking.momoPayment.message}
+                        </span>
+                      </div>
+                      <div>
+                        <strong>Response Time (responseTime):</strong>{" "}
+                        <span className="text-sm font-mono">
+                          {completedBooking.momoPayment.responseTime || "N/A"}
+                        </span>
+                      </div> */}
                       <Divider className="my-2" />
-                      <Space direction="vertical" className="w-full">
+                      {/* <div className="text-xs text-gray-500 space-y-1">
+                        <div>
+                          <strong>Pay URL (payUrl):</strong>
+                          <p className="break-all ml-2">
+                            {completedBooking.momoPayment.payUrl}
+                          </p>
+                        </div>
+                        <div>
+                          <strong>Deep Link (deeplink):</strong>
+                          <p className="break-all ml-2">
+                            {completedBooking.momoPayment.deeplink}
+                          </p>
+                        </div>
+                        <div>
+                          <strong>QR Code URL (qrCodeUrl):</strong>
+                          <p className="break-all ml-2">
+                            {completedBooking.momoPayment.qrCodeUrl || "N/A"}
+                          </p>
+                        </div>
+                      </div> */}
+                      <Divider className="my-2" />
+                      {/* <Space direction="vertical" className="w-full">
                         <Button
                           type="primary"
                           icon={<LinkOutlined />}
@@ -1313,45 +1491,45 @@ export default function Confirmations() {
                         >
                           Mở ứng dụng MoMo
                         </Button>
-                      </Space>
+                      </Space> */}
                     </Space>
-                  </Col>
-                  <Col span={10}>
-                    <div className="text-center">
-                      <div className="text-sm font-semibold mb-2 text-gray-700">
-                        <QrcodeOutlined className="mr-1" />
-                        Quét mã QR để thanh toán
+
+                    {/* Payment Page from payUrl */}
+                    <div className="mt-4">
+                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 mb-3">
+                        <div className="text-base font-semibold text-purple-700 flex items-center justify-center gap-2">
+                          <LinkOutlined className="text-xl" />
+                          <span>Trang thanh toán MoMo</span>
+                        </div>
                       </div>
-                      <div className="border-2 border-dashed border-gray-300 p-2 rounded-lg bg-white">
-                        <img
-                          src={completedBooking.momoPayment.qrCodeUrl}
-                          alt="MoMo QR Code"
-                          className="w-full h-auto max-w-[200px] mx-auto"
+                      <div className="border-2 border-purple-200 rounded-lg bg-white overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+                        <iframe
+                          src={completedBooking.momoPayment.payUrl}
+                          className="w-full h-[600px]"
+                          title="MoMo Payment Page"
+                          sandbox="allow-same-origin allow-scripts allow-forms"
                           onError={(e) => {
-                            const target = e.target as HTMLImageElement;
+                            const target = e.target as HTMLIFrameElement;
                             target.style.display = "none";
-                            const parent = target.parentElement;
-                            if (parent) {
-                              parent.innerHTML = `
-                                <div class="flex items-center justify-center h-[200px] text-gray-400">
-                                  <div class="text-center">
-                                    <QrcodeOutlined style="font-size: 48px" />
-                                    <p class="mt-2 text-sm">Không thể tải mã QR</p>
-                                  </div>
-                                </div>
-                              `;
-                            }
                           }}
                         />
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Quét bằng app MoMo
-                      </p>
+                      <div className="mt-3 text-center">
+                        <Button
+                          type="link"
+                          icon={<LinkOutlined />}
+                          href={completedBooking.momoPayment.payUrl}
+                          target="_blank"
+                          className="text-purple-600"
+                        >
+                          Mở trang thanh toán trong tab mới
+                        </Button>
+                      </div>
                     </div>
-                  </Col>
-                </Row>
-              </Card>
-            )}
+                  </Card>
+                </Col>
+              )}
+            </Row>
 
             {/* Footer */}
             <div className="text-center text-sm text-gray-500 border-t pt-4">

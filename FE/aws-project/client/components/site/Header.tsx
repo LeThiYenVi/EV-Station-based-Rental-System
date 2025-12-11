@@ -212,7 +212,7 @@ export function Header() {
                       <div
                         className={`h-32 bg-cover bg-center ${
                           index === 0
-                            ? "bg-[url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=400&h=200&fit=crop')]"
+                            ? "bg-[url('/VinFast-VF-8-driving.jpeg)]"
                             : index === 1
                               ? "bg-[url('https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=400&h=200&fit=crop')]"
                               : index === 2

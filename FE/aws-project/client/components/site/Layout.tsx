@@ -15,7 +15,7 @@ export function Layout({ children }: { children: ReactNode }) {
           bottom: "10px",
           position: "fixed",
         }}
-        starColor="#60a5fa"
+        starColor="#ffea00ff"
         lightColors={[
           "#0EA5E9", // Sky blue
           "#06B6D4", // Cyan
