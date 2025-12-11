@@ -27,12 +27,26 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: "dist",
+      assetsDir: "assets",
       rollupOptions: {
         output: {
           manualChunks: {
             'vendor': ['react', 'react-dom', 'react-router-dom'],
             'antd': ['antd'],
-          }
+          },
+          // Configure how assets are named
+          assetFileNames: (assetInfo) => {
+            const info = assetInfo.name.split(".");
+            const ext = info[info.length - 1];
+            if (/png|jpe?g|gif|tiff|bmp|ico|webp|svg/.test(ext)) {
+              return `images/[name]-[hash][extname]`;
+            } else if (/woff|woff2|eot|ttf|otf/.test(ext)) {
+              return `fonts/[name]-[hash][extname]`;
+            } else if (ext === "css") {
+              return `css/[name]-[hash][extname]`;
+            }
+            return `assets/[name]-[hash][extname]`;
+          },
         }
       }
     },
