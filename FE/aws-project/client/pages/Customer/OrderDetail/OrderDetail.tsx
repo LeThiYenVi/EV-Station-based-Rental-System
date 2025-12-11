@@ -47,7 +47,7 @@ export default function OrderDetail() {
   const navigate = useNavigate();
   const [order, setOrder] = useState<BookingDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const { getBookingByCode, completeBooking, payRemainder } = useBooking();
+  const { getBookingByCode, payRemainder } = useBooking();
   const { contextHolder, showSuccess, showError } = useMessage();
 
   // Feedback states
@@ -312,50 +312,6 @@ export default function OrderDetail() {
     }
   };
 
-  const handleCompleteBooking = async () => {
-    if (!order?.id) {
-      showError("Không tìm thấy thông tin đơn hàng");
-      return;
-    }
-
-    try {
-      setIsProcessing(true);
-      const result = await completeBooking(order.id);
-
-      if (result) {
-        showSuccess("Hoàn thành chuyến đi thành công!");
-
-        // Update order status locally
-        setOrder((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            status: BookingStatus.COMPLETED,
-          };
-        });
-
-        // Reload booking detail to get updated data
-        setTimeout(async () => {
-          const updatedBooking = await getBookingByCode(id!);
-          if (updatedBooking) {
-            setOrder(updatedBooking as any);
-          }
-        }, 1000);
-      } else {
-        showError("Không thể hoàn thành chuyến đi. Vui lòng thử lại.");
-      }
-    } catch (error: any) {
-      console.error("Complete booking error:", error);
-      const errorMessage =
-        error?.response?.data?.errors ||
-        error?.response?.data?.message ||
-        "Không thể hoàn thành chuyến đi";
-      showError(errorMessage);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   const handlePayRemainder = async () => {
     if (!order?.id) {
       showError("Không tìm thấy thông tin đơn hàng");
@@ -553,25 +509,6 @@ export default function OrderDetail() {
                 <Star className="w-4 h-4 mr-2 text-blue-600" />
                 Viết đánh giá
               </Button>
-              {order.status?.toUpperCase() === "ONGOING" && (
-                <Button
-                  onClick={handleCompleteBooking}
-                  disabled={isProcessing}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Đang xử lý...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Hoàn thành chuyến đi
-                    </>
-                  )}
-                </Button>
-              )}
               {order.status?.toUpperCase() === "COMPLETED" && (
                 <Button
                   onClick={handlePayRemainder}

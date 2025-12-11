@@ -29,7 +29,7 @@ interface UseBookingReturn {
   updateBooking: (id: string, data: UpdateBookingRequest) => Promise<BookingResponse | null>;
   confirmBooking: (id: string) => Promise<BookingResponse | null>;
   startBooking: (id: string) => Promise<BookingResponse | null>;
-  completeBooking: (id: string) => Promise<BookingResponse | null>;
+  completeBooking: (id: string) => Promise<BookingWithPaymentResponse | null>;
   cancelBooking: (id: string) => Promise<BookingResponse | null>;
   deleteBooking: (id: string) => Promise<boolean>;
   payRemainder: (id: string) => Promise<MomoPaymentResponse | null>;
@@ -264,13 +264,13 @@ export const useBooking = (): UseBookingReturn => {
     }
   }, []);
 
-  const completeBooking = useCallback(async (id: string): Promise<BookingResponse | null> => {
+  const completeBooking = useCallback(async (id: string): Promise<BookingWithPaymentResponse | null> => {
     try {
       setLoading(true);
       setError(null);
 
       const response = await bookingService.completeBooking(id);
-      return response;
+      return response as BookingWithPaymentResponse;
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Failed to complete booking';
       setError(errorMessage);

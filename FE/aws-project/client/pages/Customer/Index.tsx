@@ -42,6 +42,7 @@ import { gsap } from "gsap";
 import { useStation } from "@/hooks/useStation";
 import { useVehicle } from "@/hooks/useVehicle";
 import Snowfall from "react-snowfall";
+import SantaHat from "@/components/SantaHat";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -263,12 +264,25 @@ export default function Index() {
           <div className="relative h-[500px] flex flex-col items-center justify-center">
             {/* Content Overlay */}
             <div className="text-center text-white mb-8 pt-[50px]">
-              <h1
-                ref={title1Ref}
-                className="text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg"
-              >
-                VoltGo - Cùng Bạn
-              </h1>
+              <div className="relative inline-block">
+                <h1
+                  ref={title1Ref}
+                  className="text-4xl md:text-5xl font-bold mb-2 drop-shadow-lg"
+                >
+                  VoltGo - Cùng Bạn
+                </h1>
+                <span className="absolute top-0 left-[19%] md:left-[36%] -translate-x-1/2 pointer-events-none">
+                  <span
+                    className="text-2xl md:text-3xl inline-block animate-swing"
+                    style={{
+                      transformOrigin: "top center",
+                      marginTop: "-1rem",
+                    }}
+                  >
+                    🎁
+                  </span>
+                </span>
+              </div>
               <h2
                 ref={title2Ref}
                 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg"

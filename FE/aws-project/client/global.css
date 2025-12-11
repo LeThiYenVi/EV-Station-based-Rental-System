@@ -5,6 +5,25 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes swing {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  10%, 30%, 50%, 70% {
+    transform: rotate(15deg);
+  }
+  20%, 40%, 60%, 80% {
+    transform: rotate(-15deg);
+  }
+  90% {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-swing {
+  animation: swing 2s ease-in-out infinite;
+}
+
 @layer base {
   /**
    * Tailwind CSS theme
