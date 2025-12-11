@@ -92,11 +92,6 @@ export function StationCard({ station }: StationCardProps) {
             }}
           />
           <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded-full text-xs font-semibold">
-            {station.status === "ACTIVE" ? (
-              <span className="text-green-600">⚡ Hoạt động</span>
-            ) : (
-              <span className="text-gray-500">🚫 Đóng cửa</span>
-            )}
           </div>
         </div>
       )}
