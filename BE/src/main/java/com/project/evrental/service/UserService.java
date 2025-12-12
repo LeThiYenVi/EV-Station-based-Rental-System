@@ -41,7 +41,6 @@ public class UserService {
         return userRepository.findAll().stream().map(UserMapper::fromEntity).toList();
     }
 
-    @Cacheable(value = "users", key = "#email")
     public UserResponse getUserByEmail(String email) {
         var loadedUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
@@ -58,7 +57,6 @@ public class UserService {
         return loadedUser;
     }
 
-    @CacheEvict(value = "users", allEntries = true)
     public UserResponse createUser(User user) {
         return UserMapper.fromEntity(userRepository.save(user));
     }
@@ -86,7 +84,6 @@ public class UserService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", key = "#id")
     public UserResponse verifyLicenceUserAccount(UUID id) {
         var loadedUser = userRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("User not found with id: " + id)
@@ -99,7 +96,6 @@ public class UserService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", key = "#id")
     public UserResponse rejectLicenseVerification(UUID id) {
         log.info("Rejecting license verification for user: {}", id);
         var loadedUser = userRepository.findById(id).orElseThrow(
@@ -146,7 +142,6 @@ public class UserService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
     public UserResponse updateUser(UUID id, UpdateUserRequest request) {
         log.info("Updating user: {}", id);
         var user = userRepository.findById(id)
@@ -177,7 +172,6 @@ public class UserService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
     public UserResponse updateUserRole(UUID id, UserRole role) {
         log.info("Updating user role: {} to {}", id, role);
         var user = userRepository.findById(id)
@@ -188,7 +182,6 @@ public class UserService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
     public UserResponse uploadAvatar(UUID id, MultipartFile file) {
         log.info("Uploading avatar for user: {}", id);
         var user = userRepository.findById(id)
@@ -210,7 +203,6 @@ public class UserService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
     public UserResponse uploadLicenseCardFront(UUID id, MultipartFile file) {
         log.info("Uploading license card front for user: {}", id);
         var user = userRepository.findById(id)
@@ -234,7 +226,6 @@ public class UserService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
     public UserResponse uploadLicenseCardBack(UUID id, MultipartFile file) {
         log.info("Uploading license card back for user: {}", id);
         var user = userRepository.findById(id)
@@ -304,7 +295,6 @@ public class UserService {
     }
 
     @Transactional
-    @CacheEvict(value = "users", allEntries = true)
     public void attachStaffToStation(UUID staffId, UUID stationId) {
         log.info("Attaching staff {} to station {}", staffId, stationId);
         var staff = userRepository.findById(staffId)

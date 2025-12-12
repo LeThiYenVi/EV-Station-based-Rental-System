@@ -41,28 +41,28 @@ public class OauthStateService {
                 .expiresAt(LocalDateTime.now().plusMinutes(ttl_minutes))
                 .build();
 
-        String key = state_prefix + state;
-        redis.opsForValue().set(key, oauthState, ttl_minutes, TimeUnit.MINUTES);
+//        String key = state_prefix + state;
+//        redis.opsForValue().set(key, oauthState, ttl_minutes, TimeUnit.MINUTES);
         return oauthState;
     }
 
-    public OauthState validateAndConsumeState(String stateValue) {
-        if(stateValue == null || stateValue.isBlank()) {
-            throw new InvalidStateException("State parameter is missing");
-        }
-
-        String key = state_prefix + stateValue;
-        OauthState oauthState = (OauthState) redis.opsForValue().get(key);
-        if(oauthState == null || !oauthState.getState().equals(stateValue)) {
-            log.warn("Invalid or expired state: {}", stateValue);
-            throw new InvalidStateException(
-                    "Invalid or expired state parameter. Please try again."
-            );
-        }
-
-        redis.delete(key);
-        return oauthState;
-    }
+//    public OauthState validateAndConsumeState(String stateValue) {
+//        if(stateValue == null || stateValue.isBlank()) {
+//            throw new InvalidStateException("State parameter is missing");
+//        }
+//
+//        String key = state_prefix + stateValue;
+//        OauthState oauthState = (OauthState) redis.opsForValue().get(key);
+//        if(oauthState == null || !oauthState.getState().equals(stateValue)) {
+//            log.warn("Invalid or expired state: {}", stateValue);
+//            throw new InvalidStateException(
+//                    "Invalid or expired state parameter. Please try again."
+//            );
+//        }
+//
+//        redis.delete(key);
+//        return oauthState;
+//    }
 
     private String generateSecureState() {
         SecureRandom secureRandom = new SecureRandom();
